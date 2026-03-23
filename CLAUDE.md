@@ -30,6 +30,11 @@ Output: เอกสารภาษาไทย (สัญญาจ้าง, in
 - **Windows terminal** ต้อง prefix ด้วย `PYTHONUTF8=1` เมื่อรัน script ที่มีภาษาไทย
 - model name ที่แสดงใน sidebar ดึงจาก `/api/health` endpoint ตอนโหลดหน้า (ไม่ได้ hardcode ใน HTML)
 
+## Version Management
+- Version แสดงใน `index.html` บรรทัด `<div class="version">INTERNAL POC — vX.X</div>`
+- **อัปเดตทุกครั้งที่ commit** โดย increment patch version (v0.1 → v0.2 → v0.3 ...)
+- Version ปัจจุบัน: **v0.3**
+
 ## Rules ที่ต้องทำตามเสมอ
 - ภาษาไทยใน UI และ system prompts ทั้งหมด
 - ทุก agent output ต้องมี disclaimer ว่าเป็น draft
