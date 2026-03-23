@@ -1,5 +1,12 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.3.2] — 23 มีนาคม 2569 · feat
+- Auto-resize textarea: เริ่มต้น 1 บรรทัด → ขยายตาม content (max 5 บรรทัด / 140px)
+- Reset กลับ 1 บรรทัดอัตโนมัติหลัง send
+- fillInput() (nav-item click) trigger resize ด้วย
+
+---
+
 ## [v0.3.1] — 23 มีนาคม 2569 · feat
 - เพิ่ม Markdown rendering ด้วย marked.js (CDN)
 - ระหว่าง streaming แสดงเป็น plain text — switch เป็น rendered HTML ตอน done

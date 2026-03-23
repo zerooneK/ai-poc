@@ -454,6 +454,10 @@
       font-size: 14px;
       resize: none;
       line-height: 1.6;
+      min-height: 24px;
+      max-height: 140px;
+      overflow-y: auto;
+      box-sizing: content-box;
     }
     textarea::placeholder { color: var(--on-surface-2); opacity: 0.4; }
 
@@ -559,7 +563,7 @@
       <span class="app-desc">Orchestrator · HR · Accounting · Manager</span>
     </div>
     <div class="navbar-right">
-      <span class="version-tag">v0.3.1</span>
+      <span class="version-tag">v0.3.2</span>
     </div>
   </header>
 
@@ -588,7 +592,7 @@
       <div class="input-box">
         <textarea
           id="inputMsg"
-          rows="2"
+          rows="1"
           placeholder="พิมพ์งานที่ต้องการ — ระบบจะเลือก Agent ที่เหมาะสมโดยอัตโนมัติ"
         ></textarea>
         <div class="input-actions">
@@ -605,8 +609,11 @@
 
 <script>
   function fillInput(text) {
-    document.getElementById('inputMsg').value = text;
-    document.getElementById('inputMsg').focus();
+    const ta = document.getElementById('inputMsg');
+    ta.value = text;
+    ta.style.height = 'auto';
+    ta.style.height = ta.scrollHeight + 'px';
+    ta.focus();
   }
 
   let startTime = 0;
@@ -634,6 +641,7 @@
     copyBtn.style.display = 'none';
     container.classList.remove('streaming');
     input.value = '';
+    input.style.height = 'auto';
 
     try {
       const response = await fetch('/api/chat', {
@@ -721,7 +729,14 @@
 
   // Enter to send, Shift+Enter for newline
   document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('inputMsg').addEventListener('keydown', e => {
+    const ta = document.getElementById('inputMsg');
+
+    ta.addEventListener('input', () => {
+      ta.style.height = 'auto';
+      ta.style.height = ta.scrollHeight + 'px';
+    });
+
+    ta.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         sendMessage();
