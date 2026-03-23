@@ -40,6 +40,11 @@
       color: #3730a3;
       border: 1px solid #c7d2fe;
     }
+    body.light-mode .agent-manager {
+      background: #fdf4ff;
+      color: #7e22ce;
+      border: 1px solid #d8b4fe;
+    }
     body.light-mode .use-case-list { color: #666; }
     body.light-mode .use-case-list span:hover {
       color: #1a1a1a;
@@ -113,6 +118,11 @@
       background: #0d0d1f;
       color: #818cf8;
       border: 1px solid #3730a3;
+    }
+    .agent-manager {
+      background: #1a0d1a;
+      color: #e879f9;
+      border: 1px solid #7e22ce;
     }
 
     .use-case-list {
@@ -278,7 +288,7 @@
 
   <div class="footer">
     Model: <span id="modelName">กำลังโหลด...</span><br>
-    Agents: Orchestrator, HR, Accounting<br>
+    Agents: Orchestrator, HR, Accounting, Manager<br>
     <br>
     ⚠️ POC เท่านั้น — ไม่ใช่ระบบ production
   </div>
@@ -370,11 +380,16 @@
             status.textContent = '⚙️ ' + data.message;
 
           } else if (data.type === 'agent') {
-            const isHR = data.agent === 'hr';
-            badge.className = 'agent-badge ' + (isHR ? 'agent-hr' : 'agent-accounting');
-            badge.textContent = (isHR ? '◉ HR Agent' : '◉ Accounting Agent') + '\n' + data.reason;
+            const agentMap = {
+              hr:         { cls: 'agent-hr',         label: 'HR Agent' },
+              accounting: { cls: 'agent-accounting',  label: 'Accounting Agent' },
+              manager:    { cls: 'agent-manager',     label: 'Manager Advisor' }
+            };
+            const info = agentMap[data.agent] || agentMap['hr'];
+            badge.className = 'agent-badge ' + info.cls;
+            badge.textContent = '◉ ' + info.label + '\n' + data.reason;
             badge.style.display = 'block';
-            status.textContent = `✓ เลือก ${isHR ? 'HR' : 'Accounting'} Agent — กำลังสร้างเอกสาร...`;
+            status.textContent = `✓ เลือก ${info.label} — กำลังสร้างเอกสาร...`;
 
           } else if (data.type === 'text') {
             outputText += data.content;
