@@ -1,5 +1,14 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.3.3] — 23 มีนาคม 2569 · feat
+- Input area redesign: button ย้ายเข้าไปอยู่ใน container (absolute bottom-right) สไตล์ ChatGPT/Claude
+- เพิ่ม `.input-wrapper` (backdrop-filter blur) + `.input-container` (position: relative, border-radius: 20px)
+- textarea: padding-right: 52px ป้องกันข้อความทับปุ่ม, max-height 200px
+- send button: gradient background, opacity transition
+- เพิ่ม input-hint "INTERNAL POC · DRAFT OUTPUT ONLY" ด้านล่าง input box
+
+---
+
 ## [v0.3.2] — 23 มีนาคม 2569 · feat
 - Auto-resize textarea: เริ่มต้น 1 บรรทัด → ขยายตาม content (max 5 บรรทัด / 140px)
 - Reset กลับ 1 บรรทัดอัตโนมัติหลัง send

@@ -386,13 +386,11 @@
     .input-footer {
       position: fixed;
       bottom: 0; left: 256px; right: 0;
-      padding: 0 48px 24px;
-      background: linear-gradient(to top, var(--bg) 60%, transparent);
       pointer-events: none;
     }
 
     .input-inner {
-      max-width: 760px;
+      max-width: 780px;
       margin: 0 auto;
       pointer-events: auto;
     }
@@ -428,68 +426,79 @@
     }
     .copy-btn:hover { color: var(--on-surface); background: var(--surface-top); }
 
-    .input-box {
-      background: var(--surface-pure);
-      border-radius: 16px;
+    .input-wrapper {
+      padding: 12px 32px 20px;
+      background: color-mix(in srgb, var(--surface) 90%, transparent);
+      backdrop-filter: blur(12px);
+    }
+
+    .input-container {
+      position: relative;
       display: flex;
       flex-direction: column;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 0 0 1px rgba(255,255,255,0.04);
-      transition: box-shadow 0.3s, background 0.3s;
+      background: var(--surface-pure);
+      border-radius: 20px;
+      padding: 14px 16px 12px;
+      box-shadow: 0px 8px 24px rgba(43,52,55,0.06);
+      max-width: 780px;
+      margin: 0 auto;
+      transition: box-shadow 0.3s;
     }
-    body.light-mode .input-box {
-      box-shadow: 0 4px 24px rgba(43,52,55,0.08), 0 0 0 1px var(--outline-var);
-    }
-    .input-box:focus-within {
+    .input-container:focus-within {
       box-shadow: 0 8px 32px rgba(88,86,214,0.15), 0 0 0 1px rgba(88,86,214,0.3);
+    }
+    body.light-mode .input-container {
+      box-shadow: 0 4px 24px rgba(43,52,55,0.08), 0 0 0 1px var(--outline-var);
     }
 
     textarea {
-      flex: 1;
+      width: 100%;
       background: transparent;
       border: none;
       outline: none;
-      padding: 14px 18px 8px;
+      padding: 0;
+      padding-right: 52px;
       color: var(--on-surface);
       font-family: 'Inter', 'Sarabun', sans-serif;
-      font-size: 14px;
+      font-size: 0.9375rem;
       resize: none;
       line-height: 1.6;
       min-height: 24px;
-      max-height: 140px;
+      max-height: 200px;
       overflow-y: auto;
-      box-sizing: content-box;
+      box-sizing: border-box;
     }
     textarea::placeholder { color: var(--on-surface-2); opacity: 0.4; }
 
-    .input-actions {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      padding: 6px 10px;
-      gap: 6px;
-    }
-
     .send-btn {
+      position: absolute;
+      bottom: 12px; right: 12px;
       width: 36px; height: 36px;
-      background: var(--primary);
+      background: linear-gradient(135deg, var(--primary), var(--primary-dim));
       border: none;
       border-radius: 10px;
       color: var(--on-primary);
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      transition: background 0.2s, transform 0.15s;
-      box-shadow: 0 4px 12px rgba(88,86,214,0.3);
+      flex-shrink: 0;
+      transition: opacity 300ms;
     }
-    .send-btn:hover { background: var(--primary-dim); }
-    .send-btn:active { transform: scale(0.92); }
+    .send-btn:hover { opacity: 0.85; }
+    .send-btn:active { opacity: 0.7; }
     .send-btn:disabled {
-      background: var(--surface-top);
-      color: var(--on-surface-2);
-      opacity: 0.5;
+      opacity: 0.35;
       cursor: default;
-      box-shadow: none;
     }
     .send-btn .material-symbols-outlined { font-size: 18px; }
+
+    .input-hint {
+      text-align: center;
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      color: var(--on-surface-2);
+      opacity: 0.4;
+      margin-top: 6px;
+    }
   </style>
 </head>
 <body>
@@ -563,7 +572,7 @@
       <span class="app-desc">Orchestrator · HR · Accounting · Manager</span>
     </div>
     <div class="navbar-right">
-      <span class="version-tag">v0.3.2</span>
+      <span class="version-tag">v0.3.3</span>
     </div>
   </header>
 
@@ -589,17 +598,18 @@
         </button>
       </div>
 
-      <div class="input-box">
-        <textarea
-          id="inputMsg"
-          rows="1"
-          placeholder="พิมพ์งานที่ต้องการ — ระบบจะเลือก Agent ที่เหมาะสมโดยอัตโนมัติ"
-        ></textarea>
-        <div class="input-actions">
+      <div class="input-wrapper">
+        <div class="input-container">
+          <textarea
+            id="inputMsg"
+            rows="1"
+            placeholder="พิมพ์งานที่ต้องการ — ระบบจะเลือก Agent ที่เหมาะสมโดยอัตโนมัติ"
+          ></textarea>
           <button class="send-btn" id="sendBtn" onclick="sendMessage()">
             <span class="material-symbols-outlined">arrow_upward</span>
           </button>
         </div>
+        <p class="input-hint">INTERNAL POC · DRAFT OUTPUT ONLY</p>
       </div>
 
     </div>
