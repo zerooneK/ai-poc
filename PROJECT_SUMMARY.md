@@ -10,7 +10,7 @@
 
 **เป้าหมายของ POC นี้:** Demo สดต่อหัวหน้าเพื่อขอ budget พัฒนาระบบ production จริง
 
-**สถานะ:** POC เสร็จสมบูรณ์ 100% · version **v0.3.0** · พร้อม demo
+**สถานะ:** POC เสร็จสมบูรณ์ 100% · version **v0.3.1** · พร้อม demo
 
 ---
 
@@ -23,6 +23,9 @@
 | Model | กำหนดผ่าน `OPENROUTER_MODEL` env var (default: `anthropic/claude-sonnet-4-5`) |
 | Streaming | SSE (Server-Sent Events) via `client.chat.completions.create(stream=True)` |
 | Frontend | index.html ไฟล์เดียว — dark mode default, ไม่มี framework |
+| Markdown | marked.js (CDN) — render output เป็น HTML หลัง streaming เสร็จ |
+| Icons | Material Symbols Outlined (Google Fonts) |
+| Fonts | Inter + Sarabun (Google Fonts) |
 
 ---
 
@@ -69,26 +72,26 @@ SSE stream → Frontend แสดงผล real-time
 
 ```
 ai-poc/
-├── app.py                  ← Flask backend + Orchestrator + Agents (MAIN FILE)
-├── index.html              ← Web UI ไฟล์เดียว
-├── requirements.txt        ← flask, flask-cors, openai, python-dotenv
-├── test_cases.py           ← Automated test (6 use cases) — PYTHONUTF8=1 python test_cases.py
-├── quick-demo-check.py     ← Full validation script (7 checks รวม health)
-├── CHANGELOG.md            ← Version history
-├── PROJECT_SUMMARY.md      ← ไฟล์นี้
-├── CLAUDE.md               ← Rules สำหรับ Claude Code
-├── PRE-DEMO-CHECKLIST.md   ← Checklist 30 นาทีก่อน demo
+├── app.py                   ← Flask backend + Orchestrator + Agents (MAIN FILE)
+├── index.html               ← Web UI ไฟล์เดียว (The Silent Concierge design)
+├── requirements.txt         ← flask, flask-cors, openai, python-dotenv
+├── test_cases.py            ← Automated test (6 use cases) — PYTHONUTF8=1 python test_cases.py
+├── quick-demo-check.py      ← Full validation script (7 checks รวม health)
+├── CHANGELOG.md             ← Version history
+├── PROJECT_SUMMARY.md       ← ไฟล์นี้
+├── CLAUDE.md                ← Rules สำหรับ Claude Code
+├── PRE-DEMO-CHECKLIST.md    ← Checklist 30 นาทีก่อน demo
 ├── DEMO-READINESS-REPORT.md ← สรุปผลการตรวจสอบ demo readiness
-├── .env                    ← OPENROUTER_API_KEY, OPENROUTER_MODEL (ห้าม commit)
-├── .env.example            ← Template
-├── .gitignore              ← exclude: .env, venv/, backup/screenshots/
+├── .env                     ← OPENROUTER_API_KEY, OPENROUTER_MODEL (ห้าม commit)
+├── .env.example             ← Template
+├── .gitignore               ← exclude: .env, venv/, backup/screenshots/
 ├── backup/
-│   ├── demo-inputs.txt     ← copy-paste inputs ทั้ง 6 cases พร้อมใช้
-│   ├── demo-script.md      ← demo script พร้อม timing และ talking points
-│   └── screenshots/        ← ภาพหน้าจอ backup (ไม่ commit)
+│   ├── demo-inputs.txt      ← copy-paste inputs ทั้ง 6 cases พร้อมใช้
+│   ├── demo-script.md       ← demo script พร้อม timing และ talking points
+│   └── screenshots/         ← ภาพหน้าจอ backup (ไม่ commit)
 └── docs/
-    ├── poc-plan.md         ← แผน POC 2 คืน + session logs
-    └── project-plan.md     ← แผน production Phase 0-4 (8 สัปดาห์)
+    ├── poc-plan.md          ← แผน POC 2 คืน + session logs
+    └── project-plan.md      ← แผน production Phase 0-4 (8 สัปดาห์)
 ```
 
 ---
@@ -137,9 +140,38 @@ PYTHONUTF8=1 python quick-demo-check.py
 | v0.2.2 | 23 มี.ค. 2569 | chore | Semantic versioning rule + CHANGELOG.md |
 | v0.2.3 | 23 มี.ค. 2569 | docs | PROJECT_SUMMARY.md (ไฟล์นี้) |
 | v0.3.0 | 23 มี.ค. 2569 | feat | UI redesign "The Silent Concierge" — Navbar + Sidebar + design tokens |
+| v0.3.1 | 23 มี.ค. 2569 | feat | Markdown rendering (marked.js) + status-row solid background fix |
 
 **กฎ versioning:** Minor bump (0.X.0) = agent/feature ใหม่ · Patch bump (0.0.X) = fix/tweak
 **ทุก commit ต้อง bump version ใน `index.html` และเพิ่ม entry ใน `CHANGELOG.md`**
+
+---
+
+## UI Architecture (v0.3.x)
+
+index.html ใช้ design system "The Silent Concierge":
+
+```
+Fixed Sidebar (256px)
+  ├── Brand icon + "AI Assistant" + "INTERNAL POC"
+  ├── Agent badge (แสดงหลังจาก agent ถูกเลือก)
+  ├── Nav items × 6 (slide hover effect, Material Symbols icons)
+  └── Footer: theme toggle + model pill + POC warning
+
+Fixed Navbar (left: 256px, frosted glass)
+  ├── App title + subtitle (agents list)
+  └── Version tag (right)
+
+Main area (margin-left: 256px)
+  ├── output-wrap (scrollable, padding-bottom: 200px)
+  │   ├── ai-accent-line (opacity 0→1 ระหว่าง streaming)
+  │   └── output-area (plain text ระหว่าง stream → HTML หลัง done)
+  └── Fixed input-footer (gradient fade + rounded input-box + send button)
+```
+
+**Markdown Rendering Flow:**
+- ระหว่าง streaming: `output.textContent = outputText` (plain text)
+- เมื่อ `done` event: `output.innerHTML = marked.parse(outputText)` → switch เป็น HTML
 
 ---
 
@@ -150,6 +182,7 @@ PYTHONUTF8=1 python quick-demo-check.py
 | Reasoning models (minimax, deepseek-r1) return `content=None` | Orchestrator ต้องใช้ `max_tokens ≥ 1024` |
 | Windows terminal แสดงภาษาไทยแตก | prefix ด้วย `PYTHONUTF8=1` ทุกครั้ง |
 | Model name ใน sidebar ไม่ตรง | ดึงจาก `/api/health` อัตโนมัติตอนโหลดหน้า |
+| marked.js ต้องการ internet | โหลดจาก CDN — ถ้า offline จะ fallback เป็น plain text |
 
 ---
 
