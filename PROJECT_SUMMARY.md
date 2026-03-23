@@ -135,6 +135,7 @@ PYTHONUTF8=1 python quick-demo-check.py
 | v0.2.0 | 23 มี.ค. 2569 | feat | Manager Advisor agent + timer counter + copy button |
 | v0.2.1 | 23 มี.ค. 2569 | fix | Manager badge แสดงผิด label/color |
 | v0.2.2 | 23 มี.ค. 2569 | chore | Semantic versioning rule + CHANGELOG.md |
+| v0.2.3 | 23 มี.ค. 2569 | docs | PROJECT_SUMMARY.md (ไฟล์นี้) |
 
 **กฎ versioning:** Minor bump (0.X.0) = agent/feature ใหม่ · Patch bump (0.0.X) = fix/tweak
 **ทุก commit ต้อง bump version ใน `index.html` และเพิ่ม entry ใน `CHANGELOG.md`**

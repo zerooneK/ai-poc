@@ -1,5 +1,9 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.2.3] — 23 มีนาคม 2569 · docs
+- เพิ่ม PROJECT_SUMMARY.md — ภาพรวมทั้งโปรเจกต์สำหรับ onboard AI ในการสนทนาใหม่
+- ครอบคลุม: architecture, agents, file structure, run commands, version history, rules
+
 รูปแบบ: [v0.MINOR.PATCH] — วันที่ · ประเภท · รายละเอียด
 
 ---
