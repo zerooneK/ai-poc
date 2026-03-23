@@ -31,9 +31,26 @@ Output: เอกสารภาษาไทย (สัญญาจ้าง, in
 - model name ที่แสดงใน sidebar ดึงจาก `/api/health` endpoint ตอนโหลดหน้า (ไม่ได้ hardcode ใน HTML)
 
 ## Version Management
-- Version แสดงใน `index.html` บรรทัด `<div class="version">INTERNAL POC — vX.X</div>`
-- **อัปเดตทุกครั้งที่ commit** โดย increment patch version (v0.1 → v0.2 → v0.3 ...)
-- Version ปัจจุบัน: **v0.3**
+
+Version แสดงใน `index.html` บรรทัด `<div class="version">INTERNAL POC — vX.X.X</div>`
+
+รูปแบบ: **v0.MINOR.PATCH**
+
+| การเปลี่ยนแปลง | bump | ตัวอย่าง |
+|---|---|---|
+| เพิ่ม Agent ใหม่, ฟีเจอร์หลักใหม่ (route ใหม่, capability ใหม่) | Minor | v0.2.x → v0.3.0 |
+| Bug fix, UI tweak, prompt update, doc update | Patch | v0.2.0 → v0.2.1 |
+
+กฎ:
+- **ทุก commit ต้อง bump version** ใน index.html พร้อมกัน
+- เมื่อ bump Minor ให้ reset Patch เป็น 0 เสมอ (v0.2.3 → v0.3.0)
+- Version ปัจจุบัน: **v0.2.2**
+
+ประวัติ:
+- v0.1.0 — initial POC (HR + Accounting agents, SSE streaming)
+- v0.2.0 — Manager Advisor agent + timer counter + copy button
+- v0.2.1 — fix Manager badge label/color, update sidebar agent list
+- v0.2.2 — adopt semantic versioning scheme (current)
 
 ## Rules ที่ต้องทำตามเสมอ
 - ภาษาไทยใน UI และ system prompts ทั้งหมด
