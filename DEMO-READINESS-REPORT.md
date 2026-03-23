@@ -1,6 +1,6 @@
 # DEMO READINESS REPORT
 **Project:** Internal AI Assistant POC
-**Version:** v0.3.1
+**Version:** v0.3.6
 **Date:** 2026-03-23
 **Assessor:** Claude Code
 
@@ -26,7 +26,7 @@
 
 - Flask Server: Running on port 5000
 - Health Endpoint: /api/health returns 200 with model name
-- UI Frontend: http://localhost:5000 loads (v0.3.1)
+- UI Frontend: http://localhost:5000 loads (v0.3.6)
 - Dependencies: All installed
 - API Key: Configured in .env
 - Model: configurable via OPENROUTER_MODEL env var
@@ -91,14 +91,16 @@
 
 ---
 
-## UI FEATURES (v0.3.1)
+## UI FEATURES (v0.3.6)
 
-- ✅ Navbar: Fixed, frosted glass, version tag แสดง v0.3.1
-- ✅ Sidebar: Agent badge, 6 nav-items, model pill, theme toggle
+- ✅ Navbar: Fixed, frosted glass, version tag แสดง v0.3.6
+- ✅ Sidebar: Agent badge (reserved space + idle state), 6 nav pill chips, model pill, theme toggle
+- ✅ Typing indicator: 3 bouncing dots ก่อน agent เริ่ม stream (chat-bubble style)
+- ✅ Input area: button absolute inside container (ChatGPT style), auto-resize textarea
 - ✅ Markdown Rendering: Output render เป็น HTML หลัง done (ตาราง, หัวข้อ, bold)
 - ✅ Streaming accent line: primary color line ระหว่าง streaming
 - ✅ Processing time counter + copy button
-- ✅ Dark/Light mode toggle
+- ✅ Dark/Light mode toggle (dark mode สว่างขึ้น)
 
 ---
 
@@ -107,7 +109,7 @@
 **30 Minutes Before Demo:**
 - [ ] Server running (`python app.py`)
 - [ ] Browser ready at http://localhost:5000
-- [ ] Version tag แสดง v0.3.1 ใน navbar (ขวาบน)
+- [ ] Version tag แสดง v0.3.6 ใน navbar (ขวาบน)
 - [ ] Model name แสดงใน sidebar footer
 - [ ] Notifications disabled
 - [ ] Internet tested
@@ -156,5 +158,5 @@
 
 ---
 
-**Report Generated:** 2026-03-23 (v0.3.1)
+**Report Generated:** 2026-03-23 (v0.3.6)
 **For details, see:** PRE-DEMO-CHECKLIST.md

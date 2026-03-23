@@ -43,7 +43,7 @@ Output: เอกสารภาษาไทยพร้อมใช้
 
 **สถานะ POC: เสร็จสมบูรณ์ 100% — พร้อม demo**
 
-### ทำอะไรไปบ้างคืนนี้ (v0.1.0 → v0.2.3)
+### ทำอะไรไปบ้างคืนนี้ (v0.1.0 → v0.3.6)
 - ✅ Setup เสร็จครบ: app.py, index.html, requirements.txt, .env.example, .gitignore
 - ✅ เปลี่ยน AI provider จาก Anthropic SDK → OpenAI SDK + OpenRouter API
 - ✅ Environment variables: OPENROUTER_API_KEY, OPENROUTER_MODEL (config ได้โดยไม่แก้โค้ด)
@@ -57,6 +57,13 @@ Output: เอกสารภาษาไทยพร้อมใช้
 - ✅ แก้ Manager badge แสดงผิด label/color (v0.2.1)
 - ✅ กำหนด semantic versioning v0.MINOR.PATCH + CHANGELOG.md (v0.2.2)
 - ✅ สร้าง PROJECT_SUMMARY.md เป็น AI context document (v0.2.3)
+- ✅ UI redesign "The Silent Concierge" — Navbar, Sidebar, design tokens (v0.3.0)
+- ✅ Markdown rendering (marked.js) + status-row solid background fix (v0.3.1)
+- ✅ Auto-resize textarea 1–5 บรรทัด (v0.3.2)
+- ✅ Input area redesign — send button absolute inside container (v0.3.3)
+- ✅ Agent badge reserved space + idle state (v0.3.4)
+- ✅ Nav-items → pill chips, dark mode สว่างขึ้น (v0.3.5)
+- ✅ Typing indicator (3 bouncing dots) ก่อน streaming เริ่ม (v0.3.6)
 
 ### ปัญหาที่เจอและแก้แล้ว
 - **Reasoning models (minimax) ใช้ thinking tokens** → ต้องตั้ง max_tokens ≥1024 สำหรับ Orchestrator (ไม่งั้น content=None)
@@ -82,10 +89,10 @@ Output: เอกสารภาษาไทยพร้อมใช้
 ```
 ai-poc/
 ├── app.py                   ← Flask backend + Orchestrator + HR/Accounting/Manager agents
-├── index.html               ← Web UI ไฟล์เดียว (v0.3.1 — The Silent Concierge + Markdown)
+├── index.html               ← Web UI ไฟล์เดียว (v0.3.6 — The Silent Concierge + typing indicator)
 ├── test_cases.py            ← Automated test script (6 use cases)
 ├── quick-demo-check.py      ← Full validation (7 checks: 6 cases + health)
-├── CHANGELOG.md             ← Version history (v0.1.0 → v0.3.1)
+├── CHANGELOG.md             ← Version history (v0.1.0 → v0.3.6)
 ├── PROJECT_SUMMARY.md       ← ภาพรวมโปรเจกต์สำหรับ AI context
 ├── CLAUDE.md                ← Rules สำหรับ Claude Code
 ├── PRE-DEMO-CHECKLIST.md    ← Checklist 30 นาทีก่อน demo

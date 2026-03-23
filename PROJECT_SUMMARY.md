@@ -10,7 +10,7 @@
 
 **เป้าหมายของ POC นี้:** Demo สดต่อหัวหน้าเพื่อขอ budget พัฒนาระบบ production จริง
 
-**สถานะ:** POC เสร็จสมบูรณ์ 100% · version **v0.3.1** · พร้อม demo
+**สถานะ:** POC เสร็จสมบูรณ์ 100% · version **v0.3.8** · พร้อม demo
 
 ---
 
@@ -141,6 +141,13 @@ PYTHONUTF8=1 python quick-demo-check.py
 | v0.2.3 | 23 มี.ค. 2569 | docs | PROJECT_SUMMARY.md (ไฟล์นี้) |
 | v0.3.0 | 23 มี.ค. 2569 | feat | UI redesign "The Silent Concierge" — Navbar + Sidebar + design tokens |
 | v0.3.1 | 23 มี.ค. 2569 | feat | Markdown rendering (marked.js) + status-row solid background fix |
+| v0.3.2 | 23 มี.ค. 2569 | feat | Auto-resize textarea (1 บรรทัด → max 5 บรรทัด) |
+| v0.3.3 | 23 มี.ค. 2569 | feat | Input area redesign — button absolute inside container (ChatGPT style) |
+| v0.3.4 | 23 มี.ค. 2569 | fix | Agent badge reserved space + idle state "รอคำสั่งงาน..." |
+| v0.3.5 | 23 มี.ค. 2569 | feat | Nav-items → pill chips, dark mode สว่างขึ้น, secondary text สว่างขึ้น |
+| v0.3.6 | 23 มี.ค. 2569 | feat | Typing indicator (3 bouncing dots) ก่อน streaming เริ่ม |
+| v0.3.7 | 23 มี.ค. 2569 | fix | ai-accent-line สูงพอดี typing bubble ระหว่าง typing state |
+| v0.3.8 | 23 มี.ค. 2569 | fix | "tokens"→"ตัวอักษร" + typing indicator ซ่อนเมื่อ error |
 
 **กฎ versioning:** Minor bump (0.X.0) = agent/feature ใหม่ · Patch bump (0.0.X) = fix/tweak
 **ทุก commit ต้อง bump version ใน `index.html` และเพิ่ม entry ใน `CHANGELOG.md`**
@@ -154,8 +161,8 @@ index.html ใช้ design system "The Silent Concierge":
 ```
 Fixed Sidebar (256px)
   ├── Brand icon + "AI Assistant" + "INTERNAL POC"
-  ├── Agent badge (แสดงหลังจาก agent ถูกเลือก)
-  ├── Nav items × 6 (slide hover effect, Material Symbols icons)
+  ├── Agent badge (reserved space เสมอ — idle state "รอคำสั่งงาน..." พร้อม dashed border)
+  ├── Nav chips × 6 (flex-wrap pill chips, border-radius: 99px, hover: primary border)
   └── Footer: theme toggle + model pill + POC warning
 
 Fixed Navbar (left: 256px, frosted glass)
@@ -165,8 +172,13 @@ Fixed Navbar (left: 256px, frosted glass)
 Main area (margin-left: 256px)
   ├── output-wrap (scrollable, padding-bottom: 200px)
   │   ├── ai-accent-line (opacity 0→1 ระหว่าง streaming)
-  │   └── output-area (plain text ระหว่าง stream → HTML หลัง done)
-  └── Fixed input-footer (gradient fade + rounded input-box + send button)
+  │   ├── typing-indicator (3 bouncing dots — แสดงระหว่าง agent event ถึง text chunk แรก)
+  │   └── output-area (plain text ระหว่าง stream → HTML หลัง done, marked.js)
+  └── Fixed input-footer
+      ├── input-wrapper (backdrop-filter blur)
+      └── input-container (position: relative, border-radius: 20px)
+          ├── textarea (auto-resize 1-5 บรรทัด, padding-right: 52px)
+          └── send-btn (absolute bottom-right, gradient background)
 ```
 
 **Markdown Rendering Flow:**

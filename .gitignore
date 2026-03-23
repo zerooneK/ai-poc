@@ -5,3 +5,5 @@ __pycache__/
 *.pyc
 *.pyo
 backup/screenshots/
+workspace/*
+!workspace/.gitkeep

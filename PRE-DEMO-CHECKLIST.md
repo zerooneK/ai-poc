@@ -1,7 +1,7 @@
 # PRE-DEMO CHECKLIST — Internal AI Assistant POC
 **Demo Date:** 2026-03-23 (หรือตามกำหนด)
 **Duration:** 7 นาที
-**Version:** v0.3.1
+**Version:** v0.3.6
 **Status:** 🟡 NEEDS ATTENTION (อ่านด้านล่าง)
 
 ---
@@ -55,7 +55,7 @@
 
 #### Application Structure
 - ✅ app.py — Backend with Orchestrator + HR / Accounting / Manager Advisor agents
-- ✅ index.html — Frontend v0.3.1 (The Silent Concierge UI + Markdown rendering)
+- ✅ index.html — Frontend v0.3.6 (The Silent Concierge UI + typing indicator + Markdown rendering)
 - ✅ test_cases.py — Automated test suite (6 use cases)
 - ✅ quick-demo-check.py — Full validation (7 checks: 6 cases + health)
 - ✅ backup/demo-inputs.txt — Demo scripts ready (ครบ 6 cases)
@@ -313,5 +313,5 @@ Expected:
 ---
 
 **Prepared by:** Claude Code
-**Last Updated:** 2026-03-23 (v0.3.1)
+**Last Updated:** 2026-03-23 (v0.3.6)
 **Contact:** [Your email/Slack]

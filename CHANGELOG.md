@@ -1,5 +1,53 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.4.1] — 23 มีนาคม 2569 · feat
+- Confirmation flow (frontend): AI generates document → asks for edit or save → user types "บันทึก" or edit instruction
+- State tracking: `pendingDoc`, `pendingAgent`, `isPendingConfirmation`, `wasPMTask`, `lastAgent`
+- Input hint ไฮไลท์เป็นสีหลักเมื่ออยู่ใน confirmation state: "💬 พิมพ์ บันทึก เพื่อบันทึกไฟล์ หรือระบุสิ่งที่ต้องการแก้ไข"
+- ส่ง `pending_doc` + `pending_agent` ไปกับ request ถัดไปเมื่ออยู่ใน pending state
+- PM task ไม่เข้า pending flow (auto-save คงเดิม)
+
+---
+
+## [v0.4.0] — 23 มีนาคม 2569 · feat (Minor)
+- **PM Agent**: แตก task ที่ครอบคลุมหลาย domain ออกเป็น subtasks พร้อมกำหนด Agent ที่เหมาะสม
+- **MCP Filesystem**: Python FastMCP server + 5 tools (create/read/update/delete/list files)
+- **Agentic Loop**: LLM → tool_calls → execute → feed back → repeat (max 5 รอบ) สำหรับทุก agent
+- **Workspace Selector**: เลือก directory ได้ใน navbar, กำหนดขอบเขตการทำงานของ agent
+- **Real-time File Panel**: sidebar แสดงไฟล์ใน workspace แบบ live (SSE + watchdog)
+- **New endpoints**: GET/POST /api/workspace, GET /api/files, GET /api/files/stream
+- Path traversal prevention: agent ออกนอก workspace ไม่ได้
+
+---
+
+## [v0.3.9] — 23 มีนาคม 2569 · feat
+- Chat bubble UI: user message แสดงเป็น bubble ขวา, AI response แสดงซ้าย
+- ประวัติสนทนาสะสมใน chat log (ไม่ clear ทุก send)
+- สร้าง DOM elements ใหม่ต่อทุก message (`.msg-user`, `.msg-ai-container`, `.msg-ai-body`)
+- `copyOutput()` copy จาก AI bubble ล่าสุด (`.output-area` สุดท้าย)
+- แทน static `#outputContainer` ด้วย dynamic `.chat-log#chatLog`
+
+---
+
+## [v0.3.8] — 23 มีนาคม 2569 · fix
+- แก้ status bar: "tokens" → "ตัวอักษร" (ตัวเลขที่แสดงคือจำนวนตัวอักษร ไม่ใช่ API tokens)
+- แก้ typing indicator ค้างเมื่อเกิด error: ซ่อน typing dots และลบ class `.typing` ทั้งใน SSE error event และ catch block
+
+---
+
+## [v0.3.7] — 23 มีนาคม 2569 · fix
+- ai-accent-line สูงพอดีกับ typing bubble ระหว่าง typing state (`.output-container.typing` class)
+- เส้นยังยืดตาม text เหมือนเดิมเมื่อ streaming เริ่ม
+
+---
+
+## [v0.3.6] — 23 มีนาคม 2569 · feat
+- Typing indicator: 3 จุดเด้งใน output area ระหว่างรอ agent ตอบกลับ (เหมือน chat bubble)
+- แสดงเมื่อ `agent` event มาถึง → ซ่อนเมื่อข้อความแรกเริ่ม stream
+- CSS `@keyframes typing-bounce` + `.typing-indicator` พร้อม stagger delay
+
+---
+
 ## [v0.3.5] — 23 มีนาคม 2569 · feat
 - Nav-items เปลี่ยนเป็น pill chips (flex-wrap, border-radius: 99px, border)
 - Hover: background + primary border แทน slide animation

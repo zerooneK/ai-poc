@@ -29,6 +29,7 @@
       --hr-bg:         #0d2012; --hr-fg:   #4ade80; --hr-border: #166534;
       --ac-bg:         #0d0d1f; --ac-fg:   #818cf8; --ac-border: #3730a3;
       --mg-bg:         #1a0d1a; --mg-fg:   #e879f9; --mg-border: #7e22ce;
+      --pm-bg:         #0d1a26; --pm-fg:   #38bdf8; --pm-border: #0369a1;
     }
     body.light-mode {
       --bg:            #f8f9fa;
@@ -50,6 +51,7 @@
       --hr-bg:         #f0fdf4; --hr-fg:   #166534; --hr-border: #86efac;
       --ac-bg:         #eef2ff; --ac-fg:   #3730a3; --ac-border: #c7d2fe;
       --mg-bg:         #fdf4ff; --mg-fg:   #7e22ce; --mg-border: #d8b4fe;
+      --pm-bg:         #f0f9ff; --pm-fg:   #0369a1; --pm-border: #bae6fd;
     }
 
     /* ─── Base ───────────────────────────────────────────────────── */
@@ -169,6 +171,7 @@
     .agent-badge.agent-hr      { background: var(--hr-bg); color: var(--hr-fg); box-shadow: inset 0 0 0 1px var(--hr-border); }
     .agent-badge.agent-accounting { background: var(--ac-bg); color: var(--ac-fg); box-shadow: inset 0 0 0 1px var(--ac-border); }
     .agent-badge.agent-manager { background: var(--mg-bg); color: var(--mg-fg); box-shadow: inset 0 0 0 1px var(--mg-border); }
+    .agent-badge.agent-pm      { background: var(--pm-bg); color: var(--pm-fg); box-shadow: inset 0 0 0 1px var(--pm-border); }
 
     /* Nav chips */
     .nav-chips {
@@ -323,12 +326,48 @@
     .output-wrap::-webkit-scrollbar-track { background: transparent; }
     .output-wrap::-webkit-scrollbar-thumb { background: var(--outline-var); border-radius: 10px; }
 
-    .output-container {
-      max-width: 760px;
+    /* Chat layout */
+    .chat-log {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      max-width: 780px;
       margin: 0 auto;
       padding: 24px 0 200px;
+    }
+
+    /* User bubble — RIGHT */
+    .msg-user {
+      align-self: flex-end;
+      max-width: 72%;
+      background: var(--surface-hi);
+      border-radius: 18px 18px 4px 18px;
+      padding: 12px 16px;
+      font-size: 15px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: var(--on-surface);
+    }
+
+    /* AI response container — LEFT */
+    .msg-ai-container {
       display: flex;
-      gap: 20px;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .msg-ai-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Placeholder centered */
+    .chat-placeholder {
+      display: flex;
+      justify-content: center;
+      padding: 60px 0;
     }
 
     .ai-accent-line {
@@ -342,6 +381,34 @@
       align-self: stretch;
     }
     .streaming .ai-accent-line { opacity: 1; }
+    .msg-ai-container.typing .ai-accent-line {
+      align-self: flex-start;
+      min-height: 43px;
+    }
+
+    /* ─── Typing Indicator ───────────────────────────────────────── */
+    @keyframes typing-bounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.35; }
+      30%           { transform: translateY(-5px); opacity: 1; }
+    }
+    .typing-indicator {
+      display: none;
+      align-items: center;
+      gap: 5px;
+      padding: 12px 16px;
+      background: var(--surface-hi);
+      border-radius: 18px 18px 18px 4px;
+      width: fit-content;
+      margin-bottom: 8px;
+    }
+    .typing-indicator span {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--on-surface-2);
+      animation: typing-bounce 1.2s ease-in-out infinite;
+    }
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
 
     .output-area {
       flex: 1;
@@ -517,6 +584,120 @@
       opacity: 0.4;
       margin-top: 6px;
     }
+
+    /* ─── Workspace Selector (Navbar) ───────────────────────────────── */
+    .workspace-selector {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-family: 'Inter', monospace;
+      color: var(--on-surface-2);
+      background: var(--surface-hi);
+      border: 1px solid var(--surface-top);
+      cursor: pointer;
+      max-width: 240px;
+      overflow: hidden;
+      transition: all 0.2s;
+    }
+    .workspace-selector:hover { border-color: var(--primary); color: var(--on-surface); }
+    .workspace-path-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 190px;
+    }
+
+    /* ─── File Panel (Sidebar) ──────────────────────────────────────── */
+    .file-panel {
+      border-top: 1px solid rgba(255,255,255,0.04);
+      padding: 0 0 4px;
+      flex-shrink: 0;
+    }
+    body.light-mode .file-panel { border-top-color: var(--outline-var); }
+    .file-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px 4px;
+    }
+    .file-count-badge {
+      font-size: 10px;
+      opacity: 0.45;
+      font-family: 'Inter', monospace;
+    }
+    .file-list {
+      padding: 0 8px 4px;
+      max-height: 180px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .file-list::-webkit-scrollbar { width: 3px; }
+    .file-list::-webkit-scrollbar-track { background: transparent; }
+    .file-list::-webkit-scrollbar-thumb { background: var(--outline-var); border-radius: 4px; }
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      color: var(--on-surface-2);
+      font-family: 'Inter', monospace;
+      transition: background 0.15s;
+      cursor: default;
+    }
+    .file-item:hover { background: var(--surface-hi); color: var(--on-surface); }
+    .file-item-name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .file-item-size { opacity: 0.4; font-size: 10px; flex-shrink: 0; }
+    .file-empty {
+      font-size: 11px;
+      color: var(--on-surface-2);
+      opacity: 0.35;
+      font-style: italic;
+      text-align: center;
+      padding: 14px 8px;
+    }
+
+    /* ─── PM Plan Step (Chat) ───────────────────────────────────────── */
+    .pm-plan-step {
+      background: var(--pm-bg);
+      border: 1px solid var(--pm-border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 12px;
+      color: var(--pm-fg);
+      margin-bottom: 10px;
+    }
+    .pm-plan-title { font-weight: 600; margin-bottom: 8px; }
+    .pm-subtask {
+      display: flex;
+      gap: 10px;
+      padding: 3px 0;
+      line-height: 1.5;
+    }
+    .pm-subtask-agent { opacity: 0.65; min-width: 110px; flex-shrink: 0; }
+
+    /* ─── Tool Result Badge (Chat) ──────────────────────────────────── */
+    .tool-result-line {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-family: 'Inter', monospace;
+      color: var(--on-surface-2);
+      opacity: 0.6;
+      margin: 2px 0 6px;
+    }
   </style>
 </head>
 <body>
@@ -567,6 +748,17 @@
 
   </div>
 
+  <!-- Workspace Files -->
+  <div class="file-panel">
+    <div class="file-panel-header">
+      <span class="section-label" style="padding:0">Workspace Files</span>
+      <span class="file-count-badge" id="fileCount">0 ไฟล์</span>
+    </div>
+    <div class="file-list" id="fileList">
+      <div class="file-empty">ยังไม่มีไฟล์</div>
+    </div>
+  </div>
+
   <!-- Footer -->
   <div class="sidebar-footer">
     <button class="theme-btn" onclick="toggleTheme()">
@@ -589,18 +781,21 @@
   <header class="navbar">
     <div class="navbar-left">
       <h1 class="app-title">AI Assistant</h1>
-      <span class="app-desc">Orchestrator · HR · Accounting · Manager</span>
+      <span class="app-desc">Orchestrator · PM · HR · Accounting · Manager</span>
     </div>
     <div class="navbar-right">
-      <span class="version-tag">v0.3.5</span>
+      <button class="workspace-selector" id="workspaceBtn" onclick="changeWorkspace()" title="คลิกเพื่อเปลี่ยน workspace">
+        <span class="material-symbols-outlined" style="font-size:13px">folder_open</span>
+        <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
+      </button>
+      <span class="version-tag">v0.4.1</span>
     </div>
   </header>
 
   <!-- Output -->
-  <div class="output-wrap">
-    <div class="output-container" id="outputContainer">
-      <div class="ai-accent-line"></div>
-      <div class="output-area" id="output">
+  <div class="output-wrap" id="outputWrap">
+    <div class="chat-log" id="chatLog">
+      <div class="chat-placeholder" id="chatPlaceholder">
         <span class="placeholder">ผลลัพธ์จะแสดงที่นี่<br><br>พิมพ์งานในช่องด้านล่าง หรือคลิกตัวอย่างทางซ้าย</span>
       </div>
     </div>
@@ -648,36 +843,102 @@
 
   let startTime = 0;
 
+  // Confirmation flow state
+  let pendingDoc = '';
+  let pendingAgent = '';
+  let isPendingConfirmation = false;
+  let wasPMTask = false;
+  let lastAgent = '';
+
+  function _updateInputHint(isPending) {
+    const hint = document.querySelector('.input-hint');
+    if (!hint) return;
+    if (isPending) {
+      hint.textContent = '💬 พิมพ์ บันทึก เพื่อบันทึกไฟล์ หรือระบุสิ่งที่ต้องการแก้ไข';
+      hint.style.color = 'var(--primary)';
+    } else {
+      hint.textContent = 'INTERNAL POC · DRAFT OUTPUT ONLY';
+      hint.style.color = '';
+    }
+  }
+
   async function sendMessage() {
     const input = document.getElementById('inputMsg');
-    const output = document.getElementById('output');
     const status = document.getElementById('status');
     const btn = document.getElementById('sendBtn');
     const badge = document.getElementById('agentBadge');
     const copyBtn = document.getElementById('copyBtn');
-    const container = document.getElementById('outputContainer');
+    const chatLog = document.getElementById('chatLog');
+    const placeholder = document.getElementById('chatPlaceholder');
+    const outputWrap = document.getElementById('outputWrap');
 
     const message = input.value.trim();
     if (!message) return;
 
-    // Reset UI
+    // Reset UI state
     startTime = Date.now();
     btn.disabled = true;
-    output.innerHTML = '';
-    output.classList.remove('md-rendered');
     status.textContent = '⚙️ กำลังวิเคราะห์งาน...';
     badge.className = 'agent-badge agent-idle';
     badge.innerHTML = 'รอคำสั่งงาน...';
     copyBtn.style.display = 'none';
-    container.classList.remove('streaming');
+    if (placeholder) placeholder.style.display = 'none';
+    _updateInputHint(false);
     input.value = '';
     input.style.height = 'auto';
 
+    // User bubble
+    const userBubble = document.createElement('div');
+    userBubble.className = 'msg-user';
+    userBubble.textContent = message;
+    chatLog.appendChild(userBubble);
+
+    // AI container
+    const container = document.createElement('div');
+    container.className = 'msg-ai-container';
+
+    const accentLine = document.createElement('div');
+    accentLine.className = 'ai-accent-line';
+
+    const aiBody = document.createElement('div');
+    aiBody.className = 'msg-ai-body';
+
+    const typingIndicator = document.createElement('div');
+    typingIndicator.className = 'typing-indicator';
+    typingIndicator.innerHTML = '<span></span><span></span><span></span>';
+
+    let currentOutputEl = document.createElement('div');
+    currentOutputEl.className = 'output-area';
+
+    aiBody.appendChild(typingIndicator);
+    aiBody.appendChild(currentOutputEl);
+    container.appendChild(accentLine);
+    container.appendChild(aiBody);
+    chatLog.appendChild(container);
+
+    outputWrap.scrollTop = outputWrap.scrollHeight;
+
+    const agentMap = {
+      hr:         { cls: 'agent-hr',         label: 'HR Agent',         icon: '👤' },
+      accounting: { cls: 'agent-accounting',  label: 'Accounting Agent', icon: '📊' },
+      manager:    { cls: 'agent-manager',     label: 'Manager Advisor',  icon: '🧭' },
+      pm:         { cls: 'agent-pm',          label: 'PM Agent',         icon: '🗂️' }
+    };
+
     try {
+      const reqBody = { message };
+      if (isPendingConfirmation) {
+        reqBody.pending_doc = pendingDoc;
+        reqBody.pending_agent = pendingAgent;
+      }
+      isPendingConfirmation = false;
+      pendingDoc = '';
+      pendingAgent = '';
+
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message })
+        body: JSON.stringify(reqBody)
       });
 
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -704,56 +965,169 @@
             status.textContent = '⚙️ ' + data.message;
 
           } else if (data.type === 'agent') {
-            const agentMap = {
-              hr:         { cls: 'agent-hr',         label: 'HR Agent',         icon: '👤' },
-              accounting: { cls: 'agent-accounting',  label: 'Accounting Agent', icon: '📊' },
-              manager:    { cls: 'agent-manager',     label: 'Manager Advisor',  icon: '🧭' }
-            };
+            lastAgent = data.agent;
             const info = agentMap[data.agent] || agentMap['hr'];
             badge.className = 'agent-badge ' + info.cls;
             badge.innerHTML = `<strong>${info.icon} ${info.label}</strong><br><span style="opacity:0.8;font-size:11px">${data.reason}</span>`;
             container.classList.add('streaming');
-            status.textContent = `✓ เลือก ${info.label} — กำลังสร้างเอกสาร...`;
+            typingIndicator.style.display = 'flex';
+            container.classList.add('typing');
+
+          } else if (data.type === 'pm_plan') {
+            wasPMTask = true;
+            // PM plan: show subtask breakdown before agent output
+            const planDiv = document.createElement('div');
+            planDiv.className = 'pm-plan-step';
+            const agentNames = { hr: 'HR Agent 👤', accounting: 'Accounting 📊', manager: 'Manager 🧭' };
+            let html = '<div class="pm-plan-title">🗂️ PM Agent แบ่งงานออกเป็น:</div>';
+            data.subtasks.forEach(s => {
+              html += `<div class="pm-subtask"><span class="pm-subtask-agent">${agentNames[s.agent] || s.agent}</span><span>${s.task}</span></div>`;
+            });
+            planDiv.innerHTML = html;
+            aiBody.insertBefore(planDiv, typingIndicator);
+
+          } else if (data.type === 'tool_result') {
+            // Show tool execution feedback
+            const resultLine = document.createElement('div');
+            resultLine.className = 'tool-result-line';
+            resultLine.innerHTML = `<span class="material-symbols-outlined" style="font-size:12px">build</span>${data.tool}: ${data.result}`;
+            aiBody.insertBefore(resultLine, currentOutputEl);
 
           } else if (data.type === 'text') {
+            if (outputText === '') { typingIndicator.style.display = 'none'; container.classList.remove('typing'); }
             outputText += data.content;
-            output.textContent = outputText;
-            output.parentElement.parentElement.scrollTop = output.parentElement.parentElement.scrollHeight;
+            currentOutputEl.textContent = outputText;
+            outputWrap.scrollTop = outputWrap.scrollHeight;
+
+          } else if (data.type === 'subtask_done') {
+            // Render current subtask output as markdown
+            if (outputText) {
+              currentOutputEl.innerHTML = marked.parse(outputText);
+              currentOutputEl.classList.add('md-rendered');
+            }
+            outputText = '';
+            // Separator between subtasks
+            const sep = document.createElement('hr');
+            sep.style.cssText = 'border:none;border-top:1px solid var(--surface-hi);margin:16px 0;opacity:0.5';
+            aiBody.appendChild(sep);
+            // New output area for next subtask
+            const nextOutput = document.createElement('div');
+            nextOutput.className = 'output-area';
+            aiBody.appendChild(nextOutput);
+            currentOutputEl = nextOutput;
+            // Re-show typing indicator for next subtask
+            aiBody.insertBefore(typingIndicator, currentOutputEl);
+            outputWrap.scrollTop = outputWrap.scrollHeight;
 
           } else if (data.type === 'done') {
-            output.innerHTML = marked.parse(outputText);
-            output.classList.add('md-rendered');
+            if (outputText) {
+              currentOutputEl.innerHTML = marked.parse(outputText);
+              currentOutputEl.classList.add('md-rendered');
+            }
             const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-            const tokenCount = outputText.length.toLocaleString('th-TH');
-            status.textContent = `✅ เสร็จสิ้น · ${elapsed} วินาที · ${tokenCount} tokens`;
+            const charCount = outputText.length.toLocaleString('th-TH');
+            status.textContent = `✅ เสร็จสิ้น · ${elapsed} วินาที · ${charCount} ตัวอักษร`;
             container.classList.remove('streaming');
+            outputWrap.scrollTop = outputWrap.scrollHeight;
             copyBtn.style.display = 'flex';
             btn.disabled = false;
+            // Set pending confirmation state for single-agent tasks
+            if (!wasPMTask && lastAgent && outputText) {
+              pendingDoc = outputText;
+              pendingAgent = lastAgent;
+              isPendingConfirmation = true;
+              _updateInputHint(true);
+            }
+            wasPMTask = false;
 
           } else if (data.type === 'error') {
-            output.innerHTML = `<span class="error-msg">❌ เกิดข้อผิดพลาด: ${data.message}</span>`;
+            currentOutputEl.innerHTML = `<span class="error-msg">❌ เกิดข้อผิดพลาด: ${data.message}</span>`;
             status.textContent = 'กรุณาลองใหม่อีกครั้ง';
             container.classList.remove('streaming');
+            container.classList.remove('typing');
+            typingIndicator.style.display = 'none';
             btn.disabled = false;
+            wasPMTask = false;
           }
         }
       }
     } catch (err) {
-      output.innerHTML = `<span class="error-msg">❌ ไม่สามารถเชื่อมต่อ server ได้: ${err.message}</span>`;
+      currentOutputEl.innerHTML = `<span class="error-msg">❌ ไม่สามารถเชื่อมต่อ server ได้: ${err.message}</span>`;
       status.textContent = 'กรุณาตรวจสอบว่า Flask server รันอยู่ที่ port 5000';
       container.classList.remove('streaming');
+      container.classList.remove('typing');
+      typingIndicator.style.display = 'none';
       btn.disabled = false;
+      wasPMTask = false;
     }
   }
 
   function copyOutput() {
-    const text = document.getElementById('output').textContent;
+    const outputs = document.querySelectorAll('.output-area');
+    const text = outputs.length ? outputs[outputs.length - 1].textContent : '';
     navigator.clipboard.writeText(text).then(() => {
       const btn = document.getElementById('copyBtn');
       const orig = btn.innerHTML;
       btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:13px">check</span> คัดลอกแล้ว';
       setTimeout(() => btn.innerHTML = orig, 2000);
     });
+  }
+
+  // ─── Workspace & File Stream ───────────────────────────────────────────────
+
+  let _fileEventSource = null;
+
+  function startFileStream() {
+    if (_fileEventSource) _fileEventSource.close();
+    _fileEventSource = new EventSource('/api/files/stream');
+    _fileEventSource.onmessage = (e) => {
+      const data = JSON.parse(e.data);
+      if (data.type === 'files') renderFileList(data.files, data.workspace);
+    };
+    _fileEventSource.onerror = () => { /* EventSource auto-reconnects */ };
+  }
+
+  function renderFileList(files, workspace) {
+    if (workspace) document.getElementById('workspacePath').textContent = workspace;
+    const list = document.getElementById('fileList');
+    const countEl = document.getElementById('fileCount');
+    countEl.textContent = files.length + ' ไฟล์';
+    if (files.length === 0) {
+      list.innerHTML = '<div class="file-empty">ยังไม่มีไฟล์</div>';
+      return;
+    }
+    list.innerHTML = files.map(f =>
+      `<div class="file-item">
+        <span class="material-symbols-outlined" style="font-size:13px;opacity:0.45;flex-shrink:0">description</span>
+        <span class="file-item-name">${f.name}</span>
+        <span class="file-item-size">${_formatBytes(f.size)}</span>
+      </div>`
+    ).join('');
+  }
+
+  function _formatBytes(b) {
+    if (b < 1024) return b + 'B';
+    if (b < 1048576) return (b / 1024).toFixed(1) + 'KB';
+    return (b / 1048576).toFixed(1) + 'MB';
+  }
+
+  async function changeWorkspace() {
+    const current = document.getElementById('workspacePath').textContent;
+    const newPath = prompt('ระบุ path ของ workspace directory:', current);
+    if (!newPath || newPath.trim() === current) return;
+    try {
+      const res = await fetch('/api/workspace', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: newPath.trim() })
+      });
+      const data = await res.json();
+      if (data.error) { alert('ไม่สามารถตั้งค่า workspace: ' + data.error); return; }
+      document.getElementById('workspacePath').textContent = data.path;
+      startFileStream();
+    } catch (e) {
+      alert('เกิดข้อผิดพลาด: ' + e.message);
+    }
   }
 
   // Enter to send, Shift+Enter for newline
@@ -776,10 +1150,13 @@
       .then(res => res.json())
       .then(data => {
         if (data.model) document.getElementById('modelName').textContent = data.model;
+        if (data.workspace) document.getElementById('workspacePath').textContent = data.workspace;
       })
       .catch(() => {
         document.getElementById('modelName').textContent = 'ไม่สามารถโหลดได้';
       });
+
+    startFileStream();
   });
 
   function toggleTheme() {
