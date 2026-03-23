@@ -1,9 +1,9 @@
 # AI POC — Internal AI Assistant
 
 ## โปรเจกต์นี้คืออะไร
-Flask + Anthropic API สำหรับ demo ต่อหัวหน้า
-Multi-agent: Orchestrator → HR Agent / Accounting Agent
-Output: เอกสารภาษาไทย (สัญญาจ้าง, invoice, JD)
+Flask + OpenRouter API สำหรับ demo ต่อหัวหน้า
+Multi-agent: Orchestrator → HR Agent / Accounting Agent / Manager Advisor
+Output: เอกสารภาษาไทย (สัญญาจ้าง, invoice, JD, คำแนะนำการบริหารทีม)
 
 ## เอกสารสำคัญ — อ่านก่อนทำงานทุกครั้ง
 - `docs/poc-plan.md`     — แผน POC 2 คืน พร้อม code และ demo script

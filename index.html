@@ -189,7 +189,30 @@
       border-top: 1px solid #1a1a1a;
       min-height: 38px;
       flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
+
+    .copy-btn {
+      padding: 5px 12px;
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 6px;
+      color: #aaa;
+      font-family: 'Sarabun', sans-serif;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .copy-btn:hover { background: #252525; color: #e0e0e0; }
+    body.light-mode .copy-btn {
+      background: #e5e5e5;
+      color: #666;
+      border-color: #ccc;
+    }
+    body.light-mode .copy-btn:hover { background: #d0d0d0; color: #1a1a1a; }
 
     .input-area {
       padding: 16px 28px 20px;
@@ -272,7 +295,10 @@
     </div>
   </div>
 
-  <div class="status-bar" id="status"></div>
+  <div class="status-bar">
+    <span id="status"></span>
+    <button id="copyBtn" class="copy-btn" onclick="copyOutput()" style="display:none">📋 คัดลอก</button>
+  </div>
 
   <div class="input-area">
     <textarea
@@ -290,22 +316,27 @@
     document.getElementById('inputMsg').focus();
   }
 
+  let startTime = 0;
+
   async function sendMessage() {
     const input = document.getElementById('inputMsg');
     const output = document.getElementById('output');
     const status = document.getElementById('status');
     const btn = document.getElementById('sendBtn');
     const badge = document.getElementById('agentBadge');
+    const copyBtn = document.getElementById('copyBtn');
 
     const message = input.value.trim();
     if (!message) return;
 
     // Reset UI
+    startTime = Date.now();
     btn.disabled = true;
     output.innerHTML = '';
     status.textContent = '⚙️ กำลังวิเคราะห์งาน...';
     badge.style.display = 'none';
     badge.className = 'agent-badge';
+    copyBtn.style.display = 'none';
     input.value = ''; // Clear input after sending
 
     try {
@@ -351,7 +382,10 @@
             output.parentElement.scrollTop = output.parentElement.scrollHeight;
 
           } else if (data.type === 'done') {
-            status.textContent = '✅ เสร็จสิ้น — กรุณาตรวจสอบเอกสารก่อนนำไปใช้งานจริง';
+            const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+            const tokenCount = outputText.length.toLocaleString('th-TH');
+            status.textContent = `✅ เสร็จสิ้น · ${elapsed} วินาที · ${tokenCount} tokens`;
+            copyBtn.style.display = 'inline-block';
             btn.disabled = false;
 
           } else if (data.type === 'error') {
@@ -366,6 +400,16 @@
       status.textContent = 'กรุณาตรวจสอบว่า Flask server รันอยู่ที่ port 5000';
       btn.disabled = false;
     }
+  }
+
+  function copyOutput() {
+    const text = document.getElementById('output').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copyBtn');
+      const orig = btn.textContent;
+      btn.textContent = '✅ คัดลอกแล้ว';
+      setTimeout(() => btn.textContent = orig, 2000);
+    });
   }
 
   // Enter เพื่อส่ง, Shift+Enter เพื่อขึ้นบรรทัดใหม่

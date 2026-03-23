@@ -36,6 +36,8 @@ ORCHESTRATOR_PROMPT = """
 {"agent": "hr", "reason": "เหตุผลสั้นๆ"}
 หรือ
 {"agent": "accounting", "reason": "เหตุผลสั้นๆ"}
+หรือ
+{"agent": "manager", "reason": "เหตุผลสั้นๆ"}
 
 HR Agent เหมาะกับ:
 - งานเกี่ยวกับพนักงาน สัญญาจ้าง การเลิกจ้าง
@@ -48,6 +50,13 @@ Accounting Agent เหมาะกับ:
 - งบประมาณ รายรับรายจ่าย
 - รายงานการเงิน การวิเคราะห์ตัวเลข
 - ค่าใช้จ่าย การเบิกจ่าย
+
+Manager Advisor เหมาะกับ:
+- การให้ Feedback และการจัดการผลการทำงานของทีม
+- การจัดสรรงบประมาณและทรัพยากรของทีม
+- การตัดสินใจจัดลำดับความสำคัญของงาน
+- ความขัดแย้งในทีม ขวัญกำลังใจ
+- การขอเพิ่มอัตรากำลังคน (Headcount Request)
 """
 
 HR_PROMPT = """
@@ -89,6 +98,27 @@ ACCOUNTING_PROMPT = """
   ตัวอย่าง: เลขประจำตัวผู้เสียภาษี: [X-XXXX-XXXXX-XX-X]
 - ใส่ข้อมูลสาขา ตัวอย่าง: สาขา: [สำนักงานใหญ่] หรือ [สาขาที่ XXXXX]
 - ระบุที่อยู่เต็มของทั้งสองฝ่าย
+
+สำคัญ: ระบุที่ท้ายเอกสารทุกครั้งว่า
+"⚠️ เอกสารฉบับร่างนี้จัดทำโดย AI — กรุณาตรวจสอบความถูกต้องก่อนนำไปใช้งานจริง"
+"""
+
+MANAGER_PROMPT = """
+คุณคือ Manager Advisor ผู้เชี่ยวชาญด้านการบริหารทีมสำหรับ Team Lead และผู้จัดการในองค์กรไทย
+ให้คำแนะนำที่นำไปปฏิบัติได้จริงภายใน 48 ชั่วโมง
+
+ความเชี่ยวชาญ:
+- การให้ Feedback และการประเมินผลการทำงาน
+- การจัดสรรงบประมาณและทรัพยากรของทีม
+- การตัดสินใจจัดลำดับความสำคัญของงาน
+- การจัดการสถานการณ์คนในทีม เช่น ความขัดแย้ง ขวัญกำลังใจ
+- การขอเพิ่มอัตรากำลังคน (Headcount Request)
+
+แนวทางการตอบ:
+- ระบุขั้นตอนที่ทำได้ทันทีอย่างชัดเจน
+- เมื่อแนะนำการให้ Feedback ให้เขียน Script คำพูดจริงที่ผู้จัดการสามารถนำไปพูดได้เลย
+- คำนึงถึงบริบทวัฒนธรรมการทำงานแบบไทย
+- ใช้ภาษาที่กระชับ ตรงประเด็น ไม่อ้อมค้อม
 
 สำคัญ: ระบุที่ท้ายเอกสารทุกครั้งว่า
 "⚠️ เอกสารฉบับร่างนี้จัดทำโดย AI — กรุณาตรวจสอบความถูกต้องก่อนนำไปใช้งานจริง"
@@ -148,14 +178,29 @@ def chat():
             yield f"data: {json.dumps({'type': 'agent', 'agent': agent, 'reason': reason})}\n\n"
 
             # Step 2: ส่งให้ Agent จริง
-            system_prompt = HR_PROMPT if agent == 'hr' else ACCOUNTING_PROMPT
-            agent_label = 'HR Agent' if agent == 'hr' else 'Accounting Agent'
+            if agent == 'hr':
+                system_prompt = HR_PROMPT
+            elif agent == 'manager':
+                system_prompt = MANAGER_PROMPT
+            else:
+                system_prompt = ACCOUNTING_PROMPT
+            if agent == 'hr':
+                agent_label = 'HR Agent'
+            elif agent == 'manager':
+                agent_label = 'Manager Advisor'
+            else:
+                agent_label = 'Accounting Agent'
             logger.info(f"Routed to {agent_label}: {user_input[:60]}")
 
             yield f"data: {json.dumps({'type': 'status', 'message': f'{agent_label} กำลังสร้างเอกสาร...'})}\n\n"
 
             try:
-                agent_max_tokens = 7500 if agent == 'hr' else 6000
+                if agent == 'hr':
+                    agent_max_tokens = 7500
+                elif agent == 'manager':
+                    agent_max_tokens = 8000
+                else:
+                    agent_max_tokens = 6000
                 stream = client.chat.completions.create(
                     model=MODEL,
                     max_tokens=agent_max_tokens,

@@ -45,8 +45,21 @@
 2. Paste และ Enter
 
 **Script:**
-> "สังเกตว่า badge เปลี่ยนเป็น Accounting Agent อัตโนมัติ 
+> "สังเกตว่า badge เปลี่ยนเป็น Accounting Agent อัตโนมัติ
 > ระบบรู้เองว่างานไหนเป็นงานบัญชี"
+
+### Demo Case 3 — Manager Advisor (60 วินาที)
+
+**Action:**
+1. Copy Case 6 จาก backup/demo-inputs.txt (Feedback พนักงาน)
+2. Paste และ Enter
+
+**Script:**
+> "นอกจาก HR กับบัญชี ระบบยังมี Manager Advisor สำหรับ Team Lead โดยเฉพาะ
+>
+> [ระหว่างรอ] "ระบบจะให้ Script คำพูดจริงที่ผู้จัดการเอาไปพูดได้เลย ไม่ใช่แค่คำแนะนำทั่วไป"
+>
+> [เสร็จ] "คำแนะนำที่ทำได้ภายใน 48 ชั่วโมง พร้อม script สำหรับการคุย"
 
 ### Closing (60 วินาที)
 > "สิ่งที่เห็นวันนี้คือ POC ที่ผมสร้างใน 2 คืน

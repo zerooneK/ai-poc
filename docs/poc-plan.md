@@ -17,7 +17,7 @@ User พิมพ์งาน
       ↓
 Orchestrator วิเคราะห์และเลือก Agent
       ↓
-HR Agent หรือ Accounting Agent ทำงาน
+HR Agent / Accounting Agent / Manager Advisor ทำงาน
       ↓
 Output: เอกสารภาษาไทยพร้อมใช้
 ```
@@ -28,6 +28,7 @@ Output: เอกสารภาษาไทยพร้อมใช้
 | Orchestrator | วิเคราะห์งานและ route ไปหา Agent ที่ถูกต้อง |
 | HR Agent | สัญญาจ้าง, JD, นโยบาย, อีเมล HR |
 | Accounting Agent | Invoice, งบประมาณ, เอกสารการเงิน |
+| Manager Advisor | Feedback พนักงาน, จัดสรร budget, ลำดับความสำคัญ, headcount |
 
 ### สิ่งที่ POC นี้ **ไม่มี** (และต้องพูดตรงๆ กับหัวหน้า)
 - ❌ Login / Authentication

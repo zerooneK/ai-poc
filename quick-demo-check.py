@@ -48,6 +48,13 @@ CASES = [
         "input": "สรุปรายการค่าใช้จ่ายของแผนก Marketing เดือนนี้ แบ่งเป็น ค่าโฆษณา 30,000 ค่าจ้างฟรีแลนซ์ 15,000 ค่าเดินทาง 5,000",
         "expected_agent": "accounting",
         "checks": ["Marketing", "30,000", "15,000", "5,000"]
+    },
+    {
+        "id": 6,
+        "name": "Manager — Feedback พนักงาน",
+        "input": "ช่วยฉันวางแผนการพูดคุยกับพนักงานที่ส่งงานช้าและขาดงานบ่อย ฉันเป็น Team Lead และต้องการให้ Feedback อย่างสร้างสรรค์",
+        "expected_agent": "manager",
+        "checks": ["Feedback", "48"]
     }
 ]
 
@@ -155,7 +162,7 @@ def main():
     print("="*70)
     
     # Check server
-    print("\n[1/6] Checking server health...")
+    print("\n[1/7] Checking server health...")
     if not check_health():
         print("❌ Server not running at http://localhost:5000")
         print("   Start server: python app.py")
@@ -165,7 +172,7 @@ def main():
     # Run tests
     results = []
     for i, case in enumerate(CASES, 1):
-        print(f"\n[{i+1}/6] Testing Case #{case['id']}...")
+        print(f"\n[{i+1}/7] Testing Case #{case['id']}...")
         passed, agent, errors = test_case(case)
         results.append({
             "case": case,
