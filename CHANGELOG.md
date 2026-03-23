@@ -1,5 +1,13 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.3.5] — 23 มีนาคม 2569 · feat
+- Nav-items เปลี่ยนเป็น pill chips (flex-wrap, border-radius: 99px, border)
+- Hover: background + primary border แทน slide animation
+- Dark mode สว่างขึ้น: bg #0B0E14→#13171f, surface #151921→#1b2130
+- Secondary text สว่างขึ้น: --on-surface-2 #abb3b7→#c8d2d8
+
+---
+
 ## [v0.3.4] — 23 มีนาคม 2569 · fix
 - Sidebar Agent badge: reserved space ตลอดเวลา (ไม่ใช้ display:none อีกต่อไป)
 - Idle state แสดง "รอคำสั่งงาน..." พร้อม dashed border จาง

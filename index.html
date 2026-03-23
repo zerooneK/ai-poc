@@ -10,14 +10,14 @@
   <style>
     /* ─── Design Tokens ──────────────────────────────────────────── */
     :root {
-      --bg:            #0B0E14;
-      --surface-lo:    #0f1218;
-      --surface:       #151921;
-      --surface-hi:    #1c212b;
-      --surface-top:   #242a35;
-      --surface-pure:  #080a0f;
-      --on-surface:    #f8f9fa;
-      --on-surface-2:  #abb3b7;
+      --bg:            #13171f;
+      --surface-lo:    #111520;
+      --surface:       #1b2130;
+      --surface-hi:    #222a3a;
+      --surface-top:   #2a3347;
+      --surface-pure:  #0d1017;
+      --on-surface:    #f0f4f8;
+      --on-surface-2:  #c8d2d8;
       --primary:       #5856D6;
       --primary-dim:   #423fc0;
       --on-primary:    #faf6ff;
@@ -170,30 +170,35 @@
     .agent-badge.agent-accounting { background: var(--ac-bg); color: var(--ac-fg); box-shadow: inset 0 0 0 1px var(--ac-border); }
     .agent-badge.agent-manager { background: var(--mg-bg); color: var(--mg-fg); box-shadow: inset 0 0 0 1px var(--mg-border); }
 
-    /* Nav items */
-    .nav-item {
+    /* Nav chips */
+    .nav-chips {
       display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .nav-item {
+      display: inline-flex;
       align-items: center;
-      gap: 10px;
-      padding: 9px 12px;
-      border-radius: 8px;
-      font-size: 13px;
-      color: var(--on-surface-2);
-      cursor: pointer;
-      text-decoration: none;
-      transition: color 0.2s, background 0.2s, transform 0.25s cubic-bezier(.4,0,.2,1);
-      border: none;
-      background: transparent;
-      width: 100%;
-      text-align: left;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 99px;
+      font-size: 12px;
       font-family: 'Inter', 'Sarabun', sans-serif;
+      color: var(--on-surface-2);
+      background: var(--surface-hi);
+      border: 1px solid var(--surface-top);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+      width: auto;
+      text-align: left;
     }
     .nav-item:hover {
+      background: var(--surface-top);
       color: var(--on-surface);
-      background: var(--surface-hi);
-      transform: translateX(3px);
+      border-color: var(--primary);
     }
-    .nav-item .nav-icon { font-size: 15px; opacity: 0.75; }
+    .nav-item .nav-icon { font-size: 13px; }
 
     /* Sidebar footer */
     .sidebar-footer {
@@ -539,24 +544,26 @@
     <!-- Use Cases -->
     <div class="section-label">ตัวอย่างงาน</div>
 
-    <button class="nav-item" onclick="fillInput('ร่างสัญญาจ้างพนักงานชื่อ สมชาย ใจดี ตำแหน่ง นักบัญชี เงินเดือน 35,000 บาท')">
-      <span class="nav-icon">📄</span><span>ร่างสัญญาจ้าง</span>
-    </button>
-    <button class="nav-item" onclick="fillInput('สร้าง Job Description สำหรับตำแหน่ง HR Manager')">
-      <span class="nav-icon">📋</span><span>สร้าง JD</span>
-    </button>
-    <button class="nav-item" onclick="fillInput('สร้าง Invoice สำหรับ บริษัท ABC จำกัด ค่าบริการที่ปรึกษา 50,000 บาท')">
-      <span class="nav-icon">🧾</span><span>สร้าง Invoice</span>
-    </button>
-    <button class="nav-item" onclick="fillInput('ร่างอีเมลแจ้งพนักงานเรื่องนโยบาย Work from Home สัปดาห์ละ 2 วัน')">
-      <span class="nav-icon">✉️</span><span>ร่างอีเมลนโยบาย</span>
-    </button>
-    <button class="nav-item" onclick="fillInput('สรุปขั้นตอนการลาป่วยของบริษัท')">
-      <span class="nav-icon">💬</span><span>คำถาม HR</span>
-    </button>
-    <button class="nav-item" onclick="fillInput('ช่วยฉันวางแผนการพูดคุยกับพนักงานที่ส่งงานช้าและขาดงานบ่อย ฉันเป็น Team Lead และต้องการให้ Feedback อย่างสร้างสรรค์')">
-      <span class="nav-icon">👥</span><span>Feedback พนักงาน</span>
-    </button>
+    <div class="nav-chips">
+      <button class="nav-item" onclick="fillInput('ร่างสัญญาจ้างพนักงานชื่อ สมชาย ใจดี ตำแหน่ง นักบัญชี เงินเดือน 35,000 บาท')">
+        <span class="nav-icon">📄</span><span>ร่างสัญญาจ้าง</span>
+      </button>
+      <button class="nav-item" onclick="fillInput('สร้าง Job Description สำหรับตำแหน่ง HR Manager')">
+        <span class="nav-icon">📋</span><span>สร้าง JD</span>
+      </button>
+      <button class="nav-item" onclick="fillInput('สร้าง Invoice สำหรับ บริษัท ABC จำกัด ค่าบริการที่ปรึกษา 50,000 บาท')">
+        <span class="nav-icon">🧾</span><span>สร้าง Invoice</span>
+      </button>
+      <button class="nav-item" onclick="fillInput('ร่างอีเมลแจ้งพนักงานเรื่องนโยบาย Work from Home สัปดาห์ละ 2 วัน')">
+        <span class="nav-icon">✉️</span><span>ร่างอีเมลนโยบาย</span>
+      </button>
+      <button class="nav-item" onclick="fillInput('สรุปขั้นตอนการลาป่วยของบริษัท')">
+        <span class="nav-icon">💬</span><span>คำถาม HR</span>
+      </button>
+      <button class="nav-item" onclick="fillInput('ช่วยฉันวางแผนการพูดคุยกับพนักงานที่ส่งงานช้าและขาดงานบ่อย ฉันเป็น Team Lead และต้องการให้ Feedback อย่างสร้างสรรค์')">
+        <span class="nav-icon">👥</span><span>Feedback พนักงาน</span>
+      </button>
+    </div>
 
   </div>
 
@@ -585,7 +592,7 @@
       <span class="app-desc">Orchestrator · HR · Accounting · Manager</span>
     </div>
     <div class="navbar-right">
-      <span class="version-tag">v0.3.4</span>
+      <span class="version-tag">v0.3.5</span>
     </div>
   </header>
 
