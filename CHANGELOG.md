@@ -1,5 +1,15 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.4.2] — 23 มีนาคม 2569 · fix
+- **PM Agent JSON parse**: เพิ่ม `_extract_json()` helper — strip code fences (ทุก variant), slice `{...}` จาก LLM output ก่อน parse
+- **PM_PROMPT hardened**: เปิด prompt ด้วย OUTPUT FORMAT — CRITICAL, ห้าม code fences ซ้ำท้าย prompt
+- **Orchestrator JSON parse**: ใช้ `_extract_json()` แทน inline replace chain
+- **Subtask validation**: filter subtasks ที่ `agent` ไม่ใช่ hr/accounting/manager ออกก่อน execute
+- **Sidebar badge overflow**: เพิ่ม `max-height: 96px`, `overflow: hidden`, `word-break: break-word` ใน `.agent-badge`
+- **Badge reason clamp**: เพิ่ม `.agent-badge-reason` class (2-line clamp) แทน inline style
+
+---
+
 ## [v0.4.1] — 23 มีนาคม 2569 · feat
 - Confirmation flow (frontend): AI generates document → asks for edit or save → user types "บันทึก" or edit instruction
 - State tracking: `pendingDoc`, `pendingAgent`, `isPendingConfirmation`, `wasPMTask`, `lastAgent`

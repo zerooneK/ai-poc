@@ -17,6 +17,21 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+def _extract_json(raw: str) -> str:
+    """Extract JSON from LLM output that may have markdown fences or surrounding prose.
+    Strips ```...``` fences (any language tag), then slices from first { to last }.
+    Raises ValueError if no JSON object found."""
+    # Remove all code fence variants: ```json, ```JSON, ```javascript, ``` etc.
+    cleaned = re.sub(r'```[^\n]*\n?', '', raw)
+    cleaned = cleaned.replace('```', '').strip()
+    # Slice to outermost braces
+    start = cleaned.find('{')
+    end = cleaned.rfind('}')
+    if start == -1 or end == -1:
+        raise ValueError(f"No JSON object found in LLM output: {raw[:200]!r}")
+    return cleaned[start:end + 1]
+
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 if not OPENROUTER_API_KEY:
     raise ValueError(
@@ -80,17 +95,14 @@ PM Agent เหมาะกับ:
 - งาน onboarding พนักงานใหม่ที่ต้องการทั้งเอกสาร HR และการเงิน
 """
 
-PM_PROMPT = """
+PM_PROMPT = """OUTPUT FORMAT — CRITICAL:
+ตอบกลับด้วย JSON เท่านั้น ห้ามมีข้อความอื่นนอกจาก JSON ด้านล่าง
+ห้ามมี markdown code fences ห้ามมีคำอธิบาย ห้ามมี prose ใดๆ ทั้งสิ้น
+
+{"subtasks": [{"agent": "hr", "task": "รายละเอียด task"}, {"agent": "accounting", "task": "รายละเอียด task"}]}
+
 คุณคือ PM Agent (Project Manager) ของระบบ AI Assistant
 หน้าที่ของคุณคือวิเคราะห์งานที่ได้รับและแบ่งออกเป็น subtasks พร้อมกำหนดว่าแต่ละ subtask ควรใช้ Agent ไหน
-
-ตอบกลับด้วย JSON เท่านั้น ห้ามมีข้อความอื่น:
-{
-  "subtasks": [
-    {"agent": "hr", "task": "รายละเอียด task สำหรับ HR Agent ที่ครบถ้วน"},
-    {"agent": "accounting", "task": "รายละเอียด task สำหรับ Accounting Agent ที่ครบถ้วน"}
-  ]
-}
 
 กฎสำคัญ:
 1. แต่ละ task ต้องเป็น self-contained — คัดลอกข้อมูลสำคัญจาก request มาใส่โดยตรง (ชื่อ, ตัวเลข, วันที่, เงื่อนไข) ห้ามอ้างอิงว่า "ดูจากบริบทด้านบน"
@@ -101,6 +113,8 @@ PM_PROMPT = """
 HR Agent: สัญญาจ้าง, JD, นโยบาย HR, อีเมลพนักงาน, การลา, การเลิกจ้าง
 Accounting Agent: Invoice, ใบเสร็จ, รายงานการเงิน, งบประมาณ, ค่าใช้จ่าย
 Manager Advisor: คำแนะนำการบริหารทีม, Feedback, ขวัญกำลังใจ, Headcount Request
+
+ย้ำอีกครั้ง: ตอบกลับด้วย JSON เท่านั้น ไม่มีข้อความอื่น ไม่มี code fence ไม่มีคำนำ ไม่มีคำลงท้าย
 """
 
 HR_PROMPT = """
@@ -588,8 +602,12 @@ def chat():
             if not raw:
                 yield f"data: {json.dumps({'type': 'error', 'message': 'Orchestrator ไม่ตอบกลับ กรุณาลองใหม่'})}\n\n"
                 return
-            raw = raw.strip().replace('```json', '').replace('```', '').strip()
-            routing = json.loads(raw)
+            try:
+                raw = _extract_json(raw)
+                routing = json.loads(raw)
+            except (json.JSONDecodeError, ValueError):
+                yield f"data: {json.dumps({'type': 'error', 'message': 'Orchestrator ตอบกลับผิดรูปแบบ กรุณาลองใหม่'})}\n\n"
+                return
             agent = routing.get('agent', 'hr')
             reason = routing.get('reason', '')
 
@@ -614,14 +632,18 @@ def chat():
                     return
 
                 raw_pm = pm_response.choices[0].message.content or ''
-                raw_pm = raw_pm.strip().replace('```json', '').replace('```', '').strip()
-
                 try:
+                    raw_pm = _extract_json(raw_pm)
                     pm_data = json.loads(raw_pm)
                     subtasks = pm_data.get('subtasks', [])
-                except json.JSONDecodeError:
+                except (json.JSONDecodeError, ValueError):
+                    logger.warning(f"PM Agent bad response: {raw_pm[:300]!r}")
                     yield f"data: {json.dumps({'type': 'error', 'message': 'PM Agent ตอบกลับผิดรูปแบบ กรุณาลองใหม่'})}\n\n"
                     return
+
+                # Filter out invalid agents (e.g. 'pm' self-reference)
+                valid_agents = {'hr', 'accounting', 'manager'}
+                subtasks = [s for s in subtasks if s.get('agent') in valid_agents]
 
                 if not subtasks:
                     yield f"data: {json.dumps({'type': 'error', 'message': 'PM Agent ไม่สามารถแบ่งงานได้ กรุณาลองใหม่'})}\n\n"
