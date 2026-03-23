@@ -1,5 +1,12 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.3.4] — 23 มีนาคม 2569 · fix
+- Sidebar Agent badge: reserved space ตลอดเวลา (ไม่ใช้ display:none อีกต่อไป)
+- Idle state แสดง "รอคำสั่งงาน..." พร้อม dashed border จาง
+- ตัวอย่างงานไม่ขยับขึ้นลงอีกไม่ว่า agent จะ active หรือไม่
+
+---
+
 ## [v0.3.3] — 23 มีนาคม 2569 · feat
 - Input area redesign: button ย้ายเข้าไปอยู่ใน container (absolute bottom-right) สไตล์ ChatGPT/Claude
 - เพิ่ม `.input-wrapper` (backdrop-filter blur) + `.input-container` (position: relative, border-radius: 20px)

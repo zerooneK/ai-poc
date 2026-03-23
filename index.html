@@ -144,14 +144,27 @@
 
     /* Agent Badge */
     .agent-badge {
-      display: none;
+      display: block;
       padding: 10px 12px;
       border-radius: 10px;
+      min-height: 68px;
       font-size: 12px;
       font-family: 'Inter', sans-serif;
       line-height: 1.5;
       margin-bottom: 4px;
       transition: all 0.3s;
+    }
+    .agent-badge.agent-idle {
+      background: transparent;
+      box-shadow: inset 0 0 0 1px var(--surface-hi);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--on-surface-2);
+      opacity: 0.4;
+      font-size: 12px;
+      font-style: italic;
+      letter-spacing: 0.02em;
     }
     .agent-badge.agent-hr      { background: var(--hr-bg); color: var(--hr-fg); box-shadow: inset 0 0 0 1px var(--hr-border); }
     .agent-badge.agent-accounting { background: var(--ac-bg); color: var(--ac-fg); box-shadow: inset 0 0 0 1px var(--ac-border); }
@@ -521,7 +534,7 @@
 
     <!-- Agent Active -->
     <div class="section-label">Agent Active</div>
-    <div id="agentBadge" class="agent-badge"></div>
+    <div id="agentBadge" class="agent-badge agent-idle">รอคำสั่งงาน...</div>
 
     <!-- Use Cases -->
     <div class="section-label">ตัวอย่างงาน</div>
@@ -572,7 +585,7 @@
       <span class="app-desc">Orchestrator · HR · Accounting · Manager</span>
     </div>
     <div class="navbar-right">
-      <span class="version-tag">v0.3.3</span>
+      <span class="version-tag">v0.3.4</span>
     </div>
   </header>
 
@@ -646,8 +659,8 @@
     output.innerHTML = '';
     output.classList.remove('md-rendered');
     status.textContent = '⚙️ กำลังวิเคราะห์งาน...';
-    badge.style.display = 'none';
-    badge.className = 'agent-badge';
+    badge.className = 'agent-badge agent-idle';
+    badge.innerHTML = 'รอคำสั่งงาน...';
     copyBtn.style.display = 'none';
     container.classList.remove('streaming');
     input.value = '';
@@ -692,7 +705,6 @@
             const info = agentMap[data.agent] || agentMap['hr'];
             badge.className = 'agent-badge ' + info.cls;
             badge.innerHTML = `<strong>${info.icon} ${info.label}</strong><br><span style="opacity:0.8;font-size:11px">${data.reason}</span>`;
-            badge.style.display = 'block';
             container.classList.add('streaming');
             status.textContent = `✓ เลือก ${info.label} — กำลังสร้างเอกสาร...`;
 
