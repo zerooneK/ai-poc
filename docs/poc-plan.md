@@ -43,25 +43,32 @@ Output: เอกสารภาษาไทยพร้อมใช้
 
 **สถานะ POC: เสร็จสมบูรณ์ 100% — พร้อม demo**
 
-### ทำอะไรไปบ้างคืนนี้
+### ทำอะไรไปบ้างคืนนี้ (v0.1.0 → v0.2.3)
 - ✅ Setup เสร็จครบ: app.py, index.html, requirements.txt, .env.example, .gitignore
 - ✅ เปลี่ยน AI provider จาก Anthropic SDK → OpenAI SDK + OpenRouter API
 - ✅ Environment variables: OPENROUTER_API_KEY, OPENROUTER_MODEL (config ได้โดยไม่แก้โค้ด)
 - ✅ Backend มี error handling ครบถ้วน (input validation, API errors, token limits)
 - ✅ Frontend แก้ UI bugs ทั้งหมด 5 จุด (input clear, dark mode, model name, textarea, Enter to send)
 - ✅ Prompt engineering แก้ปัญหา VAT, พ.ศ., tax ID format
-- ✅ ทดสอบ 5 use cases ผ่านหมด (automated test script)
+- ✅ ทดสอบ 5 use cases ผ่านหมด (automated test script) — HR×3, Accounting×2
 - ✅ Thai document quality เพิ่มจาก 5.7/10 → 7.6/10
+- ✅ เพิ่ม Manager Advisor Agent (v0.2.0) — Feedback script, 48hr actionable plan
+- ✅ เพิ่ม processing time counter + copy button (v0.2.0)
+- ✅ แก้ Manager badge แสดงผิด label/color (v0.2.1)
+- ✅ กำหนด semantic versioning v0.MINOR.PATCH + CHANGELOG.md (v0.2.2)
+- ✅ สร้าง PROJECT_SUMMARY.md เป็น AI context document (v0.2.3)
 
 ### ปัญหาที่เจอและแก้แล้ว
 - **Reasoning models (minimax) ใช้ thinking tokens** → ต้องตั้ง max_tokens ≥1024 สำหรับ Orchestrator (ไม่งั้น content=None)
 - **VAT ซ้ำใน Expense Report** → แก้ prompt ให้ระบุชัดว่า VAT เฉพาะ Invoice/ใบกำกับภาษีเท่านั้น
 - **Windows terminal แสดงภาษาไทยแตก** → ต้อง set PYTHONUTF8=1 ก่อนรัน test script
 
-### สิ่งที่ต้องทำต่อ (เหลือ 0%)
+### สิ่งที่ต้องทำต่อ (เหลือ 0% สำหรับ core features)
 - [x] บันทึก screenshots backup ครบ 6 use cases
 - [x] ซักซ้อม demo script อย่างน้อย 2 รอบ
 - [x] เตรียมคำตอบคำถามที่หัวหน้าอาจถาม
+- [x] UI redesign "The Silent Concierge" (v0.3.0)
+- [x] Markdown rendering (v0.3.1)
 
 ### Metrics
 - **Orchestrator accuracy:** ยังไม่ได้ทดสอบเชิงปริมาณ (ต้องทดสอบ 20-30 cases)
@@ -74,15 +81,26 @@ Output: เอกสารภาษาไทยพร้อมใช้
 
 ```
 ai-poc/
-├── app.py              ← Flask backend + Orchestrator logic
-├── index.html          ← Web UI ไฟล์เดียว
-├── test_cases.py       ← Automated test script (5 use cases)
-├── .env                ← OPENROUTER_API_KEY, OPENROUTER_MODEL (ห้าม commit)
-├── .env.example        ← Template สำหรับ setup ใหม่
-├── .gitignore          ← ป้องกัน commit .env และ venv/
-├── requirements.txt    ← Dependencies (flask, openai, python-dotenv, flask-cors)
-└── backup/
-    └── screenshots/    ← output ที่ดีที่สุด เผื่อ internet หลุด
+├── app.py                   ← Flask backend + Orchestrator + HR/Accounting/Manager agents
+├── index.html               ← Web UI ไฟล์เดียว (v0.3.1 — The Silent Concierge + Markdown)
+├── test_cases.py            ← Automated test script (6 use cases)
+├── quick-demo-check.py      ← Full validation (7 checks: 6 cases + health)
+├── CHANGELOG.md             ← Version history (v0.1.0 → v0.3.1)
+├── PROJECT_SUMMARY.md       ← ภาพรวมโปรเจกต์สำหรับ AI context
+├── CLAUDE.md                ← Rules สำหรับ Claude Code
+├── PRE-DEMO-CHECKLIST.md    ← Checklist 30 นาทีก่อน demo
+├── DEMO-READINESS-REPORT.md ← สรุปผลการตรวจสอบ demo readiness
+├── .env                     ← OPENROUTER_API_KEY, OPENROUTER_MODEL (ห้าม commit)
+├── .env.example             ← Template สำหรับ setup ใหม่
+├── .gitignore               ← ป้องกัน commit .env และ venv/
+├── requirements.txt         ← Dependencies (flask, openai, python-dotenv, flask-cors)
+├── backup/
+│   ├── demo-inputs.txt      ← copy-paste inputs ทั้ง 6 cases พร้อมใช้
+│   ├── demo-script.md       ← demo script พร้อม timing และ talking points (3 cases)
+│   └── screenshots/         ← output ที่ดีที่สุด เผื่อ internet หลุด
+└── docs/
+    ├── poc-plan.md          ← ไฟล์นี้ — แผน POC + session logs
+    └── project-plan.md      ← แผน production Phase 0-4
 ```
 
 ---
@@ -960,6 +978,28 @@ OpenRouter มี rate limit ตาม tier ของ account
 
 ---
 
+---
+
+### Session Log — 23 มีนาคม 2569 (รอบที่ 3 — UI Redesign + Markdown)
+
+**Version:** v0.3.0 → v0.3.1
+
+**ทำอะไรไปบ้าง:**
+- ✅ ออกแบบ UI ใหม่ทั้งหมดตาม "The Silent Concierge" design system
+  - Fixed Navbar (frosted glass, version tag)
+  - Sidebar redesign: Material Symbols icons, slide hover, model pill footer
+  - CSS Custom Properties สำหรับ dark/light mode
+  - Fonts: Inter + Sarabun + Material Symbols Outlined
+- ✅ เพิ่ม Markdown rendering ด้วย marked.js (CDN)
+  - ระหว่าง streaming: plain text → switch เป็น rendered HTML ตอน done
+  - CSS: h1-h3, table, code/pre, blockquote, ul/ol, hr
+- ✅ แก้ status-row: background: var(--bg) ป้องกัน text overlap เมื่อ scroll
+- ✅ อัปเดตเอกสาร: CHANGELOG.md, CLAUDE.md, PROJECT_SUMMARY.md, PRE-DEMO-CHECKLIST.md, DEMO-READINESS-REPORT.md, poc-plan.md, project-plan.md ให้เป็นปัจจุบัน
+
+**Version ปัจจุบัน:** v0.3.1 (พร้อม demo)
+
+---
+
 ## ต่อจาก POC — Production Roadmap
 
 ดูรายละเอียดใน `project-plan.md`
@@ -969,4 +1009,4 @@ OpenRouter มี rate limit ตาม tier ของ account
 | 1 | Flask + LangGraph + MCP จริง | 2-3 สัปดาห์ |
 | 2 | React UI สวยงาม | 2 สัปดาห์ |
 | 3 | Auth + Security + Deploy | 2 สัปดาห์ |
-| 4 | เพิ่ม Agent ใหม่ | ต่อเนื่อง |
+| 4 | เพิ่ม Agent ใหม่ (Legal, IT, Marketing) | ต่อเนื่อง |

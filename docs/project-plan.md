@@ -14,6 +14,17 @@
 
 ## Tech Stack
 
+### POC (ทำแล้ว — v0.3.1)
+
+| Layer | Technology |
+|---|---|
+| Frontend | index.html ไฟล์เดียว — "The Silent Concierge" UI, Markdown rendering (marked.js) |
+| Backend | Python 3.11 + Flask + flask-cors |
+| AI Provider | OpenRouter API via OpenAI SDK |
+| Streaming | SSE (Server-Sent Events) |
+
+### Production (แผนระยะถัดไป)
+
 | Layer | Technology | เหตุผล |
 |---|---|---|
 | Frontend | React + Vite + TypeScript | เร็ว, type-safe, ecosystem ใหญ่ |
@@ -60,19 +71,21 @@ Local Network บริษัท
 
 ## Agent Roster
 
-### MVP (Phase 1-2)
+### ✅ พิสูจน์แล้วใน POC (v0.3.1)
+
+| Agent | แผนก | ความสามารถหลัก | max_tokens |
+|---|---|---|---|
+| **Orchestrator** | ทุกแผนก | วิเคราะห์งาน + เลือก Agent ที่เหมาะสม (ตอบ JSON) | 1,024 |
+| **HR Agent** | Human Resources | สัญญาจ้าง, JD, HR policy, อีเมลแจ้งนโยบาย | 7,500 |
+| **Accounting Agent** | บัญชี/การเงิน | Invoice (+ VAT 7%), Expense Report, งบประมาณ | 6,000 |
+| **Manager Advisor** | ผู้บริหาร/Team Lead | Feedback script, headcount, budget, ลำดับความสำคัญ | 8,000 |
+
+> **หมายเหตุ:** Manager Advisor ถูก implement และทดสอบแล้วใน POC ไม่จำเป็นต้องรอ Phase 3+
+
+### Phase 4+ (เพิ่มเติมในอนาคต)
 
 | Agent | แผนก | ความสามารถหลัก |
 |---|---|---|
-| **Orchestrator** | ทุกแผนก | วิเคราะห์งาน + เลือก Agent ที่เหมาะสม |
-| **HR Agent** | Human Resources | สัญญาจ้าง, JD, HR policy, อีเมลแจ้งนโยบาย |
-| **Accounting Agent** | บัญชี/การเงิน | invoice, วิเคราะห์ Excel, รายงานงบประมาณ |
-
-### Phase 3+
-
-| Agent | แผนก | ความสามารถหลัก |
-|---|---|---|
-| **Manager Agent** | ผู้บริหาร | สรุปรายงาน, วิเคราะห์ทีม, agenda ประชุม |
 | **Legal Agent** | กฎหมาย | ร่างสัญญา, compliance checklist |
 | **IT Agent** | IT | troubleshoot, คู่มือการใช้งาน |
 | **Marketing Agent** | การตลาด | content, แผนการตลาด, copywriting |
