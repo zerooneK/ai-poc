@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Assistant — Internal POC</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Sarabun', sans-serif;
+      background: #0f0f0f;
+      color: #e0e0e0;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    /* Light mode */
+    body.light-mode {
+      background: #f5f5f5;
+      color: #1a1a1a;
+    }
+    body.light-mode .sidebar {
+      background: #ffffff;
+      border-right: 1px solid #e0e0e0;
+    }
+    body.light-mode .logo { color: #1a1a1a; }
+    body.light-mode .version { color: #999; }
+    body.light-mode .section-label { color: #999; }
+    body.light-mode .agent-hr {
+      background: #f0fdf4;
+      color: #166534;
+      border: 1px solid #86efac;
+    }
+    body.light-mode .agent-accounting {
+      background: #eef2ff;
+      color: #3730a3;
+      border: 1px solid #c7d2fe;
+    }
+    body.light-mode .use-case-list { color: #666; }
+    body.light-mode .use-case-list span:hover {
+      color: #1a1a1a;
+      background: #e5e5e5;
+    }
+    body.light-mode .footer { color: #999; }
+    body.light-mode .header {
+      border-bottom: 1px solid #e0e0e0;
+      color: #666;
+    }
+    body.light-mode .output-area { color: #1a1a1a; }
+    body.light-mode .placeholder { color: #bbb; }
+    body.light-mode .status-bar {
+      border-top: 1px solid #e5e5e5;
+      color: #666;
+    }
+    body.light-mode .input-area {
+      border-top: 1px solid #e0e0e0;
+    }
+    body.light-mode textarea {
+      background: #ffffff;
+      border: 1px solid #d0d0d0;
+      color: #1a1a1a;
+    }
+    body.light-mode textarea:focus { border-color: #999; }
+    body.light-mode textarea::placeholder { color: #bbb; }
+    body.light-mode .send-btn:disabled {
+      background: #e5e5e5;
+      color: #999;
+    }
+    body.light-mode .theme-toggle {
+      background: #e5e5e5;
+      color: #1a1a1a;
+    }
+    body.light-mode .theme-toggle:hover {
+      background: #d0d0d0;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 240px;
+      background: #141414;
+      border-right: 1px solid #222;
+      padding: 28px 20px;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    .logo { font-size: 20px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+    .version { font-size: 11px; color: #555; margin-bottom: 36px; letter-spacing: 1px; }
+
+    .section-label {
+      font-size: 10px; color: #444;
+      letter-spacing: 2px; margin-bottom: 10px;
+    }
+
+    .agent-badge {
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 24px;
+      display: none;
+      line-height: 1.5;
+    }
+    .agent-hr {
+      background: #0d1f0d;
+      color: #4ade80;
+      border: 1px solid #166534;
+    }
+    .agent-accounting {
+      background: #0d0d1f;
+      color: #818cf8;
+      border: 1px solid #3730a3;
+    }
+
+    .use-case-list {
+      font-size: 12px;
+      color: #555;
+      line-height: 2.2;
+    }
+    .use-case-list span {
+      display: block;
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 4px;
+      transition: all 0.15s;
+    }
+    .use-case-list span:hover { color: #aaa; background: #1a1a1a; }
+
+    .theme-toggle {
+      padding: 8px 12px;
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 6px;
+      color: #e0e0e0;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .theme-toggle:hover {
+      background: #252525;
+    }
+
+    .footer {
+      margin-top: auto;
+      font-size: 11px;
+      color: #333;
+      line-height: 1.8;
+    }
+
+    /* Main */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .header {
+      padding: 18px 28px;
+      border-bottom: 1px solid #1e1e1e;
+      font-size: 13px;
+      color: #666;
+      flex-shrink: 0;
+    }
+
+    .output-wrap {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px;
+    }
+    .output-area {
+      font-size: 14px;
+      line-height: 1.9;
+      white-space: pre-wrap;
+      min-height: 100%;
+      color: #d4d4d4;
+    }
+    .placeholder { color: #333; font-style: italic; }
+
+    .status-bar {
+      padding: 10px 28px;
+      font-size: 12px;
+      color: #666;
+      border-top: 1px solid #1a1a1a;
+      min-height: 38px;
+      flex-shrink: 0;
+    }
+
+    .input-area {
+      padding: 16px 28px 20px;
+      border-top: 1px solid #1e1e1e;
+      display: flex;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    textarea {
+      flex: 1;
+      background: #141414;
+      border: 1px solid #2a2a2a;
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: #e0e0e0;
+      font-family: 'Sarabun', sans-serif;
+      font-size: 14px;
+      resize: none;
+      line-height: 1.6;
+      transition: border-color 0.2s;
+    }
+    textarea:focus { outline: none; border-color: #3a3a3a; }
+    textarea::placeholder { color: #444; }
+
+    .send-btn {
+      padding: 0 28px;
+      background: #2563eb;
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-family: 'Sarabun', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .send-btn:hover { background: #1d4ed8; }
+    .send-btn:disabled { background: #1e1e1e; color: #444; cursor: default; }
+
+    .error-msg { color: #f87171; }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="logo">🏢 AI Assistant</div>
+  <div class="version">INTERNAL POC — v0.1</div>
+
+  <div class="section-label">AGENT ACTIVE</div>
+  <div id="agentBadge" class="agent-badge">—</div>
+
+  <div class="section-label">ตัวอย่างงาน</div>
+  <div class="use-case-list">
+    <span onclick="fillInput('ร่างสัญญาจ้างพนักงานชื่อ สมชาย ใจดี ตำแหน่ง นักบัญชี เงินเดือน 35,000 บาท')">📄 ร่างสัญญาจ้าง</span>
+    <span onclick="fillInput('สร้าง Job Description สำหรับตำแหน่ง HR Manager')">📋 สร้าง JD</span>
+    <span onclick="fillInput('สร้าง Invoice สำหรับ บริษัท ABC จำกัด ค่าบริการที่ปรึกษา 50,000 บาท')">🧾 สร้าง Invoice</span>
+    <span onclick="fillInput('ร่างอีเมลแจ้งพนักงานเรื่องนโยบาย Work from Home สัปดาห์ละ 2 วัน')">✉️ ร่างอีเมลนโยบาย</span>
+    <span onclick="fillInput('สรุปขั้นตอนการลาป่วยของบริษัท')">❓ คำถาม HR</span>
+  </div>
+
+  <button class="theme-toggle" onclick="toggleTheme()">🌓 สลับโหมด</button>
+
+  <div class="footer">
+    Model: <span id="modelName">กำลังโหลด...</span><br>
+    Agents: Orchestrator, HR, Accounting<br>
+    <br>
+    ⚠️ POC เท่านั้น — ไม่ใช่ระบบ production
+  </div>
+</div>
+
+<div class="main">
+  <div class="header">
+    พิมพ์งานที่ต้องการ — ระบบจะเลือก Agent ที่เหมาะสมและสร้างเอกสารให้อัตโนมัติ
+  </div>
+
+  <div class="output-wrap">
+    <div class="output-area" id="output">
+      <span class="placeholder">ผลลัพธ์จะแสดงที่นี่...<br><br>ลองพิมพ์งานในช่องด้านล่าง หรือคลิกตัวอย่างทางซ้าย</span>
+    </div>
+  </div>
+
+  <div class="status-bar" id="status"></div>
+
+  <div class="input-area">
+    <textarea
+      id="inputMsg"
+      rows="2"
+      placeholder="เช่น: ร่างสัญญาจ้างพนักงานชื่อ สมชาย ตำแหน่ง นักบัญชี เงินเดือน 35,000 บาท เริ่มงาน 1 มกราคม 2568"
+    ></textarea>
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()">ส่ง ▶</button>
+  </div>
+</div>
+
+<script>
+  function fillInput(text) {
+    document.getElementById('inputMsg').value = text;
+    document.getElementById('inputMsg').focus();
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('inputMsg');
+    const output = document.getElementById('output');
+    const status = document.getElementById('status');
+    const btn = document.getElementById('sendBtn');
+    const badge = document.getElementById('agentBadge');
+
+    const message = input.value.trim();
+    if (!message) return;
+
+    // Reset UI
+    btn.disabled = true;
+    output.innerHTML = '';
+    status.textContent = '⚙️ กำลังวิเคราะห์งาน...';
+    badge.style.display = 'none';
+    badge.className = 'agent-badge';
+    input.value = ''; // Clear input after sending
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message })
+      });
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let outputText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          let data;
+          try { data = JSON.parse(line.slice(6)); } catch { continue; }
+
+          if (data.type === 'status') {
+            status.textContent = '⚙️ ' + data.message;
+
+          } else if (data.type === 'agent') {
+            const isHR = data.agent === 'hr';
+            badge.className = 'agent-badge ' + (isHR ? 'agent-hr' : 'agent-accounting');
+            badge.textContent = (isHR ? '◉ HR Agent' : '◉ Accounting Agent') + '\n' + data.reason;
+            badge.style.display = 'block';
+            status.textContent = `✓ เลือก ${isHR ? 'HR' : 'Accounting'} Agent — กำลังสร้างเอกสาร...`;
+
+          } else if (data.type === 'text') {
+            outputText += data.content;
+            output.textContent = outputText;
+            output.parentElement.scrollTop = output.parentElement.scrollHeight;
+
+          } else if (data.type === 'done') {
+            status.textContent = '✅ เสร็จสิ้น — กรุณาตรวจสอบเอกสารก่อนนำไปใช้งานจริง';
+            btn.disabled = false;
+
+          } else if (data.type === 'error') {
+            output.innerHTML = `<span class="error-msg">❌ เกิดข้อผิดพลาด: ${data.message}</span>`;
+            status.textContent = 'กรุณาลองใหม่อีกครั้ง';
+            btn.disabled = false;
+          }
+        }
+      }
+    } catch (err) {
+      output.innerHTML = `<span class="error-msg">❌ ไม่สามารถเชื่อมต่อ server ได้: ${err.message}</span>`;
+      status.textContent = 'กรุณาตรวจสอบว่า Flask server รันอยู่ที่ port 5000';
+      btn.disabled = false;
+    }
+  }
+
+  // Enter เพื่อส่ง, Shift+Enter เพื่อขึ้นบรรทัดใหม่
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('inputMsg').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // Load model name from backend
+    fetch('/api/health')
+      .then(res => res.json())
+      .then(data => {
+        if (data.model) {
+          document.getElementById('modelName').textContent = data.model;
+        }
+      })
+      .catch(() => {
+        document.getElementById('modelName').textContent = 'ไม่สามารถโหลดได้';
+      });
+  });
+
+  // Theme toggle function
+  function toggleTheme() {
+    document.body.classList.toggle('light-mode');
+    const isLight = document.body.classList.contains('light-mode');
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  }
+
+  // Load saved theme on page load
+  if (localStorage.getItem('theme') === 'light') {
+    document.body.classList.add('light-mode');
+  }
+</script>
+
+</body>
+</html>
