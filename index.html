@@ -6,6 +6,7 @@
   <title>AI Assistant — Internal POC</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     /* ─── Design Tokens ──────────────────────────────────────────── */
     :root {
@@ -333,6 +334,46 @@
       color: var(--on-surface);
       min-height: 100px;
     }
+
+    /* ─── Markdown Styles ────────────────────────────────────────── */
+    .output-area.md-rendered { white-space: normal; }
+    .output-area h1 { font-size: 1.4rem; font-weight: 700; margin: 1.2em 0 0.4em; color: var(--on-surface); }
+    .output-area h2 { font-size: 1.15rem; font-weight: 600; margin: 1em 0 0.3em; color: var(--on-surface); }
+    .output-area h3 { font-size: 1rem; font-weight: 600; margin: 0.8em 0 0.2em; color: var(--on-surface); }
+    .output-area p { margin: 0.5em 0; }
+    .output-area strong { font-weight: 700; color: var(--on-surface); }
+    .output-area em { font-style: italic; }
+    .output-area ul, .output-area ol { padding-left: 1.6em; margin: 0.4em 0; }
+    .output-area li { margin: 0.15em 0; }
+    .output-area blockquote {
+      border-left: 3px solid var(--primary);
+      margin: 0.6em 0; padding: 4px 12px;
+      color: var(--on-surface-2);
+    }
+    .output-area code {
+      background: var(--surface-hi);
+      padding: 1px 6px; border-radius: 4px;
+      font-size: 0.85em; font-family: 'Courier New', monospace;
+    }
+    .output-area pre {
+      background: var(--surface-hi);
+      padding: 12px 16px; border-radius: 8px;
+      overflow-x: auto; margin: 0.6em 0;
+    }
+    .output-area pre code { background: none; padding: 0; }
+    .output-area table { border-collapse: collapse; width: 100%; margin: 0.8em 0; }
+    .output-area th {
+      font-weight: 600; text-align: left;
+      padding: 7px 12px;
+      border-bottom: 2px solid var(--surface-top);
+      color: var(--on-surface);
+    }
+    .output-area td {
+      padding: 6px 12px;
+      border-bottom: 1px solid var(--surface-hi);
+      color: var(--on-surface);
+    }
+    .output-area hr { border: none; border-top: 1px solid var(--surface-hi); margin: 1em 0; }
     .placeholder {
       color: var(--on-surface-2);
       opacity: 0.35;
@@ -362,6 +403,7 @@
       justify-content: space-between;
       padding: 0 4px 8px;
       min-height: 28px;
+      background: var(--bg);
     }
     #status {
       font-size: 11px;
@@ -517,7 +559,7 @@
       <span class="app-desc">Orchestrator · HR · Accounting · Manager</span>
     </div>
     <div class="navbar-right">
-      <span class="version-tag">v0.3.0</span>
+      <span class="version-tag">v0.3.1</span>
     </div>
   </header>
 
@@ -585,6 +627,7 @@
     startTime = Date.now();
     btn.disabled = true;
     output.innerHTML = '';
+    output.classList.remove('md-rendered');
     status.textContent = '⚙️ กำลังวิเคราะห์งาน...';
     badge.style.display = 'none';
     badge.className = 'agent-badge';
@@ -641,6 +684,8 @@
             output.parentElement.parentElement.scrollTop = output.parentElement.parentElement.scrollHeight;
 
           } else if (data.type === 'done') {
+            output.innerHTML = marked.parse(outputText);
+            output.classList.add('md-rendered');
             const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
             const tokenCount = outputText.length.toLocaleString('th-TH');
             status.textContent = `✅ เสร็จสิ้น · ${elapsed} วินาที · ${tokenCount} tokens`;

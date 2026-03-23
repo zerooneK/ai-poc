@@ -1,5 +1,13 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.3.1] — 23 มีนาคม 2569 · feat
+- เพิ่ม Markdown rendering ด้วย marked.js (CDN)
+- ระหว่าง streaming แสดงเป็น plain text — switch เป็น rendered HTML ตอน done
+- เพิ่ม CSS สำหรับ markdown elements: h1-h3, table, code, blockquote, ul/ol, hr
+- แก้ status-row พื้นหลังทึบ (`background: var(--bg)`) ป้องกัน text ทับกันเมื่อ scroll
+
+---
+
 ## [v0.3.0] — 23 มีนาคม 2569 · feat
 **UI Redesign — "The Silent Concierge"**
 - ออกแบบ UI ใหม่ทั้งหมดตาม design system "High-End Editorial"
