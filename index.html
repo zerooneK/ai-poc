@@ -4,320 +4,561 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Assistant — Internal POC</title>
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    /* ─── Design Tokens ──────────────────────────────────────────── */
+    :root {
+      --bg:            #0B0E14;
+      --surface-lo:    #0f1218;
+      --surface:       #151921;
+      --surface-hi:    #1c212b;
+      --surface-top:   #242a35;
+      --surface-pure:  #080a0f;
+      --on-surface:    #f8f9fa;
+      --on-surface-2:  #abb3b7;
+      --primary:       #5856D6;
+      --primary-dim:   #423fc0;
+      --on-primary:    #faf6ff;
+      --sec-cnt:       #1c212b;
+      --on-sec-cnt:    #d9e3f6;
+      --outline:       #586064;
+      --outline-var:   #2b3437;
+      --error:         #ff8b9a;
+      --hr-bg:         #0d2012; --hr-fg:   #4ade80; --hr-border: #166534;
+      --ac-bg:         #0d0d1f; --ac-fg:   #818cf8; --ac-border: #3730a3;
+      --mg-bg:         #1a0d1a; --mg-fg:   #e879f9; --mg-border: #7e22ce;
+    }
+    body.light-mode {
+      --bg:            #f8f9fa;
+      --surface-lo:    #f1f4f6;
+      --surface:       #eaeff1;
+      --surface-hi:    #e2e9ec;
+      --surface-top:   #dbe4e7;
+      --surface-pure:  #ffffff;
+      --on-surface:    #2b3437;
+      --on-surface-2:  #586064;
+      --primary:       #4f4ccd;
+      --primary-dim:   #3d3ab8;
+      --on-primary:    #faf6ff;
+      --sec-cnt:       #d9e3f6;
+      --on-sec-cnt:    #485262;
+      --outline:       #737c7f;
+      --outline-var:   #c5cdd0;
+      --error:         #9e3f4e;
+      --hr-bg:         #f0fdf4; --hr-fg:   #166534; --hr-border: #86efac;
+      --ac-bg:         #eef2ff; --ac-fg:   #3730a3; --ac-border: #c7d2fe;
+      --mg-bg:         #fdf4ff; --mg-fg:   #7e22ce; --mg-border: #d8b4fe;
+    }
+
+    /* ─── Base ───────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'Sarabun', sans-serif;
-      background: #0f0f0f;
-      color: #e0e0e0;
+      font-family: 'Inter', 'Sarabun', sans-serif;
+      background: var(--bg);
+      color: var(--on-surface);
       display: flex;
       height: 100vh;
       overflow: hidden;
-      transition: background-color 0.3s, color 0.3s;
+      transition: background 0.3s, color 0.3s;
     }
 
-    /* Light mode */
-    body.light-mode {
-      background: #f5f5f5;
-      color: #1a1a1a;
-    }
-    body.light-mode .sidebar {
-      background: #ffffff;
-      border-right: 1px solid #e0e0e0;
-    }
-    body.light-mode .logo { color: #1a1a1a; }
-    body.light-mode .version { color: #999; }
-    body.light-mode .section-label { color: #999; }
-    body.light-mode .agent-hr {
-      background: #f0fdf4;
-      color: #166534;
-      border: 1px solid #86efac;
-    }
-    body.light-mode .agent-accounting {
-      background: #eef2ff;
-      color: #3730a3;
-      border: 1px solid #c7d2fe;
-    }
-    body.light-mode .agent-manager {
-      background: #fdf4ff;
-      color: #7e22ce;
-      border: 1px solid #d8b4fe;
-    }
-    body.light-mode .use-case-list { color: #666; }
-    body.light-mode .use-case-list span:hover {
-      color: #1a1a1a;
-      background: #e5e5e5;
-    }
-    body.light-mode .footer { color: #999; }
-    body.light-mode .header {
-      border-bottom: 1px solid #e0e0e0;
-      color: #666;
-    }
-    body.light-mode .output-area { color: #1a1a1a; }
-    body.light-mode .placeholder { color: #bbb; }
-    body.light-mode .status-bar {
-      border-top: 1px solid #e5e5e5;
-      color: #666;
-    }
-    body.light-mode .input-area {
-      border-top: 1px solid #e0e0e0;
-    }
-    body.light-mode textarea {
-      background: #ffffff;
-      border: 1px solid #d0d0d0;
-      color: #1a1a1a;
-    }
-    body.light-mode textarea:focus { border-color: #999; }
-    body.light-mode textarea::placeholder { color: #bbb; }
-    body.light-mode .send-btn:disabled {
-      background: #e5e5e5;
-      color: #999;
-    }
-    body.light-mode .theme-toggle {
-      background: #e5e5e5;
-      color: #1a1a1a;
-    }
-    body.light-mode .theme-toggle:hover {
-      background: #d0d0d0;
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      font-size: 20px;
+      line-height: 1;
+      user-select: none;
     }
 
-    /* Sidebar */
+    /* ─── Sidebar ────────────────────────────────────────────────── */
     .sidebar {
-      width: 240px;
-      background: #141414;
-      border-right: 1px solid #222;
-      padding: 28px 20px;
+      width: 256px;
+      height: 100vh;
+      position: fixed;
+      left: 0; top: 0;
+      background: var(--surface);
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
+      z-index: 40;
+      transition: background 0.3s;
     }
-    .logo { font-size: 20px; font-weight: 600; color: #fff; margin-bottom: 4px; }
-    .version { font-size: 11px; color: #555; margin-bottom: 36px; letter-spacing: 1px; }
+
+    /* Brand */
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 24px 20px 20px;
+    }
+    .brand-icon {
+      width: 40px; height: 40px;
+      background: var(--primary);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--on-primary);
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .brand-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--on-surface);
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+    }
+    .brand-sub {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--on-surface-2);
+      opacity: 0.6;
+      margin-top: 2px;
+    }
+
+    /* Sidebar body */
+    .sidebar-body {
+      flex: 1;
+      padding: 8px 12px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .sidebar-body::-webkit-scrollbar { width: 3px; }
+    .sidebar-body::-webkit-scrollbar-track { background: transparent; }
+    .sidebar-body::-webkit-scrollbar-thumb { background: var(--outline-var); border-radius: 10px; }
 
     .section-label {
-      font-size: 10px; color: #444;
-      letter-spacing: 2px; margin-bottom: 10px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--on-surface-2);
+      opacity: 0.5;
+      padding: 12px 8px 6px;
     }
 
+    /* Agent Badge */
     .agent-badge {
-      padding: 10px 14px;
+      display: none;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-family: 'Inter', sans-serif;
+      line-height: 1.5;
+      margin-bottom: 4px;
+      transition: all 0.3s;
+    }
+    .agent-badge.agent-hr      { background: var(--hr-bg); color: var(--hr-fg); box-shadow: inset 0 0 0 1px var(--hr-border); }
+    .agent-badge.agent-accounting { background: var(--ac-bg); color: var(--ac-fg); box-shadow: inset 0 0 0 1px var(--ac-border); }
+    .agent-badge.agent-manager { background: var(--mg-bg); color: var(--mg-fg); box-shadow: inset 0 0 0 1px var(--mg-border); }
+
+    /* Nav items */
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
       border-radius: 8px;
       font-size: 13px;
-      margin-bottom: 24px;
-      display: none;
-      line-height: 1.5;
-    }
-    .agent-hr {
-      background: #0d1f0d;
-      color: #4ade80;
-      border: 1px solid #166534;
-    }
-    .agent-accounting {
-      background: #0d0d1f;
-      color: #818cf8;
-      border: 1px solid #3730a3;
-    }
-    .agent-manager {
-      background: #1a0d1a;
-      color: #e879f9;
-      border: 1px solid #7e22ce;
-    }
-
-    .use-case-list {
-      font-size: 12px;
-      color: #555;
-      line-height: 2.2;
-    }
-    .use-case-list span {
-      display: block;
+      color: var(--on-surface-2);
       cursor: pointer;
-      padding: 2px 4px;
-      border-radius: 4px;
-      transition: all 0.15s;
+      text-decoration: none;
+      transition: color 0.2s, background 0.2s, transform 0.25s cubic-bezier(.4,0,.2,1);
+      border: none;
+      background: transparent;
+      width: 100%;
+      text-align: left;
+      font-family: 'Inter', 'Sarabun', sans-serif;
     }
-    .use-case-list span:hover { color: #aaa; background: #1a1a1a; }
+    .nav-item:hover {
+      color: var(--on-surface);
+      background: var(--surface-hi);
+      transform: translateX(3px);
+    }
+    .nav-item .nav-icon { font-size: 15px; opacity: 0.75; }
 
-    .theme-toggle {
-      padding: 8px 12px;
-      background: #1a1a1a;
-      border: 1px solid #2a2a2a;
-      border-radius: 6px;
-      color: #e0e0e0;
-      font-size: 12px;
-      cursor: pointer;
-      transition: all 0.15s;
-      margin-bottom: 24px;
-      text-align: center;
-    }
-    .theme-toggle:hover {
-      background: #252525;
-    }
-
-    .footer {
-      margin-top: auto;
-      font-size: 11px;
-      color: #333;
-      line-height: 1.8;
-    }
-
-    /* Main */
-    .main {
-      flex: 1;
+    /* Sidebar footer */
+    .sidebar-footer {
+      padding: 12px 12px 20px;
+      border-top: 1px solid rgba(255,255,255,0.04);
       display: flex;
       flex-direction: column;
-      overflow: hidden;
+      gap: 4px;
     }
+    body.light-mode .sidebar-footer { border-top-color: var(--outline-var); }
 
-    .header {
-      padding: 18px 28px;
-      border-bottom: 1px solid #1e1e1e;
+    .theme-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 8px;
       font-size: 13px;
-      color: #666;
+      color: var(--on-surface-2);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: color 0.2s, background 0.2s, transform 0.25s;
+      width: 100%;
+      text-align: left;
+      font-family: 'Inter', 'Sarabun', sans-serif;
+    }
+    .theme-btn:hover { color: var(--on-surface); background: var(--surface-hi); transform: translateX(3px); }
+
+    .model-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      font-size: 11px;
+      color: var(--on-surface-2);
+      opacity: 0.6;
+    }
+    .model-pill .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #22c55e;
       flex-shrink: 0;
     }
+    #modelName { font-family: 'Inter', monospace; font-size: 10px; }
 
-    .output-wrap {
+    .poc-warning {
+      font-size: 10px;
+      color: var(--on-surface-2);
+      opacity: 0.35;
+      padding: 4px 12px;
+      line-height: 1.5;
+    }
+
+    /* ─── Main ───────────────────────────────────────────────────── */
+    .main {
       flex: 1;
-      overflow-y: auto;
-      padding: 28px;
+      margin-left: 256px;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      position: relative;
     }
-    .output-area {
-      font-size: 14px;
-      line-height: 1.9;
-      white-space: pre-wrap;
-      min-height: 100%;
-      color: #d4d4d4;
-    }
-    .placeholder { color: #333; font-style: italic; }
 
-    .status-bar {
-      padding: 10px 28px;
-      font-size: 12px;
-      color: #666;
-      border-top: 1px solid #1a1a1a;
-      min-height: 38px;
-      flex-shrink: 0;
+    /* ─── Navbar ─────────────────────────────────────────────────── */
+    .navbar {
+      position: fixed;
+      top: 0; left: 256px; right: 0;
+      height: 60px;
+      z-index: 50;
+      background: color-mix(in srgb, var(--bg) 80%, transparent);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       display: flex;
       align-items: center;
       justify-content: space-between;
+      padding: 0 32px;
+      transition: background 0.3s;
     }
-
-    .copy-btn {
-      padding: 5px 12px;
-      background: #1a1a1a;
-      border: 1px solid #2a2a2a;
-      border-radius: 6px;
-      color: #aaa;
-      font-family: 'Sarabun', sans-serif;
-      font-size: 12px;
-      cursor: pointer;
-      transition: all 0.15s;
-      flex-shrink: 0;
-    }
-    .copy-btn:hover { background: #252525; color: #e0e0e0; }
-    body.light-mode .copy-btn {
-      background: #e5e5e5;
-      color: #666;
-      border-color: #ccc;
-    }
-    body.light-mode .copy-btn:hover { background: #d0d0d0; color: #1a1a1a; }
-
-    .input-area {
-      padding: 16px 28px 20px;
-      border-top: 1px solid #1e1e1e;
+    .navbar-left {
       display: flex;
+      align-items: baseline;
       gap: 12px;
-      flex-shrink: 0;
     }
+    .app-title {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--primary);
+    }
+    .app-desc {
+      font-size: 11px;
+      color: var(--on-surface-2);
+      opacity: 0.5;
+      letter-spacing: 0.05em;
+    }
+    .navbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .version-tag {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: var(--on-surface-2);
+      opacity: 0.4;
+      padding: 3px 8px;
+      border-radius: 99px;
+      background: var(--surface-hi);
+    }
+
+    /* ─── Output ─────────────────────────────────────────────────── */
+    .output-wrap {
+      flex: 1;
+      overflow-y: auto;
+      padding: 80px 48px 0;
+      transition: background 0.3s;
+    }
+    .output-wrap::-webkit-scrollbar { width: 4px; }
+    .output-wrap::-webkit-scrollbar-track { background: transparent; }
+    .output-wrap::-webkit-scrollbar-thumb { background: var(--outline-var); border-radius: 10px; }
+
+    .output-container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 24px 0 200px;
+      display: flex;
+      gap: 20px;
+    }
+
+    .ai-accent-line {
+      width: 3px;
+      min-height: 40px;
+      border-radius: 4px;
+      background: var(--primary);
+      opacity: 0;
+      flex-shrink: 0;
+      transition: opacity 0.4s;
+      align-self: stretch;
+    }
+    .streaming .ai-accent-line { opacity: 1; }
+
+    .output-area {
+      flex: 1;
+      font-size: 14px;
+      font-family: 'Inter', 'Sarabun', sans-serif;
+      line-height: 1.9;
+      white-space: pre-wrap;
+      color: var(--on-surface);
+      min-height: 100px;
+    }
+    .placeholder {
+      color: var(--on-surface-2);
+      opacity: 0.35;
+      font-style: italic;
+      font-size: 14px;
+    }
+    .error-msg { color: var(--error); }
+
+    /* ─── Input Footer ───────────────────────────────────────────── */
+    .input-footer {
+      position: fixed;
+      bottom: 0; left: 256px; right: 0;
+      padding: 0 48px 24px;
+      background: linear-gradient(to top, var(--bg) 60%, transparent);
+      pointer-events: none;
+    }
+
+    .input-inner {
+      max-width: 760px;
+      margin: 0 auto;
+      pointer-events: auto;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 4px 8px;
+      min-height: 28px;
+    }
+    #status {
+      font-size: 11px;
+      color: var(--on-surface-2);
+      opacity: 0.6;
+      font-family: 'Inter', sans-serif;
+    }
+    .copy-btn {
+      display: none;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-family: 'Inter', 'Sarabun', sans-serif;
+      font-weight: 500;
+      color: var(--on-surface-2);
+      background: var(--surface-hi);
+      border: none;
+      border-radius: 99px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .copy-btn:hover { color: var(--on-surface); background: var(--surface-top); }
+
+    .input-box {
+      background: var(--surface-pure);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 0 0 1px rgba(255,255,255,0.04);
+      transition: box-shadow 0.3s, background 0.3s;
+    }
+    body.light-mode .input-box {
+      box-shadow: 0 4px 24px rgba(43,52,55,0.08), 0 0 0 1px var(--outline-var);
+    }
+    .input-box:focus-within {
+      box-shadow: 0 8px 32px rgba(88,86,214,0.15), 0 0 0 1px rgba(88,86,214,0.3);
+    }
+
     textarea {
       flex: 1;
-      background: #141414;
-      border: 1px solid #2a2a2a;
-      border-radius: 10px;
-      padding: 10px 14px;
-      color: #e0e0e0;
-      font-family: 'Sarabun', sans-serif;
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 14px 18px 8px;
+      color: var(--on-surface);
+      font-family: 'Inter', 'Sarabun', sans-serif;
       font-size: 14px;
       resize: none;
       line-height: 1.6;
-      transition: border-color 0.2s;
     }
-    textarea:focus { outline: none; border-color: #3a3a3a; }
-    textarea::placeholder { color: #444; }
+    textarea::placeholder { color: var(--on-surface-2); opacity: 0.4; }
+
+    .input-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 6px 10px;
+      gap: 6px;
+    }
 
     .send-btn {
-      padding: 0 28px;
-      background: #2563eb;
+      width: 36px; height: 36px;
+      background: var(--primary);
       border: none;
       border-radius: 10px;
-      color: #fff;
-      font-family: 'Sarabun', sans-serif;
-      font-size: 14px;
-      font-weight: 500;
+      color: var(--on-primary);
       cursor: pointer;
-      transition: background 0.15s;
-      white-space: nowrap;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s, transform 0.15s;
+      box-shadow: 0 4px 12px rgba(88,86,214,0.3);
     }
-    .send-btn:hover { background: #1d4ed8; }
-    .send-btn:disabled { background: #1e1e1e; color: #444; cursor: default; }
-
-    .error-msg { color: #f87171; }
+    .send-btn:hover { background: var(--primary-dim); }
+    .send-btn:active { transform: scale(0.92); }
+    .send-btn:disabled {
+      background: var(--surface-top);
+      color: var(--on-surface-2);
+      opacity: 0.5;
+      cursor: default;
+      box-shadow: none;
+    }
+    .send-btn .material-symbols-outlined { font-size: 18px; }
   </style>
 </head>
 <body>
 
-<div class="sidebar">
-  <div class="logo">🏢 AI Assistant</div>
-  <div class="version">INTERNAL POC — v0.2.3</div>
+<!-- ─── Sidebar ──────────────────────────────────────────────────── -->
+<aside class="sidebar">
 
-  <div class="section-label">AGENT ACTIVE</div>
-  <div id="agentBadge" class="agent-badge">—</div>
-
-  <div class="section-label">ตัวอย่างงาน</div>
-  <div class="use-case-list">
-    <span onclick="fillInput('ร่างสัญญาจ้างพนักงานชื่อ สมชาย ใจดี ตำแหน่ง นักบัญชี เงินเดือน 35,000 บาท')">📄 ร่างสัญญาจ้าง</span>
-    <span onclick="fillInput('สร้าง Job Description สำหรับตำแหน่ง HR Manager')">📋 สร้าง JD</span>
-    <span onclick="fillInput('สร้าง Invoice สำหรับ บริษัท ABC จำกัด ค่าบริการที่ปรึกษา 50,000 บาท')">🧾 สร้าง Invoice</span>
-    <span onclick="fillInput('ร่างอีเมลแจ้งพนักงานเรื่องนโยบาย Work from Home สัปดาห์ละ 2 วัน')">✉️ ร่างอีเมลนโยบาย</span>
-    <span onclick="fillInput('สรุปขั้นตอนการลาป่วยของบริษัท')">❓ คำถาม HR</span>
-  </div>
-
-  <button class="theme-toggle" onclick="toggleTheme()">🌓 สลับโหมด</button>
-
-  <div class="footer">
-    Model: <span id="modelName">กำลังโหลด...</span><br>
-    Agents: Orchestrator, HR, Accounting, Manager<br>
-    <br>
-    ⚠️ POC เท่านั้น — ไม่ใช่ระบบ production
-  </div>
-</div>
-
-<div class="main">
-  <div class="header">
-    พิมพ์งานที่ต้องการ — ระบบจะเลือก Agent ที่เหมาะสมและสร้างเอกสารให้อัตโนมัติ
-  </div>
-
-  <div class="output-wrap">
-    <div class="output-area" id="output">
-      <span class="placeholder">ผลลัพธ์จะแสดงที่นี่...<br><br>ลองพิมพ์งานในช่องด้านล่าง หรือคลิกตัวอย่างทางซ้าย</span>
+  <!-- Brand -->
+  <div class="brand">
+    <div class="brand-icon">
+      <span class="material-symbols-outlined" style="font-size:20px">auto_awesome</span>
+    </div>
+    <div>
+      <h2 class="brand-name">AI Assistant</h2>
+      <p class="brand-sub">Internal POC</p>
     </div>
   </div>
 
-  <div class="status-bar">
-    <span id="status"></span>
-    <button id="copyBtn" class="copy-btn" onclick="copyOutput()" style="display:none">📋 คัดลอก</button>
+  <div class="sidebar-body">
+
+    <!-- Agent Active -->
+    <div class="section-label">Agent Active</div>
+    <div id="agentBadge" class="agent-badge"></div>
+
+    <!-- Use Cases -->
+    <div class="section-label">ตัวอย่างงาน</div>
+
+    <button class="nav-item" onclick="fillInput('ร่างสัญญาจ้างพนักงานชื่อ สมชาย ใจดี ตำแหน่ง นักบัญชี เงินเดือน 35,000 บาท')">
+      <span class="nav-icon">📄</span><span>ร่างสัญญาจ้าง</span>
+    </button>
+    <button class="nav-item" onclick="fillInput('สร้าง Job Description สำหรับตำแหน่ง HR Manager')">
+      <span class="nav-icon">📋</span><span>สร้าง JD</span>
+    </button>
+    <button class="nav-item" onclick="fillInput('สร้าง Invoice สำหรับ บริษัท ABC จำกัด ค่าบริการที่ปรึกษา 50,000 บาท')">
+      <span class="nav-icon">🧾</span><span>สร้าง Invoice</span>
+    </button>
+    <button class="nav-item" onclick="fillInput('ร่างอีเมลแจ้งพนักงานเรื่องนโยบาย Work from Home สัปดาห์ละ 2 วัน')">
+      <span class="nav-icon">✉️</span><span>ร่างอีเมลนโยบาย</span>
+    </button>
+    <button class="nav-item" onclick="fillInput('สรุปขั้นตอนการลาป่วยของบริษัท')">
+      <span class="nav-icon">💬</span><span>คำถาม HR</span>
+    </button>
+    <button class="nav-item" onclick="fillInput('ช่วยฉันวางแผนการพูดคุยกับพนักงานที่ส่งงานช้าและขาดงานบ่อย ฉันเป็น Team Lead และต้องการให้ Feedback อย่างสร้างสรรค์')">
+      <span class="nav-icon">👥</span><span>Feedback พนักงาน</span>
+    </button>
+
   </div>
 
-  <div class="input-area">
-    <textarea
-      id="inputMsg"
-      rows="2"
-      placeholder="เช่น: ร่างสัญญาจ้างพนักงานชื่อ สมชาย ตำแหน่ง นักบัญชี เงินเดือน 35,000 บาท เริ่มงาน 1 มกราคม 2568"
-    ></textarea>
-    <button class="send-btn" id="sendBtn" onclick="sendMessage()">ส่ง ▶</button>
+  <!-- Footer -->
+  <div class="sidebar-footer">
+    <button class="theme-btn" onclick="toggleTheme()">
+      <span class="material-symbols-outlined" style="font-size:18px">dark_mode</span>
+      <span>สลับโหมด</span>
+    </button>
+    <div class="model-pill">
+      <span class="dot"></span>
+      <span id="modelName">กำลังโหลด...</span>
+    </div>
+    <p class="poc-warning">⚠️ POC เท่านั้น — ไม่ใช่ระบบ production</p>
   </div>
+
+</aside>
+
+<!-- ─── Main ─────────────────────────────────────────────────────── -->
+<div class="main">
+
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="navbar-left">
+      <h1 class="app-title">AI Assistant</h1>
+      <span class="app-desc">Orchestrator · HR · Accounting · Manager</span>
+    </div>
+    <div class="navbar-right">
+      <span class="version-tag">v0.3.0</span>
+    </div>
+  </header>
+
+  <!-- Output -->
+  <div class="output-wrap">
+    <div class="output-container" id="outputContainer">
+      <div class="ai-accent-line"></div>
+      <div class="output-area" id="output">
+        <span class="placeholder">ผลลัพธ์จะแสดงที่นี่<br><br>พิมพ์งานในช่องด้านล่าง หรือคลิกตัวอย่างทางซ้าย</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Input Footer -->
+  <div class="input-footer">
+    <div class="input-inner">
+
+      <div class="status-row">
+        <span id="status"></span>
+        <button id="copyBtn" class="copy-btn" onclick="copyOutput()">
+          <span class="material-symbols-outlined" style="font-size:13px">content_copy</span>
+          คัดลอก
+        </button>
+      </div>
+
+      <div class="input-box">
+        <textarea
+          id="inputMsg"
+          rows="2"
+          placeholder="พิมพ์งานที่ต้องการ — ระบบจะเลือก Agent ที่เหมาะสมโดยอัตโนมัติ"
+        ></textarea>
+        <div class="input-actions">
+          <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+            <span class="material-symbols-outlined">arrow_upward</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -335,6 +576,7 @@
     const btn = document.getElementById('sendBtn');
     const badge = document.getElementById('agentBadge');
     const copyBtn = document.getElementById('copyBtn');
+    const container = document.getElementById('outputContainer');
 
     const message = input.value.trim();
     if (!message) return;
@@ -347,7 +589,8 @@
     badge.style.display = 'none';
     badge.className = 'agent-badge';
     copyBtn.style.display = 'none';
-    input.value = ''; // Clear input after sending
+    container.classList.remove('streaming');
+    input.value = '';
 
     try {
       const response = await fetch('/api/chat', {
@@ -381,31 +624,34 @@
 
           } else if (data.type === 'agent') {
             const agentMap = {
-              hr:         { cls: 'agent-hr',         label: 'HR Agent' },
-              accounting: { cls: 'agent-accounting',  label: 'Accounting Agent' },
-              manager:    { cls: 'agent-manager',     label: 'Manager Advisor' }
+              hr:         { cls: 'agent-hr',         label: 'HR Agent',         icon: '👤' },
+              accounting: { cls: 'agent-accounting',  label: 'Accounting Agent', icon: '📊' },
+              manager:    { cls: 'agent-manager',     label: 'Manager Advisor',  icon: '🧭' }
             };
             const info = agentMap[data.agent] || agentMap['hr'];
             badge.className = 'agent-badge ' + info.cls;
-            badge.textContent = '◉ ' + info.label + '\n' + data.reason;
+            badge.innerHTML = `<strong>${info.icon} ${info.label}</strong><br><span style="opacity:0.8;font-size:11px">${data.reason}</span>`;
             badge.style.display = 'block';
+            container.classList.add('streaming');
             status.textContent = `✓ เลือก ${info.label} — กำลังสร้างเอกสาร...`;
 
           } else if (data.type === 'text') {
             outputText += data.content;
             output.textContent = outputText;
-            output.parentElement.scrollTop = output.parentElement.scrollHeight;
+            output.parentElement.parentElement.scrollTop = output.parentElement.parentElement.scrollHeight;
 
           } else if (data.type === 'done') {
             const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
             const tokenCount = outputText.length.toLocaleString('th-TH');
             status.textContent = `✅ เสร็จสิ้น · ${elapsed} วินาที · ${tokenCount} tokens`;
-            copyBtn.style.display = 'inline-block';
+            container.classList.remove('streaming');
+            copyBtn.style.display = 'flex';
             btn.disabled = false;
 
           } else if (data.type === 'error') {
             output.innerHTML = `<span class="error-msg">❌ เกิดข้อผิดพลาด: ${data.message}</span>`;
             status.textContent = 'กรุณาลองใหม่อีกครั้ง';
+            container.classList.remove('streaming');
             btn.disabled = false;
           }
         }
@@ -413,6 +659,7 @@
     } catch (err) {
       output.innerHTML = `<span class="error-msg">❌ ไม่สามารถเชื่อมต่อ server ได้: ${err.message}</span>`;
       status.textContent = 'กรุณาตรวจสอบว่า Flask server รันอยู่ที่ port 5000';
+      container.classList.remove('streaming');
       btn.disabled = false;
     }
   }
@@ -421,13 +668,13 @@
     const text = document.getElementById('output').textContent;
     navigator.clipboard.writeText(text).then(() => {
       const btn = document.getElementById('copyBtn');
-      const orig = btn.textContent;
-      btn.textContent = '✅ คัดลอกแล้ว';
-      setTimeout(() => btn.textContent = orig, 2000);
+      const orig = btn.innerHTML;
+      btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:13px">check</span> คัดลอกแล้ว';
+      setTimeout(() => btn.innerHTML = orig, 2000);
     });
   }
 
-  // Enter เพื่อส่ง, Shift+Enter เพื่อขึ้นบรรทัดใหม่
+  // Enter to send, Shift+Enter for newline
   document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('inputMsg').addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) {
@@ -436,27 +683,22 @@
       }
     });
 
-    // Load model name from backend
     fetch('/api/health')
       .then(res => res.json())
       .then(data => {
-        if (data.model) {
-          document.getElementById('modelName').textContent = data.model;
-        }
+        if (data.model) document.getElementById('modelName').textContent = data.model;
       })
       .catch(() => {
         document.getElementById('modelName').textContent = 'ไม่สามารถโหลดได้';
       });
   });
 
-  // Theme toggle function
   function toggleTheme() {
     document.body.classList.toggle('light-mode');
     const isLight = document.body.classList.contains('light-mode');
     localStorage.setItem('theme', isLight ? 'light' : 'dark');
   }
 
-  // Load saved theme on page load
   if (localStorage.getItem('theme') === 'light') {
     document.body.classList.add('light-mode');
   }

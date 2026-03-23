@@ -45,13 +45,15 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 - **ทุก commit ต้อง bump version** ใน index.html พร้อมกัน
 - **ทุก commit ต้องเพิ่ม entry ใน CHANGELOG.md** ระบุ version, วันที่, ประเภท, รายละเอียด
 - เมื่อ bump Minor ให้ reset Patch เป็น 0 เสมอ (v0.2.3 → v0.3.0)
-- Version ปัจจุบัน: **v0.2.2**
+- Version ปัจจุบัน: **v0.3.0**
 
 ประวัติ:
 - v0.1.0 — initial POC (HR + Accounting agents, SSE streaming)
 - v0.2.0 — Manager Advisor agent + timer counter + copy button
 - v0.2.1 — fix Manager badge label/color, update sidebar agent list
-- v0.2.2 — adopt semantic versioning scheme (current)
+- v0.2.2 — adopt semantic versioning scheme
+- v0.2.3 — PROJECT_SUMMARY.md (AI context document)
+- v0.3.0 — UI redesign "The Silent Concierge" (Navbar + Sidebar redesign, dark/light tokens, Material Symbols)
 
 ## Rules ที่ต้องทำตามเสมอ
 - ภาษาไทยใน UI และ system prompts ทั้งหมด

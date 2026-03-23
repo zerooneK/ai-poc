@@ -1,5 +1,18 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.3.0] — 23 มีนาคม 2569 · feat
+**UI Redesign — "The Silent Concierge"**
+- ออกแบบ UI ใหม่ทั้งหมดตาม design system "High-End Editorial"
+- เพิ่ม fixed Navbar (frosted glass, app title, version tag)
+- ออกแบบ Sidebar ใหม่: Material Symbols icons, slide hover effect, model pill ใน footer
+- Floating input-footer พร้อม gradient fade และ rounded input-box
+- AI accent line (primary color) ปรากฏระหว่าง streaming ด้วย `.streaming` CSS class
+- CSS Custom Properties สำหรับ dark/light mode (dark default) ผ่าน `body.light-mode`
+- ฟอนต์: Inter + Sarabun + Material Symbols Outlined
+- ทุก JS logic เดิมยังคงสมบูรณ์ (SSE, copy, timer, modelName, theme toggle)
+
+---
+
 ## [v0.2.3] — 23 มีนาคม 2569 · docs
 - เพิ่ม PROJECT_SUMMARY.md — ภาพรวมทั้งโปรเจกต์สำหรับ onboard AI ในการสนทนาใหม่
 - ครอบคลุม: architecture, agents, file structure, run commands, version history, rules
