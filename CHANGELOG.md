@@ -1,5 +1,16 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.4.3] — 24 มีนาคม 2569 · feat
+- **Temp staging flow**: PM subtasks ใช้ `stream_agent()` แทน `run_agent_with_tools()` — stream เนื้อหาเต็มให้ user เห็น real-time
+- **Temp directory**: `temp/` staging area — ไฟล์รอ confirm ที่นี่ ไม่ปรากฏใน workspace/file panel
+- `_write_temp()` + `_move_to_workspace()` helpers — `os.replace()` atomic move
+- `_cleanup_old_temp()` — ลบ temp files เก่ากว่า 1 ชั่วโมงอัตโนมัติ
+- `handle_pm_save()` — รับ `pending_temp_paths[]` → move ทุกไฟล์ไปยัง workspace
+- **PM confirmation flow**: หลัง PM tasks เสร็จ → hint "💾 พิมพ์ บันทึก เพื่อบันทึก N ไฟล์"
+- Frontend: `pendingTempPaths[]` + `pending_file` SSE event + `_updateInputHint(isPending, fileCount)`
+
+---
+
 ## [v0.4.2] — 23 มีนาคม 2569 · fix
 - **PM Agent JSON parse**: เพิ่ม `_extract_json()` helper — strip code fences (ทุก variant), slice `{...}` จาก LLM output ก่อน parse
 - **PM_PROMPT hardened**: เปิด prompt ด้วย OUTPUT FORMAT — CRITICAL, ห้าม code fences ซ้ำท้าย prompt

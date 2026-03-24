@@ -48,6 +48,10 @@ _DEFAULT_WORKSPACE = os.path.abspath(
 WORKSPACE_PATH = _DEFAULT_WORKSPACE
 _workspace_lock = threading.Lock()
 
+# Temp staging directory — files wait here until user confirms save
+TEMP_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'temp'))
+os.makedirs(TEMP_DIR, exist_ok=True)
+
 app = Flask(__name__)
 CORS(app, origins=["http://localhost:5000", "http://127.0.0.1:5000"])
 client = OpenAI(
@@ -463,6 +467,38 @@ def _suggest_filename(agent: str, content: str) -> str:
     return f"{agent}_{ts}.md"
 
 
+def _write_temp(content: str, agent: str) -> str:
+    """Write document content to temp staging dir. Returns absolute temp file path."""
+    filename = _suggest_filename(agent, content)
+    temp_path = os.path.join(TEMP_DIR, filename)
+    with open(temp_path, 'w', encoding='utf-8') as f:
+        f.write(content)
+    logger.info(f"Staged to temp: {filename}")
+    return temp_path
+
+
+def _move_to_workspace(temp_path: str, workspace: str) -> str:
+    """Atomically move staged file from temp to workspace. Returns filename."""
+    filename = os.path.basename(temp_path)
+    dest = os.path.join(workspace, filename)
+    os.replace(temp_path, dest)  # os.replace is atomic and works cross-platform
+    logger.info(f"Moved to workspace: {filename}")
+    return filename
+
+
+def _cleanup_old_temp():
+    """Remove temp files older than 1 hour to prevent accumulation."""
+    cutoff = datetime.now().timestamp() - 3600
+    try:
+        for fname in os.listdir(TEMP_DIR):
+            fpath = os.path.join(TEMP_DIR, fname)
+            if os.path.isfile(fpath) and os.path.getmtime(fpath) < cutoff:
+                os.remove(fpath)
+                logger.info(f"Cleaned old temp file: {fname}")
+    except Exception as e:
+        logger.warning(f"Temp cleanup error: {e}")
+
+
 def stream_agent(system_prompt: str, message: str, agent_label: str, max_tokens: int = 8000):
     """Stream agent response without MCP tools — for initial document generation.
     Generator that yields SSE data strings."""
@@ -538,6 +574,42 @@ def handle_revise(pending_doc: str, pending_agent: str, instruction: str, worksp
         yield sse
 
 
+def _is_safe_temp_path(path: str) -> bool:
+    """Validate that a path is inside TEMP_DIR to prevent path traversal attacks."""
+    try:
+        resolved = os.path.realpath(os.path.abspath(path))
+        return os.path.commonpath([resolved, TEMP_DIR]) == TEMP_DIR
+    except Exception:
+        return False
+
+
+def handle_pm_save(temp_paths: list, workspace: str):
+    """Move all PM staged temp files to workspace. Generator that yields SSE data strings."""
+    saved = []
+    for temp_path in temp_paths:
+        # Security: reject paths outside TEMP_DIR
+        if not _is_safe_temp_path(temp_path):
+            logger.warning(f"Rejected unsafe temp path: {temp_path}")
+            continue
+        if not os.path.isfile(temp_path):
+            logger.warning(f"Temp file not found (expired?): {temp_path}")
+            continue
+        try:
+            filename = _move_to_workspace(temp_path, workspace)
+            saved.append(filename)
+            yield f"data: {json.dumps({'type': 'tool_result', 'tool': 'create_file', 'result': f'บันทึก {filename} เรียบร้อย'})}\n\n"
+        except Exception as e:
+            logger.error(f"Failed to move temp file {temp_path}: {e}")
+            yield f"data: {json.dumps({'type': 'error', 'message': f'ไม่สามารถบันทึก {os.path.basename(temp_path)}: {str(e)}'})}\n\n"
+
+    count = len(saved)
+    if count > 0:
+        names = ', '.join(saved)
+        yield f"data: {json.dumps({'type': 'text', 'content': f'✅ บันทึก {count} ไฟล์เรียบร้อย\\n{names}'})}\n\n"
+    else:
+        yield f"data: {json.dumps({'type': 'text', 'content': 'ไม่พบไฟล์ที่รอบันทึก (อาจหมดอายุแล้ว) กรุณาสร้างเอกสารใหม่'})}\n\n"
+
+
 # ─── Routes ──────────────────────────────────────────────────────────────────
 
 @app.route('/')
@@ -556,15 +628,32 @@ def chat():
         return jsonify({'error': 'ข้อความยาวเกินไป (สูงสุด 5,000 ตัวอักษร)'}), 400
 
     # Confirmation flow fields
-    pending_doc   = request.json.get('pending_doc', '').strip()
-    pending_agent = request.json.get('pending_agent', '').strip()
+    pending_doc        = request.json.get('pending_doc', '').strip()
+    pending_agent      = request.json.get('pending_agent', '').strip()
+    pending_temp_paths = request.json.get('pending_temp_paths', [])
 
     def generate():
         with _workspace_lock:
             workspace = WORKSPACE_PATH
         os.makedirs(workspace, exist_ok=True)
+        _cleanup_old_temp()
 
-        # ── Follow-up: user is confirming/editing a previous draft ──────────
+        # ── Follow-up: PM staged files waiting for confirmation ──────────────
+        if pending_temp_paths:
+            if _is_save_intent(user_input):
+                for sse in handle_pm_save(pending_temp_paths, workspace):
+                    yield sse
+            else:
+                # Discard temp files (user cancelled or gave unexpected input)
+                for tp in pending_temp_paths:
+                    if _is_safe_temp_path(tp) and os.path.isfile(tp):
+                        os.remove(tp)
+                        logger.info(f"Discarded temp file: {os.path.basename(tp)}")
+                yield f"data: {json.dumps({'type': 'text', 'content': 'ยกเลิกการบันทึกไฟล์เรียบร้อย'})}\n\n"
+            yield f"data: {json.dumps({'type': 'done'})}\n\n"
+            return
+
+        # ── Follow-up: single-agent doc confirming/editing ───────────────────
         if pending_doc and pending_agent:
             if _is_save_intent(user_input):
                 for sse in handle_save(pending_doc, pending_agent, workspace):
@@ -670,11 +759,27 @@ def chat():
                         sub_max_tokens = 6000
 
                     yield f"data: {json.dumps({'type': 'agent', 'agent': sub_agent, 'reason': f'Subtask {i+1}/{len(subtasks)}'})}\n\n"
-                    yield f"data: {json.dumps({'type': 'status', 'message': f'{sub_label} กำลังดำเนินการ...'})}\n\n"
+                    yield f"data: {json.dumps({'type': 'status', 'message': f'{sub_label} กำลังสร้างเอกสาร...'})}\n\n"
                     logger.info(f"PM → {sub_label}: {sub_task[:60]}")
 
-                    for sse_line in run_agent_with_tools(sub_prompt, sub_task, workspace, sub_label, sub_max_tokens):
+                    # Stream content to frontend AND capture it for temp staging
+                    subtask_chunks = []
+                    for sse_line in stream_agent(sub_prompt, sub_task, sub_label, sub_max_tokens):
                         yield sse_line
+                        if sse_line.startswith('data: '):
+                            try:
+                                d = json.loads(sse_line[6:])
+                                if d.get('type') == 'text':
+                                    subtask_chunks.append(d.get('content', ''))
+                            except Exception:
+                                pass
+
+                    # Write captured content to temp staging (hidden from workspace/file panel)
+                    full_content = ''.join(subtask_chunks)
+                    if full_content.strip():
+                        temp_path = _write_temp(full_content, sub_agent)
+                        filename = os.path.basename(temp_path)
+                        yield f"data: {json.dumps({'type': 'pending_file', 'temp_path': temp_path, 'filename': filename, 'agent': sub_agent})}\n\n"
 
                     yield f"data: {json.dumps({'type': 'subtask_done', 'agent': sub_agent, 'index': i, 'total': len(subtasks)})}\n\n"
 

@@ -803,7 +803,7 @@
         <span class="material-symbols-outlined" style="font-size:13px">folder_open</span>
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
-      <span class="version-tag">v0.4.2</span>
+      <span class="version-tag">v0.4.3</span>
     </div>
   </header>
 
@@ -861,15 +861,19 @@
   // Confirmation flow state
   let pendingDoc = '';
   let pendingAgent = '';
+  let pendingTempPaths = [];   // PM task: staged temp file paths waiting for confirm
   let isPendingConfirmation = false;
   let wasPMTask = false;
   let lastAgent = '';
 
-  function _updateInputHint(isPending) {
+  function _updateInputHint(isPending, fileCount) {
     const hint = document.querySelector('.input-hint');
     if (!hint) return;
     if (isPending) {
-      hint.textContent = '💬 พิมพ์ บันทึก เพื่อบันทึกไฟล์ หรือระบุสิ่งที่ต้องการแก้ไข';
+      const msg = (fileCount > 0)
+        ? `💾 พิมพ์ บันทึก เพื่อบันทึก ${fileCount} ไฟล์ หรือ ยกเลิก เพื่อล้างทิ้ง`
+        : '💬 พิมพ์ บันทึก เพื่อบันทึกไฟล์ หรือระบุสิ่งที่ต้องการแก้ไข';
+      hint.textContent = msg;
       hint.style.color = 'var(--primary)';
     } else {
       hint.textContent = 'INTERNAL POC · DRAFT OUTPUT ONLY';
@@ -943,12 +947,17 @@
     try {
       const reqBody = { message };
       if (isPendingConfirmation) {
-        reqBody.pending_doc = pendingDoc;
-        reqBody.pending_agent = pendingAgent;
+        if (pendingTempPaths.length > 0) {
+          reqBody.pending_temp_paths = pendingTempPaths;
+        } else {
+          reqBody.pending_doc = pendingDoc;
+          reqBody.pending_agent = pendingAgent;
+        }
       }
       isPendingConfirmation = false;
       pendingDoc = '';
       pendingAgent = '';
+      pendingTempPaths = [];
 
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -1001,6 +1010,10 @@
             planDiv.innerHTML = html;
             aiBody.insertBefore(planDiv, typingIndicator);
 
+          } else if (data.type === 'pending_file') {
+            // PM subtask: content staged to temp, waiting for user confirmation
+            pendingTempPaths.push(data.temp_path);
+
           } else if (data.type === 'tool_result') {
             // Show tool execution feedback
             const resultLine = document.createElement('div');
@@ -1046,12 +1059,17 @@
             outputWrap.scrollTop = outputWrap.scrollHeight;
             copyBtn.style.display = 'flex';
             btn.disabled = false;
-            // Set pending confirmation state for single-agent tasks
-            if (!wasPMTask && lastAgent && outputText) {
+            // Set pending confirmation state
+            if (pendingTempPaths.length > 0) {
+              // PM task: staged files waiting for confirm
+              isPendingConfirmation = true;
+              _updateInputHint(true, pendingTempPaths.length);
+            } else if (!wasPMTask && lastAgent && outputText) {
+              // Single-agent: content in memory waiting for confirm
               pendingDoc = outputText;
               pendingAgent = lastAgent;
               isPendingConfirmation = true;
-              _updateInputHint(true);
+              _updateInputHint(true, 0);
             }
             wasPMTask = false;
 
@@ -1063,6 +1081,7 @@
             typingIndicator.style.display = 'none';
             btn.disabled = false;
             wasPMTask = false;
+            pendingTempPaths = [];
           }
         }
       }
@@ -1074,6 +1093,7 @@
       typingIndicator.style.display = 'none';
       btn.disabled = false;
       wasPMTask = false;
+      pendingTempPaths = [];
     }
   }
 

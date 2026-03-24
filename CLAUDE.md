@@ -23,6 +23,7 @@ Output: เอกสารภาษาไทย (สัญญาจ้าง, in
 - .env.example    — template สำหรับ setup ใหม่
 - requirements.txt — flask, flask-cors, openai, python-dotenv, mcp, watchdog
 - workspace/       — workspace directory สำหรับ agent สร้างไฟล์ (gitignored ยกเว้น .gitkeep)
+- temp/            — staging area สำหรับไฟล์ที่รอ confirm ก่อน move ไป workspace (gitignored ยกเว้น .gitkeep)
 - test_cases.py   — ทดสอบ 5 use cases อัตโนมัติ (`PYTHONUTF8=1 python test_cases.py`)
 - docs/           — project-plan.md, poc-plan.md
 - .claude/agents/ — subagents ทั้งหมด
@@ -47,7 +48,7 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 - **ทุก commit ต้อง bump version** ใน index.html พร้อมกัน
 - **ทุก commit ต้องเพิ่ม entry ใน CHANGELOG.md** ระบุ version, วันที่, ประเภท, รายละเอียด
 - เมื่อ bump Minor ให้ reset Patch เป็น 0 เสมอ (v0.2.3 → v0.3.0)
-- Version ปัจจุบัน: **v0.4.2**
+- Version ปัจจุบัน: **v0.4.3**
 
 ประวัติ:
 - v0.1.0 — initial POC (HR + Accounting agents, SSE streaming)
@@ -68,6 +69,7 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 - v0.4.0 — PM Agent + MCP Filesystem (workspace selector, real-time file panel, agentic tool-calling loop)
 - v0.4.1 — Confirmation flow: AI generates → asks to edit or save → user confirms before file write
 - v0.4.2 — fix PM Agent JSON parse robustness + sidebar badge overflow
+- v0.4.3 — temp staging flow: PM subtasks stream full content → temp dir → confirm → move to workspace
 
 ## Rules ที่ต้องทำตามเสมอ
 - ภาษาไทยใน UI และ system prompts ทั้งหมด
