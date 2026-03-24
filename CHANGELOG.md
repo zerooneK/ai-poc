@@ -1,5 +1,12 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.4.10] — 24 มีนาคม 2569 · fix
+- แยกกรณี `save_failed` ออกจาก success path ของการบันทึกไฟล์ฝั่ง single-agent
+- ป้องกันการแสดงข้อความสำเร็จปลอมเมื่อ `create_file` ล้มเหลว
+- คง pending confirmation state เดิมใน frontend เมื่อการบันทึกล้มเหลวหรือ request ยืนยันสะดุด
+
+---
+
 ## [v0.4.9] — 24 มีนาคม 2569 · fix
 - จำกัดการเปลี่ยน workspace ผ่าน `POST /api/workspace` ให้อยู่ภายใต้ root ของโปรเจกต์เท่านั้น
 - คงรูปแบบ API เดิมไว้เพื่อลดผลกระทบกับ frontend ที่มีอยู่

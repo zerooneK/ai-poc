@@ -333,6 +333,11 @@ def _execute_tool(workspace: str, tool_name: str, tool_args: dict) -> str:
         return f"❌ เกิดข้อผิดพลาด: {str(e)}"
 
 
+def _tool_result_is_error(result: str) -> bool:
+    """Return True when a tool result string represents a failure."""
+    return result.strip().startswith('❌')
+
+
 # ─── Agentic Tool-Calling Loop ────────────────────────────────────────────────
 
 
@@ -589,10 +594,17 @@ def handle_save(pending_doc: str, pending_agent: str, workspace: str):
             'filename': filename,
             'content': pending_doc
         })
+        if _tool_result_is_error(result):
+            logger.warning(f"Save failed for {filename}: {result}")
+            yield f"data: {json.dumps({'type': 'save_failed', 'message': result, 'filename': filename})}\n\n"
+            yield f"data: {json.dumps({'type': 'tool_result', 'tool': 'create_file', 'result': result})}\n\n"
+            return
         yield f"data: {json.dumps({'type': 'text', 'content': f'✅ {result}'})}\n\n"
         yield f"data: {json.dumps({'type': 'tool_result', 'tool': 'create_file', 'result': result})}\n\n"
     except Exception as e:
-        yield f"data: {json.dumps({'type': 'error', 'message': f'ไม่สามารถบันทึกไฟล์ได้: {str(e)}'})}\n\n"
+        message = f'ไม่สามารถบันทึกไฟล์ได้: {str(e)}'
+        logger.error(f"Unexpected save error: {e}")
+        yield f"data: {json.dumps({'type': 'save_failed', 'message': message})}\n\n"
 
 
 def handle_revise(pending_doc: str, pending_agent: str, instruction: str, workspace: str):

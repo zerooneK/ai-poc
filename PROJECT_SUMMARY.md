@@ -10,7 +10,7 @@
 
 **เป้าหมายของ POC นี้:** Demo สดต่อหัวหน้าเพื่อขอ budget พัฒนาระบบ production จริง
 
-**สถานะ:** POC เสร็จสมบูรณ์ 100% · version **v0.4.9** · พร้อม demo
+**สถานะ:** POC เสร็จสมบูรณ์ 100% · version **v0.4.10** · พร้อม demo
 
 ---
 
@@ -168,6 +168,7 @@ PYTHONUTF8=1 python quick-demo-check.py
 | v0.4.5 | 24 มี.ค. 2569 | feat | Cancel pending button — "✕ ยกเลิก" button in UI below input when pending confirmation (client-side clear) |
 | v0.4.8 | 24 มี.ค. 2569 | fix | Disable Flask debug mode by default; allow opt-in local debug via `FLASK_DEBUG=1` |
 | v0.4.9 | 24 มี.ค. 2569 | fix | Restrict runtime workspace changes to directories under the project root |
+| v0.4.10 | 24 มี.ค. 2569 | fix | Preserve pending confirmation state and avoid false save success when file creation fails |
 
 **กฎ versioning:** Minor bump (0.X.0) = agent/feature ใหม่ · Patch bump (0.0.X) = fix/tweak
 **ทุก commit ต้อง bump version ใน `index.html` และเพิ่ม entry ใน `CHANGELOG.md`**

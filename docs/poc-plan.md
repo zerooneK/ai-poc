@@ -43,7 +43,7 @@ Output: เอกสารภาษาไทยพร้อมใช้
 
 **สถานะ POC: เสร็จสมบูรณ์ 100% — พร้อม demo**
 
-### ทำอะไรไปบ้างคืนนี้ (v0.1.0 → v0.4.9)
+### ทำอะไรไปบ้างคืนนี้ (v0.1.0 → v0.4.10)
 - ✅ Setup เสร็จครบ: app.py, index.html, requirements.txt, .env.example, .gitignore
 - ✅ เปลี่ยน AI provider จาก Anthropic SDK → OpenAI SDK + OpenRouter API
 - ✅ Environment variables: OPENROUTER_API_KEY, OPENROUTER_MODEL (config ได้โดยไม่แก้โค้ด)
@@ -75,6 +75,7 @@ Output: เอกสารภาษาไทยพร้อมใช้
 - ✅ Cancel pending button — "✕ ยกเลิก" button client-side clear (v0.4.5)
 - ✅ Runtime hardening — Flask debug mode ปิดเป็นค่าเริ่มต้น และเปิดได้ผ่าน `FLASK_DEBUG=1` (v0.4.8)
 - ✅ Workspace hardening — เปลี่ยน workspace ผ่าน runtime ได้เฉพาะ directory ภายใต้ project root (v0.4.9)
+- ✅ Save flow hardening — ถ้าบันทึกล้มเหลวจะไม่แสดง success ปลอม และคง pending state เดิมไว้ (v0.4.10)
 
 ### ปัญหาที่เจอและแก้แล้ว
 - **Reasoning models (minimax) ใช้ thinking tokens** → ต้องตั้ง max_tokens ≥1024 สำหรับ Orchestrator (ไม่งั้น content=None)
@@ -101,10 +102,10 @@ Output: เอกสารภาษาไทยพร้อมใช้
 ai-poc/
 ├── app.py                   ← Flask backend + Orchestrator + HR/Accounting/Manager/PM agents + Agentic loop
 ├── mcp_server.py            ← MCP Filesystem Server (FastMCP) + 5 tools (Layer A/B)
-├── index.html               ← Web UI ไฟล์เดียว (v0.4.9 — chat bubbles + confirmation flow + cancel button)
+├── index.html               ← Web UI ไฟล์เดียว (v0.4.10 — chat bubbles + confirmation flow + cancel button)
 ├── test_cases.py            ← Automated test script (6 use cases)
 ├── quick-demo-check.py      ← Full validation (7 checks: 6 cases + health)
-├── CHANGELOG.md             ← Version history (v0.1.0 → v0.4.9)
+├── CHANGELOG.md             ← Version history (v0.1.0 → v0.4.10)
 ├── PROJECT_SUMMARY.md       ← ภาพรวมโปรเจกต์สำหรับ AI context
 ├── CLAUDE.md                ← Rules สำหรับ Claude Code
 ├── PRE-DEMO-CHECKLIST.md    ← Checklist 30 นาทีก่อน demo

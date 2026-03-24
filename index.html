@@ -830,7 +830,7 @@
         <span class="material-symbols-outlined" style="font-size:13px">folder_open</span>
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
-      <span class="version-tag">v0.4.9</span>
+      <span class="version-tag">v0.4.10</span>
     </div>
   </header>
 
@@ -988,6 +988,21 @@
       pm:         { cls: 'agent-pm',          label: 'PM Agent',         icon: '🗂️' }
     };
 
+    const previousPendingState = {
+      doc: pendingDoc,
+      agent: pendingAgent,
+      tempPaths: [...pendingTempPaths],
+      isPending: isPendingConfirmation
+    };
+    const restorePendingState = () => {
+      if (!previousPendingState.isPending) return;
+      pendingDoc = previousPendingState.doc;
+      pendingAgent = previousPendingState.agent;
+      pendingTempPaths = [...previousPendingState.tempPaths];
+      isPendingConfirmation = true;
+      _updateInputHint(true, pendingTempPaths.length);
+    };
+
     try {
       const reqBody = { message };
       if (isPendingConfirmation) {
@@ -1015,6 +1030,7 @@
       const decoder = new TextDecoder();
       let buffer = '';
       let outputText = '';
+      let saveFailed = false;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -1065,6 +1081,17 @@
             resultLine.innerHTML = `<span class="material-symbols-outlined" style="font-size:12px">build</span>${data.tool}: ${data.result}`;
             aiBody.insertBefore(resultLine, currentOutputEl);
 
+          } else if (data.type === 'save_failed') {
+            saveFailed = true;
+            currentOutputEl.textContent = `❌ ${data.message}`;
+            status.textContent = 'บันทึกไฟล์ไม่สำเร็จ';
+            container.classList.remove('streaming');
+            container.classList.remove('typing');
+            typingIndicator.style.display = 'none';
+            btn.disabled = false;
+            restorePendingState();
+            outputWrap.scrollTop = outputWrap.scrollHeight;
+
           } else if (data.type === 'text') {
             if (outputText === '') { typingIndicator.style.display = 'none'; container.classList.remove('typing'); }
             outputText += data.content;
@@ -1092,6 +1119,11 @@
             outputWrap.scrollTop = outputWrap.scrollHeight;
 
           } else if (data.type === 'done') {
+            if (saveFailed) {
+              wasPMTask = false;
+              outputWrap.scrollTop = outputWrap.scrollHeight;
+              continue;
+            }
             if (outputText) {
               currentOutputEl.innerHTML = marked.parse(outputText);
               currentOutputEl.classList.add('md-rendered');
@@ -1125,11 +1157,15 @@
             typingIndicator.style.display = 'none';
             btn.disabled = false;
             wasPMTask = false;
-            isPendingConfirmation = false;
-            pendingDoc = '';
-            pendingAgent = '';
-            pendingTempPaths = [];
-            _updateInputHint(false, 0);
+            if (previousPendingState.isPending) {
+              restorePendingState();
+            } else {
+              isPendingConfirmation = false;
+              pendingDoc = '';
+              pendingAgent = '';
+              pendingTempPaths = [];
+              _updateInputHint(false, 0);
+            }
           }
         }
       }
@@ -1141,11 +1177,15 @@
       typingIndicator.style.display = 'none';
       btn.disabled = false;
       wasPMTask = false;
-      isPendingConfirmation = false;
-      pendingDoc = '';
-      pendingAgent = '';
-      pendingTempPaths = [];
-      _updateInputHint(false, 0);
+      if (typeof restorePendingState === 'function' && previousPendingState?.isPending) {
+        restorePendingState();
+      } else {
+        isPendingConfirmation = false;
+        pendingDoc = '';
+        pendingAgent = '';
+        pendingTempPaths = [];
+        _updateInputHint(false, 0);
+      }
     }
   }
 
