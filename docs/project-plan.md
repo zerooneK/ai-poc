@@ -14,14 +14,16 @@
 
 ## Tech Stack
 
-### POC (ทำแล้ว — v0.3.6)
+### POC (ทำแล้ว — v0.4.3)
 
 | Layer | Technology |
 |---|---|
-| Frontend | index.html ไฟล์เดียว — "The Silent Concierge" UI, pill chips nav, typing indicator, Markdown rendering (marked.js) |
+| Frontend | index.html ไฟล์เดียว — "The Silent Concierge" UI, chat bubbles, confirmation flow, workspace selector, file panel |
 | Backend | Python 3.11 + Flask + flask-cors |
 | AI Provider | OpenRouter API via OpenAI SDK |
 | Streaming | SSE (Server-Sent Events) |
+| MCP Server | FastMCP (mcp_server.py) — 5 filesystem tools |
+| File Watching | watchdog (Python) — real-time file panel updates |
 
 ### Production (แผนระยะถัดไป)
 
@@ -71,7 +73,7 @@ Local Network บริษัท
 
 ## Agent Roster
 
-### ✅ พิสูจน์แล้วใน POC (v0.3.6)
+### ✅ พิสูจน์แล้วใน POC (v0.4.3)
 
 | Agent | แผนก | ความสามารถหลัก | max_tokens |
 |---|---|---|---|
@@ -79,8 +81,9 @@ Local Network บริษัท
 | **HR Agent** | Human Resources | สัญญาจ้าง, JD, HR policy, อีเมลแจ้งนโยบาย | 7,500 |
 | **Accounting Agent** | บัญชี/การเงิน | Invoice (+ VAT 7%), Expense Report, งบประมาณ | 6,000 |
 | **Manager Advisor** | ผู้บริหาร/Team Lead | Feedback script, headcount, budget, ลำดับความสำคัญ | 8,000 |
+| **PM Agent** | ทุกแผนก | งานหลายแผนก → แยก subtasks → route + delegate → สร้างไฟล์ผ่าน MCP | 8,000 |
 
-> **หมายเหตุ:** Manager Advisor ถูก implement และทดสอบแล้วใน POC ไม่จำเป็นต้องรอ Phase 3+
+> **หมายเหตุ:** Manager Advisor และ PM Agent ถูก implement และทดสอบแล้วใน POC ไม่จำเป็นต้องรอ Phase 3+
 
 ### Phase 4+ (เพิ่มเติมในอนาคต)
 

@@ -1,7 +1,7 @@
 # DEMO READINESS REPORT
 **Project:** Internal AI Assistant POC
-**Version:** v0.3.6
-**Date:** 2026-03-23
+**Version:** v0.4.3
+**Date:** 2026-03-24
 **Assessor:** Claude Code
 
 ---
@@ -26,15 +26,18 @@
 
 - Flask Server: Running on port 5000
 - Health Endpoint: /api/health returns 200 with model name
-- UI Frontend: http://localhost:5000 loads (v0.3.6)
-- Dependencies: All installed
+- UI Frontend: http://localhost:5000 loads (v0.4.3)
+- Dependencies: All installed (flask, flask-cors, openai, python-dotenv, mcp, watchdog)
 - API Key: Configured in .env
 - Model: configurable via OPENROUTER_MODEL env var
+- MCP Server: mcp_server.py implements 5 filesystem tools
+- Workspace: configurable via WORKSPACE_PATH env var
 
 ### CODE & DOCUMENTATION — COMPLETE
 
-- Backend: D:/ai-poc/app.py (Orchestrator + HR + Accounting + Manager Advisor)
-- Frontend: D:/ai-poc/index.html (The Silent Concierge UI + Markdown rendering)
+- Backend: D:/ai-poc/app.py (Orchestrator + HR + Accounting + Manager Advisor + PM Agent + Agentic loop)
+- MCP Server: D:/ai-poc/mcp_server.py (FastMCP + 5 filesystem tools)
+- Frontend: D:/ai-poc/index.html (The Silent Concierge UI + chat bubbles + confirmation flow)
 - Demo Inputs: D:/ai-poc/backup/demo-inputs.txt (6 cases ready)
 - Demo Script: D:/ai-poc/backup/demo-script.md (3-case flow)
 - Quick Check: D:/ai-poc/quick-demo-check.py (7 checks: 6 cases + health)
@@ -88,18 +91,34 @@
 | HR Agent | `"hr"` | เขียว | 7,500 |
 | Accounting Agent | `"accounting"` | น้ำเงิน/ม่วง | 6,000 |
 | Manager Advisor | `"manager"` | ม่วง | 8,000 |
+| PM Agent | `"pm"` | ส้ม | 8,000 (with MCP tools) |
 
 ---
 
-## UI FEATURES (v0.3.6)
+## UI FEATURES (v0.4.3)
 
-- ✅ Navbar: Fixed, frosted glass, version tag แสดง v0.3.6
-- ✅ Sidebar: Agent badge (reserved space + idle state), 6 nav pill chips, model pill, theme toggle
-- ✅ Typing indicator: 3 bouncing dots ก่อน agent เริ่ม stream (chat-bubble style)
+- ✅ Navbar: Fixed, frosted glass, version tag แสดง v0.4.3
+- ✅ Sidebar:
+  - Workspace selector (dropdown + เลือก folder)
+  - Agent badge (reserved space + idle state + overflow ellipsis)
+  - 6 nav pill chips
+  - Real-time file panel (ดึงจาก SSE /api/workspace/files/stream)
+  - Model pill + theme toggle + POC warning
+- ✅ Chat bubbles:
+  - User messages: right side, primary background
+  - AI messages: left side, secondary background, accumulated history
+  - Typing indicator: 3 bouncing dots ก่อน agent เริ่ม stream
+  - Streaming accent line ระหว่าง streaming
+- ✅ Confirmation flow (PM Agent only):
+  - Pending state tracking (pending_doc + pending_agent)
+  - Input hint เปลี่ยน placeholder เมื่อรอ confirmation
+  - User types "บันทึก" → atomic move temp/ → workspace/
+  - User types edit instruction → revise and re-stream
+- ✅ Temp staging flow:
+  - PM subtasks → stream to temp/ directory
+  - User confirms → os.replace() atomic move to workspace/
 - ✅ Input area: button absolute inside container (ChatGPT style), auto-resize textarea
 - ✅ Markdown Rendering: Output render เป็น HTML หลัง done (ตาราง, หัวข้อ, bold)
-- ✅ Streaming accent line: primary color line ระหว่าง streaming
-- ✅ Processing time counter + copy button
 - ✅ Dark/Light mode toggle (dark mode สว่างขึ้น)
 
 ---
@@ -109,8 +128,10 @@
 **30 Minutes Before Demo:**
 - [ ] Server running (`python app.py`)
 - [ ] Browser ready at http://localhost:5000
-- [ ] Version tag แสดง v0.3.6 ใน navbar (ขวาบน)
+- [ ] Version tag แสดง v0.4.3 ใน navbar (ขวาบน)
 - [ ] Model name แสดงใน sidebar footer
+- [ ] Workspace path configured in .env (WORKSPACE_PATH)
+- [ ] workspace/ and temp/ directories exist
 - [ ] Notifications disabled
 - [ ] Internet tested
 - [ ] All 6 cases validated (quick-demo-check.py)
@@ -149,7 +170,7 @@
 
 ## CONCLUSION
 
-**System Quality:** Production-ready POC — 3 agents, Markdown output, polished UI
+**System Quality:** Production-ready POC — 4 agents + PM Agent with MCP, chat bubbles, confirmation flow, real-time file panel
 **Documentation:** Comprehensive (CHANGELOG, PROJECT_SUMMARY, demo script, demo inputs)
 **Risk Level:** Medium (missing screenshots)
 **Success Probability:** 90% with proper prep
@@ -158,5 +179,5 @@
 
 ---
 
-**Report Generated:** 2026-03-23 (v0.3.6)
+**Report Generated:** 2026-03-24 (v0.4.3)
 **For details, see:** PRE-DEMO-CHECKLIST.md

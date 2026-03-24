@@ -10,7 +10,7 @@
 
 **เป้าหมายของ POC นี้:** Demo สดต่อหัวหน้าเพื่อขอ budget พัฒนาระบบ production จริง
 
-**สถานะ:** POC เสร็จสมบูรณ์ 100% · version **v0.3.8** · พร้อม demo
+**สถานะ:** POC เสร็จสมบูรณ์ 100% · version **v0.4.3** · พร้อม demo
 
 ---
 
@@ -26,6 +26,8 @@
 | Markdown | marked.js (CDN) — render output เป็น HTML หลัง streaming เสร็จ |
 | Icons | Material Symbols Outlined (Google Fonts) |
 | Fonts | Inter + Sarabun (Google Fonts) |
+| MCP Server | FastMCP (mcp_server.py) — 5 filesystem tools (Layer A/B) |
+| File Watching | watchdog (Python) — real-time file panel updates |
 
 ---
 
@@ -37,14 +39,19 @@ User พิมพ์งาน (ภาษาไทย)
 [POST /api/chat] Flask backend
         ↓
 Orchestrator (sync call, max_tokens=1024)
-→ ตอบกลับ JSON: {"agent": "hr|accounting|manager", "reason": "..."}
+→ ตอบกลับ JSON: {"agent": "hr|accounting|manager|pm", "reason": "..."}
         ↓
 Agent ที่เหมาะสม (streaming)
 → HR Agent        (max_tokens=7500)
 → Accounting Agent (max_tokens=6000)
 → Manager Advisor  (max_tokens=8000)
+→ PM Agent         (max_tokens=8000, agentic loop with MCP tools)
         ↓
 SSE stream → Frontend แสดงผล real-time
+        ↓
+[PM Agent only] Confirmation flow:
+→ User types "บันทึก" → atomic move temp/ → workspace/
+→ User types edit instruction → revise and re-stream
 ```
 
 **SSE Event Types:** `status` → `agent` → `text` (streaming) → `done` | `error`
@@ -59,6 +66,7 @@ SSE stream → Frontend แสดงผล real-time
 | **HR Agent** | สัญญาจ้าง, Job Description, นโยบาย, อีเมล HR | 7500 |
 | **Accounting Agent** | Invoice (พร้อม VAT 7%), Expense Report (ไม่มี VAT), งบประมาณ | 6000 |
 | **Manager Advisor** | Feedback พนักงาน (พร้อม script คำพูด), budget, ลำดับความสำคัญ, headcount | 8000 |
+| **PM Agent** | งานที่ต้องการหลายแผนก → แยกเป็น subtasks → route ไป HR/Accounting/Manager → รวมผลและสร้างไฟล์ | 8000 |
 
 **กฎสำคัญของ Agents:**
 - ทุก output ต้องมี disclaimer: `"⚠️ เอกสารฉบับร่างนี้จัดทำโดย AI — กรุณาตรวจสอบความถูกต้องก่อนนำไปใช้งานจริง"`
@@ -72,9 +80,10 @@ SSE stream → Frontend แสดงผล real-time
 
 ```
 ai-poc/
-├── app.py                   ← Flask backend + Orchestrator + Agents (MAIN FILE)
-├── index.html               ← Web UI ไฟล์เดียว (The Silent Concierge design)
-├── requirements.txt         ← flask, flask-cors, openai, python-dotenv
+├── app.py                   ← Flask backend + Orchestrator + Agents + PM Agent + Agentic loop (MAIN FILE)
+├── mcp_server.py            ← MCP Filesystem Server (FastMCP) + 5 tools (Layer A/B)
+├── index.html               ← Web UI ไฟล์เดียว (The Silent Concierge design + chat bubbles + confirmation flow)
+├── requirements.txt         ← flask, flask-cors, openai, python-dotenv, mcp, watchdog
 ├── test_cases.py            ← Automated test (6 use cases) — PYTHONUTF8=1 python test_cases.py
 ├── quick-demo-check.py      ← Full validation script (7 checks รวม health)
 ├── CHANGELOG.md             ← Version history
@@ -82,9 +91,11 @@ ai-poc/
 ├── CLAUDE.md                ← Rules สำหรับ Claude Code
 ├── PRE-DEMO-CHECKLIST.md    ← Checklist 30 นาทีก่อน demo
 ├── DEMO-READINESS-REPORT.md ← สรุปผลการตรวจสอบ demo readiness
-├── .env                     ← OPENROUTER_API_KEY, OPENROUTER_MODEL (ห้าม commit)
+├── .env                     ← OPENROUTER_API_KEY, OPENROUTER_MODEL, WORKSPACE_PATH (ห้าม commit)
 ├── .env.example             ← Template
-├── .gitignore               ← exclude: .env, venv/, backup/screenshots/
+├── .gitignore               ← exclude: .env, venv/, backup/screenshots/, workspace/*, temp/*
+├── workspace/               ← workspace directory สำหรับ agent สร้างไฟล์ (gitignored ยกเว้น .gitkeep)
+├── temp/                    ← staging area สำหรับไฟล์ที่รอ user confirm (gitignored ยกเว้น .gitkeep)
 ├── backup/
 │   ├── demo-inputs.txt      ← copy-paste inputs ทั้ง 6 cases พร้อมใช้
 │   ├── demo-script.md       ← demo script พร้อม timing และ talking points
@@ -148,21 +159,28 @@ PYTHONUTF8=1 python quick-demo-check.py
 | v0.3.6 | 23 มี.ค. 2569 | feat | Typing indicator (3 bouncing dots) ก่อน streaming เริ่ม |
 | v0.3.7 | 23 มี.ค. 2569 | fix | ai-accent-line สูงพอดี typing bubble ระหว่าง typing state |
 | v0.3.8 | 23 มี.ค. 2569 | fix | "tokens"→"ตัวอักษร" + typing indicator ซ่อนเมื่อ error |
+| v0.3.9 | 24 มี.ค. 2569 | feat | Chat bubble UI — user messages right, AI left, accumulated history |
+| v0.4.0 | 24 มี.ค. 2569 | feat | PM Agent + MCP Filesystem (workspace selector, real-time file panel, agentic tool-calling loop) |
+| v0.4.1 | 24 มี.ค. 2569 | feat | Confirmation flow frontend — pending state tracking, send pending_doc/pending_agent, input hint changes |
+| v0.4.2 | 24 มี.ค. 2569 | fix | PM Agent JSON parse robustness (_extract_json helper) + sidebar badge overflow fix |
+| v0.4.3 | 24 มี.ค. 2569 | feat | Temp staging flow — PM subtasks stream to temp/, confirm → atomic move to workspace; single-agent confirmation unchanged |
 
 **กฎ versioning:** Minor bump (0.X.0) = agent/feature ใหม่ · Patch bump (0.0.X) = fix/tweak
 **ทุก commit ต้อง bump version ใน `index.html` และเพิ่ม entry ใน `CHANGELOG.md`**
 
 ---
 
-## UI Architecture (v0.3.x)
+## UI Architecture (v0.4.x)
 
 index.html ใช้ design system "The Silent Concierge":
 
 ```
 Fixed Sidebar (256px)
   ├── Brand icon + "AI Assistant" + "INTERNAL POC"
+  ├── Workspace Selector (dropdown + เลือก folder)
   ├── Agent badge (reserved space เสมอ — idle state "รอคำสั่งงาน..." พร้อม dashed border)
   ├── Nav chips × 6 (flex-wrap pill chips, border-radius: 99px, hover: primary border)
+  ├── File Panel (real-time list จาก workspace via SSE /api/workspace/files/stream)
   └── Footer: theme toggle + model pill + POC warning
 
 Fixed Navbar (left: 256px, frosted glass)
@@ -170,10 +188,15 @@ Fixed Navbar (left: 256px, frosted glass)
   └── Version tag (right)
 
 Main area (margin-left: 256px)
-  ├── output-wrap (scrollable, padding-bottom: 200px)
-  │   ├── ai-accent-line (opacity 0→1 ระหว่าง streaming)
-  │   ├── typing-indicator (3 bouncing dots — แสดงระหว่าง agent event ถึง text chunk แรก)
-  │   └── output-area (plain text ระหว่าง stream → HTML หลัง done, marked.js)
+  ├── chat-container (scrollable, chat history bubbles)
+  │   ├── User message bubbles (right side, primary background)
+  │   ├── AI message bubbles (left side, secondary background)
+  │   │   ├── ai-accent-line (opacity 0→1 ระหว่าง streaming)
+  │   │   ├── typing-indicator (3 bouncing dots — แสดงระหว่าง agent event ถึง text chunk แรก)
+  │   │   └── message-content (plain text ระหว่าง stream → HTML หลัง done, marked.js)
+  │   └── Confirmation state (PM Agent only):
+  │       - แสดง "พิมพ์ 'บันทึก' เพื่อยืนยัน หรือบอกให้แก้ไข"
+  │       - Input hint เปลี่ยน placeholder
   └── Fixed input-footer
       ├── input-wrapper (backdrop-filter blur)
       └── input-container (position: relative, border-radius: 20px)
@@ -201,10 +224,9 @@ Main area (margin-left: 256px)
 ## สิ่งที่ POC นี้ไม่มี (ต้องบอกหัวหน้าตรงๆ)
 
 - ❌ Login / Authentication
-- ❌ เชื่อมต่อไฟล์บนเครื่อง (MCP)
-- ❌ บันทึกประวัติการใช้งาน
+- ❌ บันทึกประวัติการใช้งาน (แสดงแค่ session ปัจจุบัน)
 - ❌ Database
-- ❌ LangGraph (ใช้ direct API call แทน)
+- ❌ LangGraph (ใช้ direct API call + agentic loop แทน)
 
 ---
 

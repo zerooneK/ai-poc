@@ -29,21 +29,21 @@ Output: เอกสารภาษาไทยพร้อมใช้
 | HR Agent | สัญญาจ้าง, JD, นโยบาย, อีเมล HR |
 | Accounting Agent | Invoice, งบประมาณ, เอกสารการเงิน |
 | Manager Advisor | Feedback พนักงาน, จัดสรร budget, ลำดับความสำคัญ, headcount |
+| PM Agent | งานหลายแผนก → แยก subtasks → route ไป HR/Accounting/Manager → สร้างไฟล์ใน workspace |
 
 ### สิ่งที่ POC นี้ **ไม่มี** (และต้องพูดตรงๆ กับหัวหน้า)
 - ❌ Login / Authentication
-- ❌ เชื่อมต่อไฟล์บนเครื่อง user (MCP)
-- ❌ บันทึกประวัติการใช้งาน
+- ❌ บันทึกประวัติการใช้งาน (แสดงแค่ session ปัจจุบัน)
 - ❌ Database
-- ❌ LangGraph (ใช้ direct API call แทน)
+- ❌ LangGraph (ใช้ direct API call + agentic loop แทน)
 
 ---
 
-## สรุปความคืบหน้า — 23 มีนาคม 2569
+## สรุปความคืบหน้า — 24 มีนาคม 2569
 
 **สถานะ POC: เสร็จสมบูรณ์ 100% — พร้อม demo**
 
-### ทำอะไรไปบ้างคืนนี้ (v0.1.0 → v0.3.6)
+### ทำอะไรไปบ้างคืนนี้ (v0.1.0 → v0.4.3)
 - ✅ Setup เสร็จครบ: app.py, index.html, requirements.txt, .env.example, .gitignore
 - ✅ เปลี่ยน AI provider จาก Anthropic SDK → OpenAI SDK + OpenRouter API
 - ✅ Environment variables: OPENROUTER_API_KEY, OPENROUTER_MODEL (config ได้โดยไม่แก้โค้ด)
@@ -64,6 +64,13 @@ Output: เอกสารภาษาไทยพร้อมใช้
 - ✅ Agent badge reserved space + idle state (v0.3.4)
 - ✅ Nav-items → pill chips, dark mode สว่างขึ้น (v0.3.5)
 - ✅ Typing indicator (3 bouncing dots) ก่อน streaming เริ่ม (v0.3.6)
+- ✅ fix ai-accent-line สูงพอดี typing bubble (v0.3.7)
+- ✅ fix "tokens"→"ตัวอักษร" + typing indicator ซ่อนเมื่อ error (v0.3.8)
+- ✅ Chat bubble UI — user messages right, AI left, accumulated history (v0.3.9)
+- ✅ PM Agent + MCP Filesystem (workspace selector, real-time file panel, agentic tool-calling loop) (v0.4.0)
+- ✅ Confirmation flow frontend — pending state tracking (v0.4.1)
+- ✅ PM Agent JSON parse robustness + sidebar badge overflow fix (v0.4.2)
+- ✅ Temp staging flow — PM subtasks stream to temp/, confirm → atomic move to workspace (v0.4.3)
 
 ### ปัญหาที่เจอและแก้แล้ว
 - **Reasoning models (minimax) ใช้ thinking tokens** → ต้องตั้ง max_tokens ≥1024 สำหรับ Orchestrator (ไม่งั้น content=None)
@@ -88,19 +95,22 @@ Output: เอกสารภาษาไทยพร้อมใช้
 
 ```
 ai-poc/
-├── app.py                   ← Flask backend + Orchestrator + HR/Accounting/Manager agents
-├── index.html               ← Web UI ไฟล์เดียว (v0.3.6 — The Silent Concierge + typing indicator)
+├── app.py                   ← Flask backend + Orchestrator + HR/Accounting/Manager/PM agents + Agentic loop
+├── mcp_server.py            ← MCP Filesystem Server (FastMCP) + 5 tools (Layer A/B)
+├── index.html               ← Web UI ไฟล์เดียว (v0.4.3 — chat bubbles + confirmation flow + temp staging)
 ├── test_cases.py            ← Automated test script (6 use cases)
 ├── quick-demo-check.py      ← Full validation (7 checks: 6 cases + health)
-├── CHANGELOG.md             ← Version history (v0.1.0 → v0.3.6)
+├── CHANGELOG.md             ← Version history (v0.1.0 → v0.4.3)
 ├── PROJECT_SUMMARY.md       ← ภาพรวมโปรเจกต์สำหรับ AI context
 ├── CLAUDE.md                ← Rules สำหรับ Claude Code
 ├── PRE-DEMO-CHECKLIST.md    ← Checklist 30 นาทีก่อน demo
 ├── DEMO-READINESS-REPORT.md ← สรุปผลการตรวจสอบ demo readiness
-├── .env                     ← OPENROUTER_API_KEY, OPENROUTER_MODEL (ห้าม commit)
+├── .env                     ← OPENROUTER_API_KEY, OPENROUTER_MODEL, WORKSPACE_PATH (ห้าม commit)
 ├── .env.example             ← Template สำหรับ setup ใหม่
-├── .gitignore               ← ป้องกัน commit .env และ venv/
-├── requirements.txt         ← Dependencies (flask, openai, python-dotenv, flask-cors)
+├── .gitignore               ← ป้องกัน commit .env, venv/, workspace/*, temp/*
+├── requirements.txt         ← Dependencies (flask, openai, python-dotenv, flask-cors, mcp, watchdog)
+├── workspace/               ← workspace directory สำหรับ agent สร้างไฟล์ (gitignored ยกเว้น .gitkeep)
+├── temp/                    ← staging area สำหรับไฟล์ที่รอ user confirm (gitignored ยกเว้น .gitkeep)
 ├── backup/
 │   ├── demo-inputs.txt      ← copy-paste inputs ทั้ง 6 cases พร้อมใช้
 │   ├── demo-script.md       ← demo script พร้อม timing และ talking points (3 cases)
