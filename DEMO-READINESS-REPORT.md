@@ -1,6 +1,6 @@
 # DEMO READINESS REPORT
 **Project:** Internal AI Assistant POC
-**Version:** v0.4.8
+**Version:** v0.4.9
 **Date:** 24 มีนาคม 2569
 **Assessor:** Claude Code
 
@@ -26,12 +26,12 @@
 
 - Flask Server: Running on port 5000
 - Health Endpoint: /api/health returns 200 with model name
-- UI Frontend: http://localhost:5000 loads (v0.4.8)
+- UI Frontend: http://localhost:5000 loads (v0.4.9)
 - Dependencies: All installed (flask, flask-cors, openai, python-dotenv, mcp, watchdog)
 - API Key: Configured in .env
 - Model: configurable via OPENROUTER_MODEL env var
 - MCP Server: mcp_server.py implements 5 filesystem tools
-- Workspace: configurable via WORKSPACE_PATH env var
+- Workspace: configurable via WORKSPACE_PATH env var; runtime switching จำกัดให้อยู่ภายใต้ project root
 
 ### CODE & DOCUMENTATION — COMPLETE
 
@@ -95,9 +95,9 @@
 
 ---
 
-## UI FEATURES (v0.4.8)
+## UI FEATURES (v0.4.9)
 
-- ✅ Navbar: Fixed, frosted glass, version tag แสดง v0.4.8
+- ✅ Navbar: Fixed, frosted glass, version tag แสดง v0.4.9
 - ✅ Sidebar:
   - Workspace selector (dropdown + เลือก folder)
   - Agent badge (reserved space + idle state + overflow ellipsis)
@@ -130,7 +130,7 @@
 **30 Minutes Before Demo:**
 - [ ] Server running (`python app.py`)
 - [ ] Browser ready at http://localhost:5000
-- [ ] Version tag แสดง v0.4.8 ใน navbar (ขวาบน)
+- [ ] Version tag แสดง v0.4.9 ใน navbar (ขวาบน)
 - [ ] Model name แสดงใน sidebar footer
 - [ ] Workspace path configured in .env (WORKSPACE_PATH)
 - [ ] workspace/ and temp/ directories exist
@@ -181,5 +181,5 @@
 
 ---
 
-**Report Generated:** 24 มีนาคม 2569 (v0.4.8)
+**Report Generated:** 24 มีนาคม 2569 (v0.4.9)
 **For details, see:** PRE-DEMO-CHECKLIST.md

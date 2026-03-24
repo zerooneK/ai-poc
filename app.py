@@ -40,10 +40,11 @@ if not OPENROUTER_API_KEY:
     )
 
 MODEL = os.getenv("OPENROUTER_MODEL", "anthropic/claude-sonnet-4-5")
+_PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
 # Workspace state — mutable at runtime via /api/workspace
 _DEFAULT_WORKSPACE = os.path.abspath(
-    os.getenv("WORKSPACE_PATH", os.path.join(os.path.dirname(__file__), "workspace"))
+    os.getenv("WORKSPACE_PATH", os.path.join(_PROJECT_ROOT, "workspace"))
 )
 WORKSPACE_PATH = _DEFAULT_WORKSPACE
 _workspace_lock = threading.Lock()
@@ -60,6 +61,19 @@ client = OpenAI(
 )
 
 # ─── System Prompts ───────────────────────────────────────────────────────────
+
+def _normalize_workspace_path(path: str) -> str:
+    """Normalize a workspace path relative to the current process."""
+    return os.path.abspath(path or _DEFAULT_WORKSPACE)
+
+
+def _is_allowed_workspace_path(path: str) -> bool:
+    """Allow runtime workspace changes only under the repository root."""
+    try:
+        return os.path.commonpath([_PROJECT_ROOT, path]) == _PROJECT_ROOT and path != _PROJECT_ROOT
+    except ValueError:
+        return False
+
 
 ORCHESTRATOR_PROMPT = """
 คุณคือ AI Orchestrator ของระบบ Internal AI Assistant ภายในบริษัท
@@ -908,10 +922,14 @@ def set_workspace():
     new_path = data.get('path', '').strip()
     if not new_path:
         return jsonify({'error': 'ระบุ path ไม่ถูกต้อง'}), 400
-    abs_path = os.path.abspath(new_path)
+    abs_path = _normalize_workspace_path(new_path)
     # Basic safety: reject suspiciously short paths (e.g. bare drive root "C:\")
     if len(abs_path) <= 3:
         return jsonify({'error': 'Path ไม่ปลอดภัย กรุณาระบุ directory ที่ชัดเจนกว่านี้'}), 400
+    if not _is_allowed_workspace_path(abs_path):
+        return jsonify({
+            'error': f'อนุญาตเฉพาะ workspace ภายใต้โปรเจกต์นี้เท่านั้น: {_PROJECT_ROOT}'
+        }), 400
     try:
         os.makedirs(abs_path, exist_ok=True)
     except OSError as e:

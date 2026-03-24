@@ -1,5 +1,12 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.4.9] — 24 มีนาคม 2569 · fix
+- จำกัดการเปลี่ยน workspace ผ่าน `POST /api/workspace` ให้อยู่ภายใต้ root ของโปรเจกต์เท่านั้น
+- คงรูปแบบ API เดิมไว้เพื่อลดผลกระทบกับ frontend ที่มีอยู่
+- อัปเดตเอกสารให้สะท้อนข้อจำกัดใหม่ของ workspace selector/runtime
+
+---
+
 ## [v0.4.8] — 24 มีนาคม 2569 · fix
 - ปิด Flask debug mode เป็นค่าเริ่มต้นสำหรับการรันปกติ
 - เพิ่มการเปิด debug ผ่าน environment variable `FLASK_DEBUG=1` แทนการ hardcode ใน `app.py`

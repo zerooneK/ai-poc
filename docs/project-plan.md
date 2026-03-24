@@ -14,7 +14,7 @@
 
 ## Tech Stack
 
-### POC (ทำแล้ว — v0.4.8)
+### POC (ทำแล้ว — v0.4.9)
 
 | Layer | Technology |
 |---|---|
@@ -73,7 +73,7 @@ Local Network บริษัท
 
 ## Agent Roster
 
-### ✅ พิสูจน์แล้วใน POC (v0.4.8)
+### ✅ พิสูจน์แล้วใน POC (v0.4.9)
 
 | Agent | แผนก | ความสามารถหลัก | max_tokens |
 |---|---|---|---|
