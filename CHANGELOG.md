@@ -1,5 +1,12 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.4.11] — 24 มีนาคม 2569 · fix
+- ลด XSS risk ฝั่ง frontend โดยเปลี่ยนการ render ข้อมูลจาก server/LLM หลายจุดไปใช้ DOM API แทน `innerHTML`
+- sanitize markdown output ก่อนแทรกกลับเข้า DOM
+- harden file list, agent badge, PM plan, tool result, และ error rendering ให้ปลอดภัยขึ้น
+
+---
+
 ## [v0.4.10] — 24 มีนาคม 2569 · fix
 - แยกกรณี `save_failed` ออกจาก success path ของการบันทึกไฟล์ฝั่ง single-agent
 - ป้องกันการแสดงข้อความสำเร็จปลอมเมื่อ `create_file` ล้มเหลว

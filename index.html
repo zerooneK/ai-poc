@@ -830,7 +830,7 @@
         <span class="material-symbols-outlined" style="font-size:13px">folder_open</span>
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
-      <span class="version-tag">v0.4.10</span>
+      <span class="version-tag">v0.4.11</span>
     </div>
   </header>
 
@@ -925,6 +925,85 @@
     // Temp files in temp/ will be auto-cleaned after 1hr by _cleanup_old_temp()
   }
 
+  function _sanitizeHtml(html) {
+    const template = document.createElement('template');
+    template.innerHTML = html;
+    template.content.querySelectorAll('script,iframe,object,embed,link,style,meta').forEach(el => el.remove());
+    template.content.querySelectorAll('*').forEach(el => {
+      [...el.attributes].forEach(attr => {
+        const name = attr.name.toLowerCase();
+        const value = attr.value.trim();
+        const lowerValue = value.toLowerCase();
+        if (name.startsWith('on') || lowerValue.startsWith('javascript:')) {
+          el.removeAttribute(attr.name);
+          return;
+        }
+        if ((name === 'href' || name === 'src') && value && !/^(https?:|mailto:|tel:|#)/i.test(value)) {
+          el.removeAttribute(attr.name);
+        }
+      });
+    });
+    return template.innerHTML;
+  }
+
+  function _renderMarkdown(el, text) {
+    el.innerHTML = _sanitizeHtml(marked.parse(text));
+    el.classList.add('md-rendered');
+  }
+
+  function _setAgentBadge(badge, info, reason = '') {
+    badge.className = 'agent-badge ' + info.cls;
+    badge.replaceChildren();
+    const strong = document.createElement('strong');
+    strong.textContent = `${info.icon} ${info.label}`;
+    badge.appendChild(strong);
+    if (reason) {
+      badge.appendChild(document.createElement('br'));
+      const reasonEl = document.createElement('span');
+      reasonEl.className = 'agent-badge-reason';
+      reasonEl.textContent = reason;
+      badge.appendChild(reasonEl);
+    }
+  }
+
+  function _setInlineError(el, message) {
+    const errorEl = document.createElement('span');
+    errorEl.className = 'error-msg';
+    errorEl.textContent = `❌ ${message}`;
+    el.replaceChildren(errorEl);
+  }
+
+  function _renderPmPlan(planDiv, subtasks) {
+    const agentNames = { hr: 'HR Agent 👤', accounting: 'Accounting 📊', manager: 'Manager 🧭' };
+    planDiv.replaceChildren();
+    const title = document.createElement('div');
+    title.className = 'pm-plan-title';
+    title.textContent = '🗂️ PM Agent แบ่งงานออกเป็น:';
+    planDiv.appendChild(title);
+    subtasks.forEach(s => {
+      const item = document.createElement('div');
+      item.className = 'pm-subtask';
+      const agent = document.createElement('span');
+      agent.className = 'pm-subtask-agent';
+      agent.textContent = agentNames[s.agent] || s.agent;
+      const task = document.createElement('span');
+      task.textContent = s.task;
+      item.appendChild(agent);
+      item.appendChild(task);
+      planDiv.appendChild(item);
+    });
+  }
+
+  function _renderToolResult(resultLine, tool, result) {
+    resultLine.replaceChildren();
+    const icon = document.createElement('span');
+    icon.className = 'material-symbols-outlined';
+    icon.style.fontSize = '12px';
+    icon.textContent = 'build';
+    resultLine.appendChild(icon);
+    resultLine.appendChild(document.createTextNode(`${tool}: ${result}`));
+  }
+
   async function sendMessage() {
     const input = document.getElementById('inputMsg');
     const status = document.getElementById('status');
@@ -943,7 +1022,7 @@
     btn.disabled = true;
     status.textContent = '⚙️ กำลังวิเคราะห์งาน...';
     badge.className = 'agent-badge agent-idle';
-    badge.innerHTML = 'รอคำสั่งงาน...';
+    badge.textContent = 'รอคำสั่งงาน...';
     copyBtn.style.display = 'none';
     if (placeholder) placeholder.style.display = 'none';
     _updateInputHint(false, 0);
@@ -1051,8 +1130,7 @@
           } else if (data.type === 'agent') {
             lastAgent = data.agent;
             const info = agentMap[data.agent] || agentMap['hr'];
-            badge.className = 'agent-badge ' + info.cls;
-            badge.innerHTML = `<strong>${info.icon} ${info.label}</strong><br><span class="agent-badge-reason">${data.reason}</span>`;
+            _setAgentBadge(badge, info, data.reason);
             container.classList.add('streaming');
             typingIndicator.style.display = 'flex';
             container.classList.add('typing');
@@ -1062,12 +1140,7 @@
             // PM plan: show subtask breakdown before agent output
             const planDiv = document.createElement('div');
             planDiv.className = 'pm-plan-step';
-            const agentNames = { hr: 'HR Agent 👤', accounting: 'Accounting 📊', manager: 'Manager 🧭' };
-            let html = '<div class="pm-plan-title">🗂️ PM Agent แบ่งงานออกเป็น:</div>';
-            data.subtasks.forEach(s => {
-              html += `<div class="pm-subtask"><span class="pm-subtask-agent">${agentNames[s.agent] || s.agent}</span><span>${s.task}</span></div>`;
-            });
-            planDiv.innerHTML = html;
+            _renderPmPlan(planDiv, data.subtasks);
             aiBody.insertBefore(planDiv, typingIndicator);
 
           } else if (data.type === 'pending_file') {
@@ -1078,7 +1151,7 @@
             // Show tool execution feedback
             const resultLine = document.createElement('div');
             resultLine.className = 'tool-result-line';
-            resultLine.innerHTML = `<span class="material-symbols-outlined" style="font-size:12px">build</span>${data.tool}: ${data.result}`;
+            _renderToolResult(resultLine, data.tool, data.result);
             aiBody.insertBefore(resultLine, currentOutputEl);
 
           } else if (data.type === 'save_failed') {
@@ -1101,8 +1174,7 @@
           } else if (data.type === 'subtask_done') {
             // Render current subtask output as markdown
             if (outputText) {
-              currentOutputEl.innerHTML = marked.parse(outputText);
-              currentOutputEl.classList.add('md-rendered');
+              _renderMarkdown(currentOutputEl, outputText);
             }
             outputText = '';
             // Separator between subtasks
@@ -1125,8 +1197,7 @@
               continue;
             }
             if (outputText) {
-              currentOutputEl.innerHTML = marked.parse(outputText);
-              currentOutputEl.classList.add('md-rendered');
+              _renderMarkdown(currentOutputEl, outputText);
             }
             const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
             const charCount = outputText.length.toLocaleString('th-TH');
@@ -1150,7 +1221,7 @@
             wasPMTask = false;
 
           } else if (data.type === 'error') {
-            currentOutputEl.innerHTML = `<span class="error-msg">❌ เกิดข้อผิดพลาด: ${data.message}</span>`;
+            _setInlineError(currentOutputEl, `เกิดข้อผิดพลาด: ${data.message}`);
             status.textContent = 'กรุณาลองใหม่อีกครั้ง';
             container.classList.remove('streaming');
             container.classList.remove('typing');
@@ -1170,7 +1241,7 @@
         }
       }
     } catch (err) {
-      currentOutputEl.innerHTML = `<span class="error-msg">❌ ไม่สามารถเชื่อมต่อ server ได้: ${err.message}</span>`;
+      _setInlineError(currentOutputEl, `ไม่สามารถเชื่อมต่อ server ได้: ${err.message}`);
       status.textContent = 'กรุณาตรวจสอบว่า Flask server รันอยู่ที่ port 5000';
       container.classList.remove('streaming');
       container.classList.remove('typing');
@@ -1219,17 +1290,34 @@
     const list = document.getElementById('fileList');
     const countEl = document.getElementById('fileCount');
     countEl.textContent = files.length + ' ไฟล์';
+    list.replaceChildren();
     if (files.length === 0) {
-      list.innerHTML = '<div class="file-empty">ยังไม่มีไฟล์</div>';
+      const empty = document.createElement('div');
+      empty.className = 'file-empty';
+      empty.textContent = 'ยังไม่มีไฟล์';
+      list.appendChild(empty);
       return;
     }
-    list.innerHTML = files.map(f =>
-      `<div class="file-item">
-        <span class="material-symbols-outlined" style="font-size:13px;opacity:0.45;flex-shrink:0">description</span>
-        <span class="file-item-name">${f.name}</span>
-        <span class="file-item-size">${_formatBytes(f.size)}</span>
-      </div>`
-    ).join('');
+    files.forEach(f => {
+      const item = document.createElement('div');
+      item.className = 'file-item';
+      const icon = document.createElement('span');
+      icon.className = 'material-symbols-outlined';
+      icon.style.fontSize = '13px';
+      icon.style.opacity = '0.45';
+      icon.style.flexShrink = '0';
+      icon.textContent = 'description';
+      const name = document.createElement('span');
+      name.className = 'file-item-name';
+      name.textContent = f.name;
+      const size = document.createElement('span');
+      size.className = 'file-item-size';
+      size.textContent = _formatBytes(f.size);
+      item.appendChild(icon);
+      item.appendChild(name);
+      item.appendChild(size);
+      list.appendChild(item);
+    });
   }
 
   function _formatBytes(b) {
