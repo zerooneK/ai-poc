@@ -14,11 +14,11 @@
 
 ## Tech Stack
 
-### POC (ทำแล้ว — v0.4.3)
+### POC (ทำแล้ว — v0.4.5)
 
 | Layer | Technology |
 |---|---|
-| Frontend | index.html ไฟล์เดียว — "The Silent Concierge" UI, chat bubbles, confirmation flow, workspace selector, file panel |
+| Frontend | index.html ไฟล์เดียว — "The Silent Concierge" UI, chat bubbles, confirmation flow, cancel button, workspace selector, file panel |
 | Backend | Python 3.11 + Flask + flask-cors |
 | AI Provider | OpenRouter API via OpenAI SDK |
 | Streaming | SSE (Server-Sent Events) |
@@ -73,7 +73,7 @@ Local Network บริษัท
 
 ## Agent Roster
 
-### ✅ พิสูจน์แล้วใน POC (v0.4.3)
+### ✅ พิสูจน์แล้วใน POC (v0.4.5)
 
 | Agent | แผนก | ความสามารถหลัก | max_tokens |
 |---|---|---|---|

@@ -1,7 +1,7 @@
 # DEMO READINESS REPORT
 **Project:** Internal AI Assistant POC
-**Version:** v0.4.3
-**Date:** 2026-03-24
+**Version:** v0.4.5
+**Date:** 24 มีนาคม 2569
 **Assessor:** Claude Code
 
 ---
@@ -26,7 +26,7 @@
 
 - Flask Server: Running on port 5000
 - Health Endpoint: /api/health returns 200 with model name
-- UI Frontend: http://localhost:5000 loads (v0.4.3)
+- UI Frontend: http://localhost:5000 loads (v0.4.5)
 - Dependencies: All installed (flask, flask-cors, openai, python-dotenv, mcp, watchdog)
 - API Key: Configured in .env
 - Model: configurable via OPENROUTER_MODEL env var
@@ -35,9 +35,9 @@
 
 ### CODE & DOCUMENTATION — COMPLETE
 
-- Backend: D:/ai-poc/app.py (Orchestrator + HR + Accounting + Manager Advisor + PM Agent + Agentic loop)
+- Backend: D:/ai-poc/app.py (Orchestrator + HR + Accounting + Manager Advisor + PM Agent + Agentic loop + discard keywords)
 - MCP Server: D:/ai-poc/mcp_server.py (FastMCP + 5 filesystem tools)
-- Frontend: D:/ai-poc/index.html (The Silent Concierge UI + chat bubbles + confirmation flow)
+- Frontend: D:/ai-poc/index.html (The Silent Concierge UI + chat bubbles + confirmation flow + cancel button)
 - Demo Inputs: D:/ai-poc/backup/demo-inputs.txt (6 cases ready)
 - Demo Script: D:/ai-poc/backup/demo-script.md (3-case flow)
 - Quick Check: D:/ai-poc/quick-demo-check.py (7 checks: 6 cases + health)
@@ -95,9 +95,9 @@
 
 ---
 
-## UI FEATURES (v0.4.3)
+## UI FEATURES (v0.4.5)
 
-- ✅ Navbar: Fixed, frosted glass, version tag แสดง v0.4.3
+- ✅ Navbar: Fixed, frosted glass, version tag แสดง v0.4.5
 - ✅ Sidebar:
   - Workspace selector (dropdown + เลือก folder)
   - Agent badge (reserved space + idle state + overflow ellipsis)
@@ -111,8 +111,10 @@
   - Streaming accent line ระหว่าง streaming
 - ✅ Confirmation flow (PM Agent only):
   - Pending state tracking (pending_doc + pending_agent)
-  - Input hint เปลี่ยน placeholder เมื่อรอ confirmation
+  - Input hint เปลี่ยน placeholder เมื่อรอ confirmation: "💬 พิมพ์ บันทึก หรือ ✏️ ระบุสิ่งที่แก้ไข"
+  - "✕ ยกเลิก" button ปรากฏเมื่อ pending confirmation (client-side clear)
   - User types "บันทึก" → atomic move temp/ → workspace/
+  - User types discard keywords ("ยกเลิก", "ไม่เอา", etc.) → confirm discard
   - User types edit instruction → revise and re-stream
 - ✅ Temp staging flow:
   - PM subtasks → stream to temp/ directory
@@ -128,7 +130,7 @@
 **30 Minutes Before Demo:**
 - [ ] Server running (`python app.py`)
 - [ ] Browser ready at http://localhost:5000
-- [ ] Version tag แสดง v0.4.3 ใน navbar (ขวาบน)
+- [ ] Version tag แสดง v0.4.5 ใน navbar (ขวาบน)
 - [ ] Model name แสดงใน sidebar footer
 - [ ] Workspace path configured in .env (WORKSPACE_PATH)
 - [ ] workspace/ and temp/ directories exist
@@ -179,5 +181,5 @@
 
 ---
 
-**Report Generated:** 2026-03-24 (v0.4.3)
+**Report Generated:** 24 มีนาคม 2569 (v0.4.5)
 **For details, see:** PRE-DEMO-CHECKLIST.md

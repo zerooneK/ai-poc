@@ -10,7 +10,7 @@
 
 **เป้าหมายของ POC นี้:** Demo สดต่อหัวหน้าเพื่อขอ budget พัฒนาระบบ production จริง
 
-**สถานะ:** POC เสร็จสมบูรณ์ 100% · version **v0.4.3** · พร้อม demo
+**สถานะ:** POC เสร็จสมบูรณ์ 100% · version **v0.4.5** · พร้อม demo
 
 ---
 
@@ -164,6 +164,8 @@ PYTHONUTF8=1 python quick-demo-check.py
 | v0.4.1 | 24 มี.ค. 2569 | feat | Confirmation flow frontend — pending state tracking, send pending_doc/pending_agent, input hint changes |
 | v0.4.2 | 24 มี.ค. 2569 | fix | PM Agent JSON parse robustness (_extract_json helper) + sidebar badge overflow fix |
 | v0.4.3 | 24 มี.ค. 2569 | feat | Temp staging flow — PM subtasks stream to temp/, confirm → atomic move to workspace; single-agent confirmation unchanged |
+| v0.4.4 | 24 มี.ค. 2569 | fix | Pending doc discard bug — new requests treated as edit instead of new route; added `_DISCARD_KEYWORDS` detection in app.py |
+| v0.4.5 | 24 มี.ค. 2569 | feat | Cancel pending button — "✕ ยกเลิก" button in UI below input when pending confirmation (client-side clear) |
 
 **กฎ versioning:** Minor bump (0.X.0) = agent/feature ใหม่ · Patch bump (0.0.X) = fix/tweak
 **ทุก commit ต้อง bump version ใน `index.html` และเพิ่ม entry ใน `CHANGELOG.md`**
@@ -196,7 +198,8 @@ Main area (margin-left: 256px)
   │   │   └── message-content (plain text ระหว่าง stream → HTML หลัง done, marked.js)
   │   └── Confirmation state (PM Agent only):
   │       - แสดง "พิมพ์ 'บันทึก' เพื่อยืนยัน หรือบอกให้แก้ไข"
-  │       - Input hint เปลี่ยน placeholder
+  │       - Input hint เปลี่ยน placeholder: "💬 พิมพ์ บันทึก หรือ ✏️ ระบุสิ่งที่แก้ไข"
+  │       - "✕ ยกเลิก" button ปรากฏเมื่อ pending confirmation
   └── Fixed input-footer
       ├── input-wrapper (backdrop-filter blur)
       └── input-container (position: relative, border-radius: 20px)
@@ -218,6 +221,7 @@ Main area (margin-left: 256px)
 | Windows terminal แสดงภาษาไทยแตก | prefix ด้วย `PYTHONUTF8=1` ทุกครั้ง |
 | Model name ใน sidebar ไม่ตรง | ดึงจาก `/api/health` อัตโนมัติตอนโหลดหน้า |
 | marked.js ต้องการ internet | โหลดจาก CDN — ถ้า offline จะ fallback เป็น plain text |
+| Pending doc + new request → treated as edit (v0.4.4 fix) | เพิ่ม `_DISCARD_KEYWORDS` detection ใน app.py |
 
 ---
 
