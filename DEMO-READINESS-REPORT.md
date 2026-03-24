@@ -1,6 +1,6 @@
 # DEMO READINESS REPORT
 **Project:** Internal AI Assistant POC
-**Version:** v0.4.11
+**Version:** v0.4.12
 **Date:** 24 มีนาคม 2569
 **Assessor:** Claude Code
 
@@ -26,7 +26,7 @@
 
 - Flask Server: Running on port 5000
 - Health Endpoint: /api/health returns 200 with model name
-- UI Frontend: http://localhost:5000 loads (v0.4.11)
+- UI Frontend: http://localhost:5000 loads (v0.4.12)
 - Dependencies: All installed (flask, flask-cors, openai, python-dotenv, mcp, watchdog)
 - API Key: Configured in .env
 - Model: configurable via OPENROUTER_MODEL env var
@@ -41,6 +41,7 @@
 - Demo Inputs: D:/ai-poc/backup/demo-inputs.txt (6 cases ready)
 - Demo Script: D:/ai-poc/backup/demo-script.md (3-case flow)
 - Quick Check: D:/ai-poc/quick-demo-check.py (7 checks: 6 cases + health)
+- Phase 0 Smoke Test: D:/ai-poc/smoke_test_phase0.py (5 checks: health, workspace guard, basic chat, Thai save/discard confirmation)
 - Pre-Demo Checklist: D:/ai-poc/PRE-DEMO-CHECKLIST.md
 
 ### BACKUP MATERIALS — INCOMPLETE
@@ -62,10 +63,10 @@
 **Impact:** Using non-default model may produce inconsistent routing or output
 **Fix:** Test all cases thoroughly OR switch to `anthropic/claude-sonnet-4-5`
 
-### Issue 3: Automated Tests Not Validated
+### Issue 3: Automated Tests Need Correct Windows Invocation
 **Severity:** MEDIUM
-**Impact:** Haven't confirmed all 6 use cases work end-to-end
-**Fix:** Run: `PYTHONUTF8=1 python quick-demo-check.py`
+**Impact:** Ad-hoc smoke tests can report false failures for Thai confirmation keywords if Windows shell mangles Thai text before Python receives it
+**Fix:** Run tests from the project venv with UTF-8 enabled: `set PYTHONUTF8=1 && .\venv\Scripts\python.exe quick-demo-check.py`
 
 ---
 
@@ -80,7 +81,7 @@
 | 5 | Accounting | สรุปค่าใช้จ่าย Marketing (50,000 รวม) | NOT TESTED |
 | 6 | Manager | Feedback พนักงานส่งงานช้า/ขาดงานบ่อย | NOT TESTED |
 
-**Recommendation:** Run `PYTHONUTF8=1 python quick-demo-check.py` to validate all cases.
+**Recommendation:** Run `set PYTHONUTF8=1 && .\venv\Scripts\python.exe quick-demo-check.py` to validate all cases. For ad-hoc confirmation-flow checks on Windows, send Thai commands as UTF-8 JSON or Unicode escape payloads instead of pasting Thai text through shell heredocs.
 
 ---
 
@@ -95,9 +96,9 @@
 
 ---
 
-## UI FEATURES (v0.4.11)
+## UI FEATURES (v0.4.12)
 
-- ✅ Navbar: Fixed, frosted glass, version tag แสดง v0.4.11
+- ✅ Navbar: Fixed, frosted glass, version tag แสดง v0.4.12
 - ✅ Sidebar:
   - Workspace selector (dropdown + เลือก folder)
   - Agent badge (reserved space + idle state + overflow ellipsis)
@@ -132,7 +133,7 @@
 **30 Minutes Before Demo:**
 - [ ] Server running (`python app.py`)
 - [ ] Browser ready at http://localhost:5000
-- [ ] Version tag แสดง v0.4.11 ใน navbar (ขวาบน)
+- [ ] Version tag แสดง v0.4.12 ใน navbar (ขวาบน)
 - [ ] Model name แสดงใน sidebar footer
 - [ ] Workspace path configured in .env (WORKSPACE_PATH)
 - [ ] workspace/ and temp/ directories exist
@@ -159,11 +160,22 @@
 
 2. Validate all cases (15 min)
    ```bash
-   PYTHONUTF8=1 python quick-demo-check.py
+   set PYTHONUTF8=1 && .\venv\Scripts\python.exe quick-demo-check.py
    ```
    Expected: 7/7 PASS (6 cases + health check)
 
-3. Rehearse once (10 min)
+3. Run focused Phase 0 smoke test when checking hardening behavior
+   ```bash
+   .\venv\Scripts\python.exe smoke_test_phase0.py
+   ```
+   Expected: 5/5 PASS
+
+4. If running manual confirmation-flow smoke tests on Windows
+   - Use `.\\venv\\Scripts\\python.exe`
+   - Keep JSON payloads UTF-8 end-to-end
+   - If you test through inline shell scripts, prefer Unicode escape payloads for `บันทึก` and `ยกเลิก`
+
+5. Rehearse once (10 min)
    - Must be under 7 minutes
    - Practice opening and closing
    - Practice pointing to Agent badge on each case switch
@@ -183,5 +195,5 @@
 
 ---
 
-**Report Generated:** 24 มีนาคม 2569 (v0.4.11)
+**Report Generated:** 24 มีนาคม 2569 (v0.4.12)
 **For details, see:** PRE-DEMO-CHECKLIST.md

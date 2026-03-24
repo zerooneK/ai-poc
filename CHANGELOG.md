@@ -1,5 +1,13 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.4.12] — 24 มีนาคม 2569 · fix
+- เพิ่ม `smoke_test_phase0.py` เพื่อตรวจ Phase 0 hardening ด้วย Python stdlib (`urllib`) โดยไม่พึ่ง `requests`
+- ทำให้ smoke test คำยืนยันภาษาไทย (`บันทึก` / `ยกเลิก`) ไม่ให้ได้ false negative จาก Windows shell encoding โดยใช้ UTF-8 JSON และ Unicode escape
+- เพิ่ม retry แบบแคบๆ สำหรับ `basic chat` และจับ transport timeout/error ให้สคริปต์รายงาน FAIL พร้อมสาเหตุแทนการ crash
+- อัปเดตเอกสารที่เกี่ยวข้องให้สะท้อน root cause ของ false alarm และวิธีรัน smoke test ที่ถูกต้องบน Windows
+
+---
+
 ## [v0.4.11] — 24 มีนาคม 2569 · fix
 - ลด XSS risk ฝั่ง frontend โดยเปลี่ยนการ render ข้อมูลจาก server/LLM หลายจุดไปใช้ DOM API แทน `innerHTML`
 - sanitize markdown output ก่อนแทรกกลับเข้า DOM

@@ -10,7 +10,7 @@
 
 **เป้าหมายของ POC นี้:** Demo สดต่อหัวหน้าเพื่อขอ budget พัฒนาระบบ production จริง
 
-**สถานะ:** POC เสร็จสมบูรณ์ 100% · version **v0.4.11** · พร้อม demo
+**สถานะ:** POC เสร็จสมบูรณ์ 100% · version **v0.4.12** · พร้อม demo
 
 ---
 
@@ -86,6 +86,7 @@ ai-poc/
 ├── requirements.txt         ← flask, flask-cors, openai, python-dotenv, mcp, watchdog
 ├── test_cases.py            ← Automated test (6 use cases) — PYTHONUTF8=1 python test_cases.py
 ├── quick-demo-check.py      ← Full validation script (7 checks รวม health)
+├── smoke_test_phase0.py     ← Focused Phase 0 smoke test (5 checks, urllib-based, Thai confirmation safe on Windows)
 ├── CHANGELOG.md             ← Version history
 ├── PROJECT_SUMMARY.md       ← ไฟล์นี้
 ├── CLAUDE.md                ← Rules สำหรับ Claude Code
@@ -122,8 +123,9 @@ python app.py
 # เปิด http://localhost:5000
 
 # รัน tests (Windows ต้องมี PYTHONUTF8=1)
-PYTHONUTF8=1 python test_cases.py
-PYTHONUTF8=1 python quick-demo-check.py
+set PYTHONUTF8=1 && .\venv\Scripts\python.exe test_cases.py
+set PYTHONUTF8=1 && .\venv\Scripts\python.exe quick-demo-check.py
+.\venv\Scripts\python.exe smoke_test_phase0.py
 ```
 
 ---
@@ -170,6 +172,7 @@ PYTHONUTF8=1 python quick-demo-check.py
 | v0.4.9 | 24 มี.ค. 2569 | fix | Restrict runtime workspace changes to directories under the project root |
 | v0.4.10 | 24 มี.ค. 2569 | fix | Preserve pending confirmation state and avoid false save success when file creation fails |
 | v0.4.11 | 24 มี.ค. 2569 | fix | Sanitize markdown output and replace risky frontend HTML injection with safer DOM rendering |
+| v0.4.12 | 24 มี.ค. 2569 | fix | Add a focused Phase 0 smoke-test harness with Windows-safe Thai confirmation checks, retry, and timeout diagnostics |
 
 **กฎ versioning:** Minor bump (0.X.0) = agent/feature ใหม่ · Patch bump (0.0.X) = fix/tweak
 **ทุก commit ต้อง bump version ใน `index.html` และเพิ่ม entry ใน `CHANGELOG.md`**
@@ -223,6 +226,7 @@ Main area (margin-left: 256px)
 |---|---|
 | Reasoning models (minimax, deepseek-r1) return `content=None` | Orchestrator ต้องใช้ `max_tokens ≥ 1024` |
 | Windows terminal แสดงภาษาไทยแตก | prefix ด้วย `PYTHONUTF8=1` ทุกครั้ง |
+| Windows shell smoke test ส่ง `บันทึก` / `ยกเลิก` แล้วกลายเป็น `??????` | ใช้ `.\\venv\\Scripts\\python.exe`, ส่ง JSON เป็น UTF-8, และถ้าเขียน inline script บน Windows ให้ใช้ Unicode escape สำหรับคำภาษาไทย |
 | Model name ใน sidebar ไม่ตรง | ดึงจาก `/api/health` อัตโนมัติตอนโหลดหน้า |
 | marked.js ต้องการ internet | โหลดจาก CDN — ถ้า offline จะ fallback เป็น plain text |
 | Pending doc + new request → treated as edit (v0.4.4 fix) | เพิ่ม `_DISCARD_KEYWORDS` detection ใน app.py |
