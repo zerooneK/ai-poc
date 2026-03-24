@@ -457,7 +457,7 @@ def _is_save_intent(message: str) -> bool:
 
 def _suggest_filename(agent: str, content: str) -> str:
     """Generate a meaningful filename from agent type and document content."""
-    ts = datetime.now().strftime('%Y%m%d_%H%M')
+    ts = datetime.now().strftime('%Y%m%d_%H%M%S')
     m = re.search(r'#\s*(.{3,30})', content)
     if m:
         slug = re.sub(r'[^\w]', '_', m.group(1).strip())
@@ -478,10 +478,15 @@ def _write_temp(content: str, agent: str) -> str:
 
 
 def _move_to_workspace(temp_path: str, workspace: str) -> str:
-    """Atomically move staged file from temp to workspace. Returns filename."""
+    """Move staged file from temp to workspace. Returns filename.
+    Uses os.replace (atomic) on same drive, falls back to shutil.move for cross-drive."""
+    import shutil
     filename = os.path.basename(temp_path)
     dest = os.path.join(workspace, filename)
-    os.replace(temp_path, dest)  # os.replace is atomic and works cross-platform
+    try:
+        os.replace(temp_path, dest)  # Atomic on same drive
+    except OSError:
+        shutil.move(temp_path, dest)  # Fallback: cross-drive (copy + delete)
     logger.info(f"Moved to workspace: {filename}")
     return filename
 
@@ -631,6 +636,8 @@ def chat():
     pending_doc        = request.json.get('pending_doc', '').strip()
     pending_agent      = request.json.get('pending_agent', '').strip()
     pending_temp_paths = request.json.get('pending_temp_paths', [])
+    if not isinstance(pending_temp_paths, list):
+        pending_temp_paths = []
 
     def generate():
         with _workspace_lock:

@@ -902,7 +902,7 @@
     badge.innerHTML = 'รอคำสั่งงาน...';
     copyBtn.style.display = 'none';
     if (placeholder) placeholder.style.display = 'none';
-    _updateInputHint(false);
+    _updateInputHint(false, 0);
     input.value = '';
     input.style.height = 'auto';
 
@@ -1081,7 +1081,11 @@
             typingIndicator.style.display = 'none';
             btn.disabled = false;
             wasPMTask = false;
+            isPendingConfirmation = false;
+            pendingDoc = '';
+            pendingAgent = '';
             pendingTempPaths = [];
+            _updateInputHint(false, 0);
           }
         }
       }
@@ -1093,7 +1097,11 @@
       typingIndicator.style.display = 'none';
       btn.disabled = false;
       wasPMTask = false;
+      isPendingConfirmation = false;
+      pendingDoc = '';
+      pendingAgent = '';
       pendingTempPaths = [];
+      _updateInputHint(false, 0);
     }
   }
 
