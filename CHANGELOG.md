@@ -1,10 +1,14 @@
 # Changelog — Internal AI Assistant POC
 
-## [v0.4.13] — 24 มีนาคม 2569 · fix
+## [v0.4.21] — 24 มีนาคม 2569 · fix
 - เพิ่ม `start.sh` และ `setup.sh` สำหรับรัน app บน WSL โดยตรง
 - เปลี่ยน Flask host เป็น `0.0.0.0` (configurable ด้วย `FLASK_HOST`) เพื่อให้เข้าถึงได้จาก Windows browser ผ่าน WSL
 - อัปเดต CORS origins รองรับการเข้าถึงผ่าน WSL network
+- แก้ Python 3.10 SyntaxError: backslash ใน nested f-string expression
 
+---
+
+## [v0.4.20]
 ---
 
 ## [v0.4.12] — 24 มีนาคม 2569 · fix

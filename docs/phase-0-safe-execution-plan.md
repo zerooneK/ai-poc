@@ -128,15 +128,55 @@ Stop condition:
 ความเสี่ยง:
 - สูงสุดใน Phase 0
 
+### Step 5: แก้ Logic Bugs ใน `app.py` — Intent Detection + Missing `done` + PM Loop
+
+> เพิ่มเข้ามาจากการ review โค้ดรอบที่ 2 (2026-03-24) — bug เหล่านี้ค้นพบหลังจาก Phase 0 เดิมถูกเขียนขึ้น
+
+เป้าหมาย:
+- แก้ `_is_save_intent` ไม่ให้ trigger false positive จากคำว่า `ไม่ใช่`
+- แก้ `_is_discard_intent` ไม่ให้ trigger false positive จากวลีเช่น `สร้างสัญญาสำหรับงานใหม่`
+- เพิ่ม `done` event ใน `except json.JSONDecodeError` และ `except Exception` ของ `generate()`
+- แก้ PM subtask loop ให้ `break` เมื่อ subtask หนึ่งได้รับ `error` type event
+- แก้ `ยกเลิกครับ` (discard + suffix) ให้ไม่ fall through ไปยัง Orchestrator โดยไม่ตั้งใจ
+
+สิ่งที่ต้องระวัง:
+- การแก้ intent keywords ต้องไม่ทำให้ happy path (save/discard ปกติ) พัง
+- ห้ามเปลี่ยน word matching ทั้งหมดในครั้งเดียว — แก้ทีละ function
+- ทดสอบ edge case ภาษาไทยด้วย Unicode-safe payload เสมอ (ดู Windows Thai Input Note)
+
+แนวทางแบบ safe:
+- `_is_save_intent`: เพิ่ม negative check — ถ้า `ไม่ใช่` นำหน้า `ใช่` ให้ไม่นับ
+- `_is_discard_intent`: นำ `งานใหม่` และ `เริ่มใหม่` ออกจาก keyword set — เพราะเป็นวลีที่ใช้ในงานจริง ไม่ใช่แค่ cancel signal
+- `generate()` outer except: เพิ่ม `yield done` ก่อน `return` ทุก branch
+- PM loop: เพิ่ม `if d.get('type') == 'error': break` ใน subtask capture loop
+
+Smoke check หลังแก้:
+- พิมพ์ `"ไม่ใช่แบบนั้น แก้ด้วย"` ขณะ pending → ต้องไปที่ revise ไม่ใช่ save
+- พิมพ์ `"สร้างสัญญาสำหรับงานใหม่"` ขณะ pending → ต้องไปที่ Orchestrator ไม่ใช่ discard
+- simulate API error → frontend ต้องไม่ค้าง (ได้รับ `done` event)
+- พิมพ์ `"ยกเลิกครับ"` ขณะ pending → ต้องได้รับ discard confirm ไม่ใช่วิ่งไป Orchestrator
+
+Stop condition:
+- `บันทึก` หรือ `ยืนยัน` หยุด trigger save
+- `ยกเลิก` หยุด trigger discard
+- `done` event หายในกรณีปกติ
+
+ความเสี่ยง:
+- ปานกลาง (แตะ intent detection ซึ่งกระทบทุก confirmation flow)
+
+---
+
 ## Recommended Patch Strategy
 
-ให้แยกการแก้เป็น 4 patch หรือ 4 PR:
+ให้แยกการแก้เป็น 5 patch หรือ 5 PR:
 1. `app.py`: disable debug mode only
 2. `app.py`: workspace validation only
 3. `app.py`: save flow hardening only
 4. `index.html`: XSS mitigation only
+5. `app.py`: intent detection fixes + missing `done` + PM loop break
 
 ห้ามรวม `index.html` และ `app.py` ใน patch เดียวถ้ายังไม่จำเป็น
+Step 5 ต้องทำหลัง Step 3 เสร็จเท่านั้น เพราะแตะ confirmation flow เดียวกัน
 
 ## Rollback Rules
 
@@ -146,12 +186,19 @@ Stop condition:
 
 ## Minimum Smoke Test Checklist After Every Patch
 
+**Happy path (ทุก patch):**
 - [ ] เปิดหน้าเว็บได้
 - [ ] ส่งข้อความได้
 - [ ] response แสดงผลในหน้าได้
 - [ ] ไม่มี JavaScript error ใหม่ที่ทำให้ flow หลักหยุด
 - [ ] save/revise/discard ยังทำงานตามกรณีที่เกี่ยวข้อง
 - [ ] workspace flow ยังทำงานตามกรณีที่เกี่ยวข้อง
+
+**Error path (เพิ่มเติมจาก Step 5 เป็นต้นไป):**
+- [ ] API timeout หรือ error → frontend ไม่ค้าง (ได้รับ `done` event)
+- [ ] พิมพ์ `"ไม่ใช่แบบนั้น"` ขณะ pending → ไม่ trigger save
+- [ ] พิมพ์ `"สร้างสัญญาสำหรับงานใหม่"` ขณะ pending → ไปที่ Orchestrator ไม่ใช่ discard
+- [ ] พิมพ์ `"ยกเลิกครับ"` ขณะ pending → discard confirm ไม่ใช่งานใหม่
 
 คำสั่งแนะนำสำหรับรอบยืนยัน Phase 0:
 ```bash
@@ -172,11 +219,13 @@ Stop condition:
 
 ## Success Criteria
 
-จะถือว่า Phase 0 สำเร็จแบบปลอดภัยเมื่อ:
+จะถือว่า Phase 0 (รวม Step 5) สำเร็จแบบปลอดภัยเมื่อ:
 - ระบบยังใช้งาน flow หลักได้เหมือนเดิม
 - ไม่มี false success ใน save flow
 - path สำหรับ workspace ถูกจำกัดอย่างปลอดภัย
 - frontend ลดความเสี่ยง XSS ลงอย่างชัดเจน
+- intent detection ไม่มี false positive ที่พิสูจน์ได้จาก edge case ภาษาไทย
+- frontend ไม่ค้างเมื่อเกิด API error (ได้รับ `done` event ทุกกรณี)
 - ไม่มี regression ร้ายแรงใน chat, save, revise, discard, และ workspace flow
 
 ## Confidence Assessment
@@ -185,7 +234,9 @@ Stop condition:
 - โอกาสสำเร็จโดยไม่เกิด regression ร้ายแรง: ค่อนข้างสูง
 - งานความเสี่ยงต่ำสุด: ปิด `debug=True`
 - งานความเสี่ยงสูงสุด: ปรับ safe rendering ใน `index.html`
+- งานความเสี่ยงปานกลาง (เพิ่มใหม่): Step 5 — intent detection ที่แตะ confirmation flow ทั้งหมด
 
 ข้อสำคัญ:
 - แผนนี้ลดความเสี่ยงได้มาก แต่ไม่ใช่การรับประกัน 100%
 - จุดที่ต้องระวังที่สุดคือการทำให้ UI render เปลี่ยนพฤติกรรม และการทำให้ save flow เปลี่ยน contract โดยไม่ตั้งใจ
+- Step 5 ต้องทดสอบ edge case ภาษาไทยอย่างละเอียดก่อนถือว่าสำเร็จ เพราะ false positive/negative ของ intent detection มองไม่เห็นจาก happy path ทั่วไป

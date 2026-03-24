@@ -740,6 +740,71 @@
       opacity: 0.6;
       margin: 2px 0 6px;
     }
+
+    /* ── Pending Doc Confirmation Modal ─────────────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      backdrop-filter: blur(2px);
+    }
+    .modal-box {
+      background: var(--surface);
+      border: 1px solid var(--surface-hi);
+      border-radius: 14px;
+      padding: 28px 32px 24px;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+    }
+    .modal-icon {
+      font-size: 36px;
+      margin-bottom: 10px;
+    }
+    .modal-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0 0 6px;
+    }
+    .modal-body {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin: 0 0 20px;
+    }
+    .modal-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .modal-btn {
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: none;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .modal-btn:hover { opacity: 0.85; }
+    .modal-btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+    .modal-btn-secondary {
+      background: var(--surface-hi);
+      color: var(--text-primary);
+    }
+    .modal-btn-cancel {
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid var(--surface-hi);
+    }
   </style>
 </head>
 <body>
@@ -830,7 +895,7 @@
         <span class="material-symbols-outlined" style="font-size:13px">folder_open</span>
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
-      <span class="version-tag">v0.4.13</span>
+      <span class="version-tag">v0.4.21</span>
     </div>
   </header>
 
@@ -877,6 +942,20 @@
 
 </div>
 
+<!-- Pending Doc Confirmation Modal -->
+<div id="pendingModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <div class="modal-icon">📄</div>
+    <p class="modal-title">มีเอกสารที่ยังไม่ได้บันทึก</p>
+    <p class="modal-body">ต้องการดำเนินการอย่างไรกับคำสั่งใหม่นี้?</p>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-primary" id="modalSaveBtn">💾 บันทึกก่อน แล้วดำเนินการต่อ</button>
+      <button class="modal-btn modal-btn-secondary" id="modalSkipBtn">⏭ ข้ามและดำเนินการต่อ</button>
+      <button class="modal-btn modal-btn-cancel" id="modalCancelBtn">✕ ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
 <script>
   function fillInput(text) {
     const ta = document.getElementById('inputMsg');
@@ -895,6 +974,24 @@
   let isPendingConfirmation = false;
   let wasPMTask = false;
   let lastAgent = '';
+
+  // Queued task after "save first" modal choice
+  let queuedMessage = '';
+
+  // Auto-scroll lock — stops forcing scroll-to-bottom when user has scrolled up
+  let userScrolledUp = false;
+  const outputWrapEl = document.getElementById('outputWrap');
+  if (outputWrapEl) {
+    outputWrapEl.addEventListener('scroll', () => {
+      const threshold = 80;
+      const atBottom = outputWrapEl.scrollTop + outputWrapEl.clientHeight >= outputWrapEl.scrollHeight - threshold;
+      userScrolledUp = !atBottom;
+    });
+  }
+
+  function _scrollToBottom() {
+    if (!userScrolledUp) outputWrapEl.scrollTop = outputWrapEl.scrollHeight;
+  }
 
   function _updateInputHint(isPending, fileCount) {
     const hint = document.getElementById('inputHint');
@@ -1004,7 +1101,39 @@
     resultLine.appendChild(document.createTextNode(`${tool}: ${result}`));
   }
 
-  async function sendMessage() {
+  function _isNewTask(msg) {
+    const m = msg.toLowerCase();
+    const saveKw   = ['บันทึก','save','เซฟ','ยืนยัน','ตกลง','ok','โอเค','ได้เลย','ใช้ได้'];
+    const discardKw= ['ยกเลิก','cancel','ไม่เอา','ไม่บันทึก','ไม่ต้องการ','discard'];
+    const editKw   = ['แก้ไข','แก้','ปรับ','ปรับปรุง','เพิ่ม','ลบ','เปลี่ยน','แทนที่',
+                      'edit','modify','update','change','fix','adjust','add','remove','delete','replace','revise'];
+    return ![...saveKw,...discardKw,...editKw].some(k => m.includes(k));
+  }
+
+  function _showPendingModal(newTaskMessage) {
+    const modal = document.getElementById('pendingModal');
+    modal.style.display = 'flex';
+
+    document.getElementById('modalSaveBtn').onclick = () => {
+      modal.style.display = 'none';
+      queuedMessage = newTaskMessage;
+      sendMessage('บันทึก');
+    };
+    document.getElementById('modalSkipBtn').onclick = () => {
+      modal.style.display = 'none';
+      sendMessage(newTaskMessage);
+    };
+    document.getElementById('modalCancelBtn').onclick = () => {
+      modal.style.display = 'none';
+      const input = document.getElementById('inputMsg');
+      input.value = newTaskMessage;
+      input.style.height = 'auto';
+      input.style.height = input.scrollHeight + 'px';
+      input.focus();
+    };
+  }
+
+  async function sendMessage(overrideMessage) {
     const input = document.getElementById('inputMsg');
     const status = document.getElementById('status');
     const btn = document.getElementById('sendBtn');
@@ -1014,8 +1143,16 @@
     const placeholder = document.getElementById('chatPlaceholder');
     const outputWrap = document.getElementById('outputWrap');
 
-    const message = input.value.trim();
+    const message = overrideMessage !== undefined ? overrideMessage : input.value.trim();
     if (!message) return;
+
+    // Intercept: if pending doc and message is a new task → show modal
+    if (isPendingConfirmation && _isNewTask(message) && !overrideMessage) {
+      input.value = '';
+      input.style.height = 'auto';
+      _showPendingModal(message);
+      return;
+    }
 
     // Reset UI state
     startTime = Date.now();
@@ -1058,7 +1195,9 @@
     container.appendChild(aiBody);
     chatLog.appendChild(container);
 
-    outputWrap.scrollTop = outputWrap.scrollHeight;
+    // New message started — reset scroll lock so new bubble is visible
+    userScrolledUp = false;
+    outputWrapEl.scrollTop = outputWrapEl.scrollHeight;
 
     const agentMap = {
       hr:         { cls: 'agent-hr',         label: 'HR Agent',         icon: '👤' },
@@ -1110,6 +1249,7 @@
       let buffer = '';
       let outputText = '';
       let saveFailed = false;
+      let receivedAgentEvent = false;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -1129,6 +1269,7 @@
 
           } else if (data.type === 'agent') {
             lastAgent = data.agent;
+            receivedAgentEvent = true;
             const info = agentMap[data.agent] || agentMap['hr'];
             _setAgentBadge(badge, info, data.reason);
             container.classList.add('streaming');
@@ -1163,13 +1304,14 @@
             typingIndicator.style.display = 'none';
             btn.disabled = false;
             restorePendingState();
-            outputWrap.scrollTop = outputWrap.scrollHeight;
+            _scrollToBottom();
 
           } else if (data.type === 'text') {
-            if (outputText === '') { typingIndicator.style.display = 'none'; container.classList.remove('typing'); }
+            typingIndicator.style.display = 'none';
+            container.classList.remove('typing');
             outputText += data.content;
             currentOutputEl.textContent = outputText;
-            outputWrap.scrollTop = outputWrap.scrollHeight;
+            _scrollToBottom();
 
           } else if (data.type === 'subtask_done') {
             // Render current subtask output as markdown
@@ -1188,12 +1330,12 @@
             currentOutputEl = nextOutput;
             // Re-show typing indicator for next subtask
             aiBody.insertBefore(typingIndicator, currentOutputEl);
-            outputWrap.scrollTop = outputWrap.scrollHeight;
+            _scrollToBottom();
 
           } else if (data.type === 'done') {
             if (saveFailed) {
               wasPMTask = false;
-              outputWrap.scrollTop = outputWrap.scrollHeight;
+              _scrollToBottom();
               continue;
             }
             if (outputText) {
@@ -1203,22 +1345,32 @@
             const charCount = outputText.length.toLocaleString('th-TH');
             status.textContent = `✅ เสร็จสิ้น · ${elapsed} วินาที · ${charCount} ตัวอักษร`;
             container.classList.remove('streaming');
-            outputWrap.scrollTop = outputWrap.scrollHeight;
+            container.classList.remove('typing');
+            typingIndicator.style.display = 'none';
+            _scrollToBottom();
             copyBtn.style.display = 'flex';
             btn.disabled = false;
-            // Set pending confirmation state
+            // Set pending confirmation state — only for genuine new document generation
+            // (receivedAgentEvent = false means this was a save/discard/confirmation action)
             if (pendingTempPaths.length > 0) {
               // PM task: staged files waiting for confirm
               isPendingConfirmation = true;
               _updateInputHint(true, pendingTempPaths.length);
-            } else if (!wasPMTask && lastAgent && outputText) {
-              // Single-agent: content in memory waiting for confirm
+            } else if (receivedAgentEvent && !wasPMTask && lastAgent && outputText) {
+              // Single-agent: new document generated, waiting for confirm
               pendingDoc = outputText;
               pendingAgent = lastAgent;
               isPendingConfirmation = true;
               _updateInputHint(true, 0);
             }
             wasPMTask = false;
+
+            // Auto-send queued task if user chose "save first" in modal
+            if (queuedMessage && !isPendingConfirmation) {
+              const task = queuedMessage;
+              queuedMessage = '';
+              setTimeout(() => sendMessage(task), 50);
+            }
 
           } else if (data.type === 'error') {
             _setInlineError(currentOutputEl, `เกิดข้อผิดพลาด: ${data.message}`);

@@ -465,12 +465,16 @@ def run_agent_with_tools(system_prompt: str, user_message: str, workspace: str,
 
 _SAVE_KEYWORDS = {
     'บันทึก', 'save', 'เซฟ', 'ยืนยัน', 'ตกลง', 'ได้เลย', 'ok', 'โอเค',
-    'บันทึกได้', 'บันทึกเลย', 'บันทึกได้เลย', 'ใช่', 'ใช้ได้'
+    'บันทึกได้', 'บันทึกเลย', 'บันทึกได้เลย', 'ใช้ได้'
+    # นำ 'ใช่' ออก — เป็น substring ของ 'ไม่ใช่', 'ใช่ไหม' ฯลฯ ทำให้ false positive สูง
 }
+
+_SAVE_NEGATIVE_PREFIX = {'ไม่ใช่', 'ไม่ใช้'}
 
 _DISCARD_KEYWORDS = {
     'ยกเลิก', 'cancel', 'ไม่เอา', 'ไม่บันทึก', 'ไม่ต้องการ',
-    'งานใหม่', 'เริ่มใหม่', 'ข้ามไป', 'ลบทิ้ง', 'discard'
+    'ข้ามไป', 'ลบทิ้ง', 'discard'
+    # นำ 'งานใหม่' และ 'เริ่มใหม่' ออก — เป็นวลีที่ใช้ในงานจริง ไม่ใช่ cancel signal
 }
 
 _EDIT_KEYWORDS = {
@@ -484,6 +488,8 @@ _EDIT_KEYWORDS = {
 def _is_save_intent(message: str) -> bool:
     """Return True if user message signals intent to save the document."""
     msg = message.lower().strip()
+    if any(neg in msg for neg in _SAVE_NEGATIVE_PREFIX):
+        return False
     return any(kw in msg for kw in _SAVE_KEYWORDS)
 
 
@@ -721,7 +727,7 @@ def chat():
                 yield f"data: {json.dumps({'type': 'done'})}\n\n"
                 return
             # New task alongside discard — notify briefly then fall through to Orchestrator
-            yield f"data: {json.dumps({'type': 'text', 'content': '🗑️ ยกเลิกไฟล์เก่าแล้ว กำลังดำเนินการคำสั่งใหม่...'})}\n\n"
+            yield f"data: {json.dumps({'type': 'status', 'message': '🗑️ ยกเลิกไฟล์เก่าแล้ว กำลังดำเนินการคำสั่งใหม่...'})}\n\n"
 
         # ── Follow-up: single-agent doc confirming/editing ───────────────────
         if pending_doc and pending_agent:
@@ -737,7 +743,7 @@ def chat():
                     yield f"data: {json.dumps({'type': 'done'})}\n\n"
                     return
                 # Has additional task content — notify briefly then fall through to Orchestrator
-                yield f"data: {json.dumps({'type': 'text', 'content': '🗑️ ยกเลิกเอกสารเดิมแล้ว กำลังดำเนินการคำสั่งใหม่...'})}\n\n"
+                yield f"data: {json.dumps({'type': 'status', 'message': '🗑️ ยกเลิกเอกสารเดิมแล้ว กำลังดำเนินการคำสั่งใหม่...'})}\n\n"
             elif _is_edit_intent(user_input):
                 # Explicit edit instruction → revise the pending doc
                 for sse in handle_revise(pending_doc, pending_agent, user_input, workspace):
@@ -746,7 +752,7 @@ def chat():
                 return
             else:
                 # No save/discard/edit signal → treat as new task, discard pending doc silently
-                yield f"data: {json.dumps({'type': 'text', 'content': '🗑️ ยกเลิกเอกสารเดิมแล้ว กำลังดำเนินการคำสั่งใหม่...'})}\n\n"
+                yield f"data: {json.dumps({'type': 'status', 'message': '🗑️ ยกเลิกเอกสารเดิมแล้ว กำลังดำเนินการคำสั่งใหม่...'})}\n\n"
                 # fall through to Orchestrator
 
         try:
@@ -859,6 +865,7 @@ def chat():
 
                     # Stream content to frontend AND capture it for temp staging
                     subtask_chunks = []
+                    subtask_failed = False
                     for sse_line in stream_agent(sub_prompt, sub_task, sub_label, sub_max_tokens):
                         yield sse_line
                         if sse_line.startswith('data: '):
@@ -866,8 +873,12 @@ def chat():
                                 d = json.loads(sse_line[6:])
                                 if d.get('type') == 'text':
                                     subtask_chunks.append(d.get('content', ''))
+                                elif d.get('type') == 'error':
+                                    subtask_failed = True
                             except Exception:
                                 pass
+                    if subtask_failed:
+                        break
 
                     # Write captured content to temp staging (hidden from workspace/file panel)
                     full_content = ''.join(subtask_chunks)
@@ -903,9 +914,11 @@ def chat():
 
         except json.JSONDecodeError:
             yield f"data: {json.dumps({'type': 'error', 'message': 'Orchestrator ตอบกลับผิดรูปแบบ กรุณาลองใหม่'})}\n\n"
+            yield f"data: {json.dumps({'type': 'done'})}\n\n"
         except Exception as e:
             logger.error(f"Unexpected error in chat: {e}")
             yield f"data: {json.dumps({'type': 'error', 'message': 'เกิดข้อผิดพลาดจากระบบ กรุณาลองใหม่อีกครั้ง'})}\n\n"
+            yield f"data: {json.dumps({'type': 'done'})}\n\n"
 
     return Response(
         generate(),
