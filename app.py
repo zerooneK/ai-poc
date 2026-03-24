@@ -54,7 +54,8 @@ TEMP_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'temp'))
 os.makedirs(TEMP_DIR, exist_ok=True)
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:5000", "http://127.0.0.1:5000"])
+CORS(app, origins=["http://localhost:5000", "http://127.0.0.1:5000",
+                   "http://0.0.0.0:5000"])
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=OPENROUTER_API_KEY,
@@ -666,7 +667,8 @@ def handle_pm_save(temp_paths: list, workspace: str):
     count = len(saved)
     if count > 0:
         names = ', '.join(saved)
-        yield f"data: {json.dumps({'type': 'text', 'content': f'✅ บันทึก {count} ไฟล์เรียบร้อย\\n{names}'})}\n\n"
+        save_msg = '✅ บันทึก ' + str(count) + ' ไฟล์เรียบร้อย\n' + names
+        yield f"data: {json.dumps({'type': 'text', 'content': save_msg})}\n\n"
     else:
         yield f"data: {json.dumps({'type': 'text', 'content': 'ไม่พบไฟล์ที่รอบันทึก (อาจหมดอายุแล้ว) กรุณาสร้างเอกสารใหม่'})}\n\n"
 
@@ -1035,4 +1037,6 @@ def health():
 
 if __name__ == '__main__':
     debug_mode = os.getenv('FLASK_DEBUG', '').strip().lower() in {'1', 'true', 'yes', 'on'}
-    app.run(debug=debug_mode, port=5000, threaded=True)
+    # host='0.0.0.0' allows access from Windows browser when running in WSL
+    host = os.getenv('FLASK_HOST', '0.0.0.0')
+    app.run(debug=debug_mode, host=host, port=5000, threaded=True)

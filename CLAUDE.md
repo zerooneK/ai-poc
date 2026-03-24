@@ -48,7 +48,7 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 - **ทุก commit ต้อง bump version** ใน index.html พร้อมกัน
 - **ทุก commit ต้องเพิ่ม entry ใน CHANGELOG.md** ระบุ version, วันที่, ประเภท, รายละเอียด
 - เมื่อ bump Minor ให้ reset Patch เป็น 0 เสมอ (v0.2.3 → v0.3.0)
-- Version ปัจจุบัน: **v0.4.12**
+- Version ปัจจุบัน: **v0.4.13**
 
 ประวัติ:
 - v0.1.0 — initial POC (HR + Accounting agents, SSE streaming)
@@ -79,6 +79,7 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 - v0.4.10 — harden save confirmation flow: save fail แล้วไม่หลอกว่าสำเร็จ และไม่ทำ pending state หาย
 - v0.4.11 — harden frontend rendering: sanitize markdown และลดการใช้ innerHTML กับข้อมูลจาก server/LLM
 - v0.4.12 — smoke test harness hardening: เพิ่ม `smoke_test_phase0.py`, กัน false alarm จาก Windows shell encoding, และเพิ่ม retry/timeout diagnostics
+- v0.4.13 — WSL support: เพิ่ม start.sh/setup.sh, Flask host=0.0.0.0 สำหรับ access จาก Windows browser
 
 ## Rules ที่ต้องทำตามเสมอ
 - ภาษาไทยใน UI และ system prompts ทั้งหมด

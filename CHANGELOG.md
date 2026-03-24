@@ -1,5 +1,12 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.4.13] — 24 มีนาคม 2569 · fix
+- เพิ่ม `start.sh` และ `setup.sh` สำหรับรัน app บน WSL โดยตรง
+- เปลี่ยน Flask host เป็น `0.0.0.0` (configurable ด้วย `FLASK_HOST`) เพื่อให้เข้าถึงได้จาก Windows browser ผ่าน WSL
+- อัปเดต CORS origins รองรับการเข้าถึงผ่าน WSL network
+
+---
+
 ## [v0.4.12] — 24 มีนาคม 2569 · fix
 - เพิ่ม `smoke_test_phase0.py` เพื่อตรวจ Phase 0 hardening ด้วย Python stdlib (`urllib`) โดยไม่พึ่ง `requests`
 - ทำให้ smoke test คำยืนยันภาษาไทย (`บันทึก` / `ยกเลิก`) ไม่ให้ได้ false negative จาก Windows shell encoding โดยใช้ UTF-8 JSON และ Unicode escape
