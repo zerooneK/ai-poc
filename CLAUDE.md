@@ -48,7 +48,7 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 - **ทุก commit ต้อง bump version** ใน index.html พร้อมกัน
 - **ทุก commit ต้องเพิ่ม entry ใน CHANGELOG.md** ระบุ version, วันที่, ประเภท, รายละเอียด
 - เมื่อ bump Minor ให้ reset Patch เป็น 0 เสมอ (v0.2.3 → v0.3.0)
-- Version ปัจจุบัน: **v0.4.5**
+- Version ปัจจุบัน: **v0.4.8**
 
 ประวัติ:
 - v0.1.0 — initial POC (HR + Accounting agents, SSE streaming)
@@ -72,6 +72,9 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 - v0.4.3 — temp staging flow: PM subtasks stream full content → temp dir → confirm → move to workspace
 - v0.4.4 — fix PM Agent max_tokens 1024→6000 (subtask JSON truncation) + finish_reason logging
 - v0.4.5 — fix pending state hijack: ✕ ยกเลิก button + _is_discard_intent() backend safety net
+- v0.4.6 — fix fall-through routing: งานใหม่ขณะ pending → ยกเลิกเดิม + ส่งงานใหม่ไป Orchestrator
+- v0.4.7 — fix new-task-vs-edit: _is_edit_intent() แยก edit instruction ออกจากงานใหม่ ป้องกัน handle_revise() ถูกเรียกผิด
+- v0.4.8 — harden runtime default: ปิด Flask debug mode สำหรับการรันปกติ และเปิดได้ผ่าน FLASK_DEBUG
 
 ## Rules ที่ต้องทำตามเสมอ
 - ภาษาไทยใน UI และ system prompts ทั้งหมด

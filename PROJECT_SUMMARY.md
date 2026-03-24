@@ -10,7 +10,7 @@
 
 **เป้าหมายของ POC นี้:** Demo สดต่อหัวหน้าเพื่อขอ budget พัฒนาระบบ production จริง
 
-**สถานะ:** POC เสร็จสมบูรณ์ 100% · version **v0.4.5** · พร้อม demo
+**สถานะ:** POC เสร็จสมบูรณ์ 100% · version **v0.4.8** · พร้อม demo
 
 ---
 
@@ -166,6 +166,7 @@ PYTHONUTF8=1 python quick-demo-check.py
 | v0.4.3 | 24 มี.ค. 2569 | feat | Temp staging flow — PM subtasks stream to temp/, confirm → atomic move to workspace; single-agent confirmation unchanged |
 | v0.4.4 | 24 มี.ค. 2569 | fix | Pending doc discard bug — new requests treated as edit instead of new route; added `_DISCARD_KEYWORDS` detection in app.py |
 | v0.4.5 | 24 มี.ค. 2569 | feat | Cancel pending button — "✕ ยกเลิก" button in UI below input when pending confirmation (client-side clear) |
+| v0.4.8 | 24 มี.ค. 2569 | fix | Disable Flask debug mode by default; allow opt-in local debug via `FLASK_DEBUG=1` |
 
 **กฎ versioning:** Minor bump (0.X.0) = agent/feature ใหม่ · Patch bump (0.0.X) = fix/tweak
 **ทุก commit ต้อง bump version ใน `index.html` และเพิ่ม entry ใน `CHANGELOG.md`**

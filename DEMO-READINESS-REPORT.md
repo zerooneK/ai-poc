@@ -1,6 +1,6 @@
 # DEMO READINESS REPORT
 **Project:** Internal AI Assistant POC
-**Version:** v0.4.5
+**Version:** v0.4.8
 **Date:** 24 มีนาคม 2569
 **Assessor:** Claude Code
 
@@ -26,7 +26,7 @@
 
 - Flask Server: Running on port 5000
 - Health Endpoint: /api/health returns 200 with model name
-- UI Frontend: http://localhost:5000 loads (v0.4.5)
+- UI Frontend: http://localhost:5000 loads (v0.4.8)
 - Dependencies: All installed (flask, flask-cors, openai, python-dotenv, mcp, watchdog)
 - API Key: Configured in .env
 - Model: configurable via OPENROUTER_MODEL env var
@@ -95,9 +95,9 @@
 
 ---
 
-## UI FEATURES (v0.4.5)
+## UI FEATURES (v0.4.8)
 
-- ✅ Navbar: Fixed, frosted glass, version tag แสดง v0.4.5
+- ✅ Navbar: Fixed, frosted glass, version tag แสดง v0.4.8
 - ✅ Sidebar:
   - Workspace selector (dropdown + เลือก folder)
   - Agent badge (reserved space + idle state + overflow ellipsis)
@@ -130,7 +130,7 @@
 **30 Minutes Before Demo:**
 - [ ] Server running (`python app.py`)
 - [ ] Browser ready at http://localhost:5000
-- [ ] Version tag แสดง v0.4.5 ใน navbar (ขวาบน)
+- [ ] Version tag แสดง v0.4.8 ใน navbar (ขวาบน)
 - [ ] Model name แสดงใน sidebar footer
 - [ ] Workspace path configured in .env (WORKSPACE_PATH)
 - [ ] workspace/ and temp/ directories exist
@@ -181,5 +181,5 @@
 
 ---
 
-**Report Generated:** 24 มีนาคม 2569 (v0.4.5)
+**Report Generated:** 24 มีนาคม 2569 (v0.4.8)
 **For details, see:** PRE-DEMO-CHECKLIST.md

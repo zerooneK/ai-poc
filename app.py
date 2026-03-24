@@ -453,6 +453,13 @@ _DISCARD_KEYWORDS = {
     'งานใหม่', 'เริ่มใหม่', 'ข้ามไป', 'ลบทิ้ง', 'discard'
 }
 
+_EDIT_KEYWORDS = {
+    'แก้ไข', 'แก้', 'ปรับ', 'ปรับปรุง', 'ปรับแก้', 'เพิ่ม', 'ลบ',
+    'เปลี่ยน', 'แทนที่', 'เพิ่มเติม', 'ตัดออก', 'แก้ตรง', 'ปรับตรง',
+    'edit', 'modify', 'update', 'change', 'fix', 'adjust', 'add', 'remove',
+    'delete', 'replace', 'revise'
+}
+
 
 def _is_save_intent(message: str) -> bool:
     """Return True if user message signals intent to save the document."""
@@ -464,6 +471,18 @@ def _is_discard_intent(message: str) -> bool:
     """Return True if user message signals intent to discard the pending document."""
     msg = message.lower().strip()
     return any(kw in msg for kw in _DISCARD_KEYWORDS)
+
+
+def _is_pure_discard(message: str) -> bool:
+    """Return True if message is ONLY a discard keyword — no additional task content."""
+    msg = message.lower().strip()
+    return msg in _DISCARD_KEYWORDS
+
+
+def _is_edit_intent(message: str) -> bool:
+    """Return True if user message is an edit instruction for the current pending doc."""
+    msg = message.lower().strip()
+    return any(kw in msg for kw in _EDIT_KEYWORDS)
 
 
 def _suggest_filename(agent: str, content: str) -> str:
@@ -661,28 +680,46 @@ def chat():
             if _is_save_intent(user_input):
                 for sse in handle_pm_save(pending_temp_paths, workspace):
                     yield sse
-            else:
-                # Discard temp files (user cancelled or gave unexpected input)
-                for tp in pending_temp_paths:
-                    if _is_safe_temp_path(tp) and os.path.isfile(tp):
-                        os.remove(tp)
-                        logger.info(f"Discarded temp file: {os.path.basename(tp)}")
-                yield f"data: {json.dumps({'type': 'text', 'content': 'ยกเลิกการบันทึกไฟล์เรียบร้อย'})}\n\n"
-            yield f"data: {json.dumps({'type': 'done'})}\n\n"
-            return
+                yield f"data: {json.dumps({'type': 'done'})}\n\n"
+                return
+            # Discard temp files regardless
+            for tp in pending_temp_paths:
+                if _is_safe_temp_path(tp) and os.path.isfile(tp):
+                    os.remove(tp)
+                    logger.info(f"Discarded temp file: {os.path.basename(tp)}")
+            if _is_pure_discard(user_input):
+                # Pure cancel keyword — just confirm and stop
+                yield f"data: {json.dumps({'type': 'text', 'content': '🗑️ ยกเลิกการบันทึกไฟล์เรียบร้อย'})}\n\n"
+                yield f"data: {json.dumps({'type': 'done'})}\n\n"
+                return
+            # New task alongside discard — notify briefly then fall through to Orchestrator
+            yield f"data: {json.dumps({'type': 'text', 'content': '🗑️ ยกเลิกไฟล์เก่าแล้ว กำลังดำเนินการคำสั่งใหม่...'})}\n\n"
 
         # ── Follow-up: single-agent doc confirming/editing ───────────────────
         if pending_doc and pending_agent:
             if _is_save_intent(user_input):
                 for sse in handle_save(pending_doc, pending_agent, workspace):
                     yield sse
+                yield f"data: {json.dumps({'type': 'done'})}\n\n"
+                return
             elif _is_discard_intent(user_input):
-                yield f"data: {json.dumps({'type': 'text', 'content': '🗑️ ยกเลิกเอกสารแล้ว สามารถส่งคำสั่งใหม่ได้เลย'})}\n\n"
-            else:
+                if _is_pure_discard(user_input):
+                    # Pure cancel keyword — just confirm and stop
+                    yield f"data: {json.dumps({'type': 'text', 'content': '🗑️ ยกเลิกเอกสารแล้ว สามารถส่งคำสั่งใหม่ได้เลย'})}\n\n"
+                    yield f"data: {json.dumps({'type': 'done'})}\n\n"
+                    return
+                # Has additional task content — notify briefly then fall through to Orchestrator
+                yield f"data: {json.dumps({'type': 'text', 'content': '🗑️ ยกเลิกเอกสารเดิมแล้ว กำลังดำเนินการคำสั่งใหม่...'})}\n\n"
+            elif _is_edit_intent(user_input):
+                # Explicit edit instruction → revise the pending doc
                 for sse in handle_revise(pending_doc, pending_agent, user_input, workspace):
                     yield sse
-            yield f"data: {json.dumps({'type': 'done'})}\n\n"
-            return
+                yield f"data: {json.dumps({'type': 'done'})}\n\n"
+                return
+            else:
+                # No save/discard/edit signal → treat as new task, discard pending doc silently
+                yield f"data: {json.dumps({'type': 'text', 'content': '🗑️ ยกเลิกเอกสารเดิมแล้ว กำลังดำเนินการคำสั่งใหม่...'})}\n\n"
+                # fall through to Orchestrator
 
         try:
             # Step 1: Orchestrator เลือก Agent
@@ -967,4 +1004,5 @@ def health():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000, threaded=True)
+    debug_mode = os.getenv('FLASK_DEBUG', '').strip().lower() in {'1', 'true', 'yes', 'on'}
+    app.run(debug=debug_mode, port=5000, threaded=True)

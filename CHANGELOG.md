@@ -1,5 +1,27 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.4.8] — 24 มีนาคม 2569 · fix
+- ปิด Flask debug mode เป็นค่าเริ่มต้นสำหรับการรันปกติ
+- เพิ่มการเปิด debug ผ่าน environment variable `FLASK_DEBUG=1` แทนการ hardcode ใน `app.py`
+- อัปเดตเอกสาร setup/runtime ให้ตรงกับพฤติกรรมใหม่ของ backend
+
+---
+
+## [v0.4.7] — 24 มีนาคม 2569 · fix
+- **`_is_edit_intent()`**: เพิ่ม keyword set สำหรับคำสั่งแก้ไข (แก้ไข, ปรับ, เพิ่ม, ลบ, เปลี่ยน, edit, modify ฯลฯ)
+- Single-agent pending block ตรวจสอบ 4 cases ชัดเจน: save → บันทึก / discard → ยกเลิก / edit intent → revise / **อื่นๆ = งานใหม่ → fall through Orchestrator**
+- แก้ปัญหา: ส่งงานใหม่ขณะ pending → agent เดิมถูกเรียกแทน Orchestrator เลือกใหม่
+
+---
+
+## [v0.4.6] — 24 มีนาคม 2569 · fix
+- **Fall-through routing**: เมื่อ user ส่งงานใหม่ขณะมี pending state → ยกเลิกไฟล์เดิมแล้ว **ส่งงานใหม่ไปยัง Orchestrator ต่อ** (ไม่ตัดจบอีกต่อไป)
+- เพิ่ม `_is_pure_discard()` helper — ตรวจสอบว่า message เป็นแค่ keyword ยกเลิกล้วนๆ (exact match) ไม่ใช่ substring
+- PM pending block: save → done+return / pure discard → confirm+done+return / งานใหม่ → แจ้ง "ยกเลิกแล้ว" แล้ว **fall through ไปยัง Orchestrator**
+- Single-agent pending block: เพิ่ม branch เดียวกัน — pure discard → stop, discard+งานใหม่ → fall through
+
+---
+
 ## [v0.4.5] — 24 มีนาคม 2569 · fix
 - **✕ ยกเลิก button**: ปรากฏใต้ input เฉพาะเมื่ออยู่ใน confirmation state — คลิกเพื่อ clear pending state ทันที (client-side, ไม่ต้องส่ง request)
 - **Discard keywords backend**: เพิ่ม `_is_discard_intent()` — ตรวจจับ "ยกเลิก", "cancel", "งานใหม่" ฯลฯ ใน single-agent pending flow
