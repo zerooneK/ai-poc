@@ -1,5 +1,13 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.4.4] — 24 มีนาคม 2569 · fix
+- **PM Agent max_tokens**: เพิ่มจาก 1024 → 6000 — แก้ปัญหา subtask JSON ถูกตัดกลางคัน
+  (1024 ไม่เพียงพอเมื่อ task descriptions ยาวแบบ self-contained)
+- เพิ่ม `finish_reason` logging สำหรับ Orchestrator และ PM Agent
+  เพื่อตรวจจับการ truncation ในอนาคต (warning เมื่อ finish_reason == 'length')
+
+---
+
 ## [v0.4.3] — 24 มีนาคม 2569 · feat
 - **Temp staging flow**: PM subtasks ใช้ `stream_agent()` แทน `run_agent_with_tools()` — stream เนื้อหาเต็มให้ user เห็น real-time
 - **Temp directory**: `temp/` staging area — ไฟล์รอ confirm ที่นี่ ไม่ปรากฏใน workspace/file panel

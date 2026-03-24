@@ -694,7 +694,10 @@ def chat():
                 yield f"data: {json.dumps({'type': 'error', 'message': 'เกิดข้อผิดพลาดจาก API กรุณาลองใหม่'})}\n\n"
                 return
 
-            raw = orchestrator_response.choices[0].message.content
+            orch_choice = orchestrator_response.choices[0]
+            if orch_choice.finish_reason == 'length':
+                logger.warning("Orchestrator response truncated by max_tokens")
+            raw = orch_choice.message.content
             if not raw:
                 yield f"data: {json.dumps({'type': 'error', 'message': 'Orchestrator ไม่ตอบกลับ กรุณาลองใหม่'})}\n\n"
                 return
@@ -717,7 +720,7 @@ def chat():
                 try:
                     pm_response = client.chat.completions.create(
                         model=MODEL,
-                        max_tokens=1024,
+                        max_tokens=6000,
                         messages=[
                             {"role": "system", "content": PM_PROMPT},
                             {"role": "user", "content": user_input}
@@ -727,7 +730,14 @@ def chat():
                     yield f"data: {json.dumps({'type': 'error', 'message': f'PM Agent เกิดข้อผิดพลาด: {str(e)}'})}\n\n"
                     return
 
-                raw_pm = pm_response.choices[0].message.content or ''
+                # Log finish_reason to detect future truncation issues
+                pm_choice = pm_response.choices[0]
+                if pm_choice.finish_reason == 'length':
+                    logger.warning("PM Agent response truncated by max_tokens — consider increasing further")
+                else:
+                    logger.info(f"PM Agent finish_reason: {pm_choice.finish_reason}")
+
+                raw_pm = pm_choice.message.content or ''
                 try:
                     raw_pm = _extract_json(raw_pm)
                     pm_data = json.loads(raw_pm)
