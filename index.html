@@ -591,13 +591,40 @@
     }
     .send-btn .material-symbols-outlined { font-size: 18px; }
 
+    .input-hint-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 6px;
+    }
     .input-hint {
       text-align: center;
       font-size: 0.6rem;
       letter-spacing: 0.15em;
       color: var(--on-surface-2);
       opacity: 0.4;
-      margin-top: 6px;
+      margin: 0;
+    }
+    .cancel-pending-btn {
+      display: none;
+      background: none;
+      border: 1px solid var(--on-surface-2);
+      border-radius: 10px;
+      font-size: 0.6rem;
+      letter-spacing: 0.08em;
+      padding: 2px 9px;
+      cursor: pointer;
+      color: var(--on-surface-2);
+      opacity: 0.55;
+      transition: color 0.2s, border-color 0.2s, opacity 0.2s;
+      font-family: 'Inter', 'Sarabun', sans-serif;
+      flex-shrink: 0;
+    }
+    .cancel-pending-btn:hover {
+      opacity: 1;
+      color: #e05252;
+      border-color: #e05252;
     }
 
     /* ─── Workspace Selector (Navbar) ───────────────────────────────── */
@@ -803,7 +830,7 @@
         <span class="material-symbols-outlined" style="font-size:13px">folder_open</span>
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
-      <span class="version-tag">v0.4.4</span>
+      <span class="version-tag">v0.4.5</span>
     </div>
   </header>
 
@@ -839,7 +866,10 @@
             <span class="material-symbols-outlined">arrow_upward</span>
           </button>
         </div>
-        <p class="input-hint">INTERNAL POC · DRAFT OUTPUT ONLY</p>
+        <div class="input-hint-row">
+          <p class="input-hint" id="inputHint">INTERNAL POC · DRAFT OUTPUT ONLY</p>
+          <button class="cancel-pending-btn" id="cancelPendingBtn" onclick="cancelPending()">✕ ยกเลิก</button>
+        </div>
       </div>
 
     </div>
@@ -867,18 +897,32 @@
   let lastAgent = '';
 
   function _updateInputHint(isPending, fileCount) {
-    const hint = document.querySelector('.input-hint');
+    const hint = document.getElementById('inputHint');
+    const cancelBtn = document.getElementById('cancelPendingBtn');
     if (!hint) return;
     if (isPending) {
       const msg = (fileCount > 0)
-        ? `💾 พิมพ์ บันทึก เพื่อบันทึก ${fileCount} ไฟล์ หรือ ยกเลิก เพื่อล้างทิ้ง`
-        : '💬 พิมพ์ บันทึก เพื่อบันทึกไฟล์ หรือระบุสิ่งที่ต้องการแก้ไข';
+        ? `💾 พิมพ์ บันทึก เพื่อบันทึก ${fileCount} ไฟล์ หรือ ✏️ ระบุสิ่งที่แก้ไข`
+        : '💬 พิมพ์ บันทึก เพื่อบันทึกไฟล์ หรือ ✏️ ระบุสิ่งที่แก้ไข';
       hint.textContent = msg;
       hint.style.color = 'var(--primary)';
+      hint.style.opacity = '1';
+      if (cancelBtn) cancelBtn.style.display = 'inline-block';
     } else {
       hint.textContent = 'INTERNAL POC · DRAFT OUTPUT ONLY';
       hint.style.color = '';
+      hint.style.opacity = '';
+      if (cancelBtn) cancelBtn.style.display = 'none';
     }
+  }
+
+  function cancelPending() {
+    isPendingConfirmation = false;
+    pendingDoc = '';
+    pendingAgent = '';
+    pendingTempPaths = [];
+    _updateInputHint(false, 0);
+    // Temp files in temp/ will be auto-cleaned after 1hr by _cleanup_old_temp()
   }
 
   async function sendMessage() {

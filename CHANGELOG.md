@@ -1,5 +1,13 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.4.5] — 24 มีนาคม 2569 · fix
+- **✕ ยกเลิก button**: ปรากฏใต้ input เฉพาะเมื่ออยู่ใน confirmation state — คลิกเพื่อ clear pending state ทันที (client-side, ไม่ต้องส่ง request)
+- **Discard keywords backend**: เพิ่ม `_is_discard_intent()` — ตรวจจับ "ยกเลิก", "cancel", "งานใหม่" ฯลฯ ใน single-agent pending flow
+- แก้ bug: ส่งงานใหม่ขณะมี pending doc → ถูกตีความเป็น edit แทน → ตอนนี้กด ✕ หรือพิมพ์ "ยกเลิก" เพื่อ clear แล้วส่งงานใหม่ผ่าน Orchestrator ได้
+- Hint text ปรับเป็น "💬 พิมพ์ บันทึก หรือ ✏️ ระบุสิ่งที่แก้ไข" ชัดเจนขึ้น
+
+---
+
 ## [v0.4.4] — 24 มีนาคม 2569 · fix
 - **PM Agent max_tokens**: เพิ่มจาก 1024 → 6000 — แก้ปัญหา subtask JSON ถูกตัดกลางคัน
   (1024 ไม่เพียงพอเมื่อ task descriptions ยาวแบบ self-contained)

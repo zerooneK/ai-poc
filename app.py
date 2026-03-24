@@ -448,11 +448,22 @@ _SAVE_KEYWORDS = {
     'บันทึกได้', 'บันทึกเลย', 'บันทึกได้เลย', 'ใช่', 'ใช้ได้'
 }
 
+_DISCARD_KEYWORDS = {
+    'ยกเลิก', 'cancel', 'ไม่เอา', 'ไม่บันทึก', 'ไม่ต้องการ',
+    'งานใหม่', 'เริ่มใหม่', 'ข้ามไป', 'ลบทิ้ง', 'discard'
+}
+
 
 def _is_save_intent(message: str) -> bool:
     """Return True if user message signals intent to save the document."""
     msg = message.lower().strip()
     return any(kw in msg for kw in _SAVE_KEYWORDS)
+
+
+def _is_discard_intent(message: str) -> bool:
+    """Return True if user message signals intent to discard the pending document."""
+    msg = message.lower().strip()
+    return any(kw in msg for kw in _DISCARD_KEYWORDS)
 
 
 def _suggest_filename(agent: str, content: str) -> str:
@@ -665,6 +676,8 @@ def chat():
             if _is_save_intent(user_input):
                 for sse in handle_save(pending_doc, pending_agent, workspace):
                     yield sse
+            elif _is_discard_intent(user_input):
+                yield f"data: {json.dumps({'type': 'text', 'content': '🗑️ ยกเลิกเอกสารแล้ว สามารถส่งคำสั่งใหม่ได้เลย'})}\n\n"
             else:
                 for sse in handle_revise(pending_doc, pending_agent, user_input, workspace):
                     yield sse
