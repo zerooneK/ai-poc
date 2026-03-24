@@ -43,7 +43,7 @@ Output: เอกสารภาษาไทยพร้อมใช้
 
 **สถานะ POC: เสร็จสมบูรณ์ 100% — พร้อม demo**
 
-### ทำอะไรไปบ้างคืนนี้ (v0.1.0 → v0.4.11)
+### ทำอะไรไปบ้างคืนนี้ (v0.1.0 → v0.4.20)
 - ✅ Setup เสร็จครบ: app.py, index.html, requirements.txt, .env.example, .gitignore
 - ✅ เปลี่ยน AI provider จาก Anthropic SDK → OpenAI SDK + OpenRouter API
 - ✅ Environment variables: OPENROUTER_API_KEY, OPENROUTER_MODEL (config ได้โดยไม่แก้โค้ด)
@@ -77,6 +77,14 @@ Output: เอกสารภาษาไทยพร้อมใช้
 - ✅ Workspace hardening — เปลี่ยน workspace ผ่าน runtime ได้เฉพาะ directory ภายใต้ project root (v0.4.9)
 - ✅ Save flow hardening — ถ้าบันทึกล้มเหลวจะไม่แสดง success ปลอม และคง pending state เดิมไว้ (v0.4.10)
 - ✅ Frontend rendering hardening — sanitize markdown และลดจุดเสี่ยง XSS จากการใช้ `innerHTML` กับข้อมูลภายนอก (v0.4.11)
+- ✅ เพิ่ม `done` event ใน outer except blocks ป้องกัน frontend ค้างเมื่อเกิด error (v0.4.13)
+- ✅ PM subtask loop break เมื่อ subtask error ป้องกัน loop วิ่งต่อหลังพัง (v0.4.14)
+- ✅ นำ 'งานใหม่'/'เริ่มใหม่' ออกจาก _DISCARD_KEYWORDS ป้องกัน false positive (v0.4.15)
+- ✅ นำ 'ใช่' ออกจาก _SAVE_KEYWORDS + _SAVE_NEGATIVE_PREFIX ป้องกัน save false positive (v0.4.16)
+- ✅ receivedAgentEvent flag ป้องกัน save text ถูกตีความเป็น pending doc หลัง save สำเร็จ (v0.4.17)
+- ✅ userScrolledUp flag หยุด auto-scroll เมื่อ user เลื่อนขึ้นอ่านระหว่าง streaming (v0.4.18)
+- ✅ typing indicator ค้าง + discard notification ปนในเอกสาร: เปลี่ยนเป็น status type + always-hide typing on text (v0.4.19)
+- ✅ pending doc confirmation modal — popup ถามก่อนยกเลิก (บันทึกก่อน/ข้ามไป/ยกเลิก) + auto-send queue (v0.4.20)
 
 ### ปัญหาที่เจอและแก้แล้ว
 - **Reasoning models (minimax) ใช้ thinking tokens** → ต้องตั้ง max_tokens ≥1024 สำหรับ Orchestrator (ไม่งั้น content=None)
@@ -103,10 +111,10 @@ Output: เอกสารภาษาไทยพร้อมใช้
 ai-poc/
 ├── app.py                   ← Flask backend + Orchestrator + HR/Accounting/Manager/PM agents + Agentic loop
 ├── mcp_server.py            ← MCP Filesystem Server (FastMCP) + 5 tools (Layer A/B)
-├── index.html               ← Web UI ไฟล์เดียว (v0.4.11 — chat bubbles + confirmation flow + cancel button)
+├── index.html               ← Web UI ไฟล์เดียว (v0.4.20 — chat bubbles + confirmation flow + cancel button + confirmation modal)
 ├── test_cases.py            ← Automated test script (6 use cases)
 ├── quick-demo-check.py      ← Full validation (7 checks: 6 cases + health)
-├── CHANGELOG.md             ← Version history (v0.1.0 → v0.4.11)
+├── CHANGELOG.md             ← Version history (v0.1.0 → v0.4.20)
 ├── PROJECT_SUMMARY.md       ← ภาพรวมโปรเจกต์สำหรับ AI context
 ├── CLAUDE.md                ← Rules สำหรับ Claude Code
 ├── PRE-DEMO-CHECKLIST.md    ← Checklist 30 นาทีก่อน demo

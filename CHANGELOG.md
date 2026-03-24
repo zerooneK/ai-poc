@@ -1,5 +1,49 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.4.20] — 24 มีนาคม 2569 · feature
+- **Pending doc confirmation modal**: เมื่อส่งงานใหม่ขณะมี pending doc → popup ถาม "บันทึกก่อน / ข้ามและดำเนินการต่อ / ยกเลิก" แทนที่จะยกเลิกอัตโนมัติทันที
+- "บันทึกก่อน" → บันทึกไฟล์เดิม แล้ว auto-send งานใหม่ต่อทันที
+- "ยกเลิก" → คืน message กลับไปใน textarea ไม่สูญหาย
+
+---
+
+## [v0.4.19] — 24 มีนาคม 2569 · fix
+- **Fix A**: เปลี่ยน discard notification 3 จุดจาก `type:'text'` → `type:'status'` — ป้องกันข้อความ "🗑️ ยกเลิก..." ปนอยู่ในเนื้อหาเอกสาร
+- **Fix B**: `text` handler hide typing indicator เสมอ (ลบเงื่อนไข `outputText===''`) — ป้องกัน typing ค้างหลัง `agent` event re-show
+- **Fix C**: `done` handler เพิ่ม `remove('typing')` + `display='none'` — กันเผื่อ typing ค้างทุก path
+
+---
+
+## [v0.4.18] — 24 มีนาคม 2569 · fix
+- **scroll lock during streaming**: เพิ่ม `userScrolledUp` flag + scroll listener — auto-scroll หยุดทันทีเมื่อ user scroll ขึ้น และกลับมาทำงานเมื่อ scroll ลงล่างอีกครั้ง
+
+---
+
+## [v0.4.17] — 24 มีนาคม 2569 · fix
+- **fix stale pending after save**: เพิ่ม flag `receivedAgentEvent` ใน frontend — pending state จะถูก set เฉพาะเมื่อมี `type: 'agent'` event ในรอบนั้น ป้องกัน save confirmation text ถูกตีความเป็น pending doc ใหม่
+
+---
+
+## [v0.4.16] — 24 มีนาคม 2569 · fix
+- **5D**: นำ `'ใช่'` ออกจาก `_SAVE_KEYWORDS` + เพิ่ม `_SAVE_NEGATIVE_PREFIX` (`ไม่ใช่`, `ไม่ใช้`) — ป้องกัน `_is_save_intent()` trigger เมื่อ user พิมพ์ "ไม่ใช่แบบนั้น" หรือ "ใช่ไหม"
+
+---
+
+## [v0.4.15] — 24 มีนาคม 2569 · fix
+- **5C**: นำ `'งานใหม่'` และ `'เริ่มใหม่'` ออกจาก `_DISCARD_KEYWORDS` — ป้องกัน false positive เมื่อ user พิมพ์คำเหล่านี้ในบริบทของงานจริง
+
+---
+
+## [v0.4.14] — 24 มีนาคม 2569 · fix
+- **5B**: PM subtask loop หยุดทันทีเมื่อ subtask ใดได้รับ `error` event — ป้องกัน loop วิ่งต่อหลัง subtask พัง
+
+---
+
+## [v0.4.13] — 24 มีนาคม 2569 · fix
+- **5A**: เพิ่ม `done` event ใน `except json.JSONDecodeError` และ `except Exception` ของ `generate()` — ป้องกัน frontend ค้างเมื่อเกิด error ที่ไม่คาดไว้
+
+---
+
 ## [v0.4.12] — 24 มีนาคม 2569 · fix
 - เพิ่ม `smoke_test_phase0.py` เพื่อตรวจ Phase 0 hardening ด้วย Python stdlib (`urllib`) โดยไม่พึ่ง `requests`
 - ทำให้ smoke test คำยืนยันภาษาไทย (`บันทึก` / `ยกเลิก`) ไม่ให้ได้ false negative จาก Windows shell encoding โดยใช้ UTF-8 JSON และ Unicode escape

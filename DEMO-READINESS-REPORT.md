@@ -1,6 +1,6 @@
 # DEMO READINESS REPORT
 **Project:** Internal AI Assistant POC
-**Version:** v0.4.12
+**Version:** v0.4.20
 **Date:** 24 มีนาคม 2569
 **Assessor:** Claude Code
 
@@ -26,7 +26,7 @@
 
 - Flask Server: Running on port 5000
 - Health Endpoint: /api/health returns 200 with model name
-- UI Frontend: http://localhost:5000 loads (v0.4.12)
+- UI Frontend: http://localhost:5000 loads (v0.4.20)
 - Dependencies: All installed (flask, flask-cors, openai, python-dotenv, mcp, watchdog)
 - API Key: Configured in .env
 - Model: configurable via OPENROUTER_MODEL env var
@@ -96,9 +96,9 @@
 
 ---
 
-## UI FEATURES (v0.4.12)
+## UI FEATURES (v0.4.20)
 
-- ✅ Navbar: Fixed, frosted glass, version tag แสดง v0.4.12
+- ✅ Navbar: Fixed, frosted glass, version tag แสดง v0.4.20
 - ✅ Sidebar:
   - Workspace selector (dropdown + เลือก folder)
   - Agent badge (reserved space + idle state + overflow ellipsis)
@@ -124,6 +124,9 @@
 - ✅ Input area: button absolute inside container (ChatGPT style), auto-resize textarea
 - ✅ Markdown Rendering: Output render เป็น HTML หลัง done (ตาราง, หัวข้อ, bold)
 - ✅ Frontend rendering hardening: sanitize markdown และลดการใช้ `innerHTML` กับข้อมูลจาก server/LLM
+- ✅ Scroll lock: `userScrolledUp` flag หยุด auto-scroll เมื่อ user เลื่อนขึ้นอ่านระหว่าง streaming
+- ✅ Typing indicator fix: ใช้ status type และซ่อน typing indicator ทันทีเมื่อได้รับ text chunk
+- ✅ Pending doc confirmation modal: popup ถามก่อนยกเลิก (บันทึกก่อน/ข้ามไป/ยกเลิก) + auto-send queue
 - ✅ Dark/Light mode toggle (dark mode สว่างขึ้น)
 
 ---
@@ -133,7 +136,7 @@
 **30 Minutes Before Demo:**
 - [ ] Server running (`python app.py`)
 - [ ] Browser ready at http://localhost:5000
-- [ ] Version tag แสดง v0.4.12 ใน navbar (ขวาบน)
+- [ ] Version tag แสดง v0.4.20 ใน navbar (ขวาบน)
 - [ ] Model name แสดงใน sidebar footer
 - [ ] Workspace path configured in .env (WORKSPACE_PATH)
 - [ ] workspace/ and temp/ directories exist
@@ -195,5 +198,5 @@
 
 ---
 
-**Report Generated:** 24 มีนาคม 2569 (v0.4.12)
+**Report Generated:** 24 มีนาคม 2569 (v0.4.20)
 **For details, see:** PRE-DEMO-CHECKLIST.md

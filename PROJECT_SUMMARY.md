@@ -10,7 +10,7 @@
 
 **เป้าหมายของ POC นี้:** Demo สดต่อหัวหน้าเพื่อขอ budget พัฒนาระบบ production จริง
 
-**สถานะ:** POC เสร็จสมบูรณ์ 100% · version **v0.4.12** · พร้อม demo
+**สถานะ:** POC เสร็จสมบูรณ์ 100% · version **v0.4.20** · พร้อม demo
 
 ---
 
@@ -173,6 +173,14 @@ set PYTHONUTF8=1 && .\venv\Scripts\python.exe quick-demo-check.py
 | v0.4.10 | 24 มี.ค. 2569 | fix | Preserve pending confirmation state and avoid false save success when file creation fails |
 | v0.4.11 | 24 มี.ค. 2569 | fix | Sanitize markdown output and replace risky frontend HTML injection with safer DOM rendering |
 | v0.4.12 | 24 มี.ค. 2569 | fix | Add a focused Phase 0 smoke-test harness with Windows-safe Thai confirmation checks, retry, and timeout diagnostics |
+| v0.4.13 | 24 มี.ค. 2569 | fix | เพิ่ม `done` event ใน outer except blocks ป้องกัน frontend ค้างเมื่อเกิด error |
+| v0.4.14 | 24 มี.ค. 2569 | fix | PM subtask loop break เมื่อ subtask error ป้องกัน loop วิ่งต่อหลังพัง |
+| v0.4.15 | 24 มี.ค. 2569 | fix | นำ 'งานใหม่'/'เริ่มใหม่' ออกจาก _DISCARD_KEYWORDS ป้องกัน false positive |
+| v0.4.16 | 24 มี.ค. 2569 | fix | นำ 'ใช่' ออกจาก _SAVE_KEYWORDS + _SAVE_NEGATIVE_PREFIX ป้องกัน save false positive |
+| v0.4.17 | 24 มี.ค. 2569 | fix | receivedAgentEvent flag ป้องกัน save text ถูกตีความเป็น pending doc หลัง save สำเร็จ |
+| v0.4.18 | 24 มี.ค. 2569 | fix | userScrolledUp flag หยุด auto-scroll เมื่อ user เลื่อนขึ้นอ่านระหว่าง streaming |
+| v0.4.19 | 24 มี.ค. 2569 | fix | typing indicator ค้าง + discard notification ปนในเอกสาร: เปลี่ยนเป็น status type + always-hide typing on text |
+| v0.4.20 | 24 มี.ค. 2569 | feat | pending doc confirmation modal — popup ถามก่อนยกเลิก (บันทึกก่อน/ข้ามไป/ยกเลิก) + auto-send queue |
 
 **กฎ versioning:** Minor bump (0.X.0) = agent/feature ใหม่ · Patch bump (0.0.X) = fix/tweak
 **ทุก commit ต้อง bump version ใน `index.html` และเพิ่ม entry ใน `CHANGELOG.md`**
@@ -207,6 +215,7 @@ Main area (margin-left: 256px)
   │       - แสดง "พิมพ์ 'บันทึก' เพื่อยืนยัน หรือบอกให้แก้ไข"
   │       - Input hint เปลี่ยน placeholder: "💬 พิมพ์ บันทึก หรือ ✏️ ระบุสิ่งที่แก้ไข"
   │       - "✕ ยกเลิก" button ปรากฏเมื่อ pending confirmation
+  │       - Confirmation modal: popup ถามก่อนยกเลิก (บันทึกก่อน/ข้ามไป/ยกเลิก) + auto-send queue
   └── Fixed input-footer
       ├── input-wrapper (backdrop-filter blur)
       └── input-container (position: relative, border-radius: 20px)
@@ -217,6 +226,10 @@ Main area (margin-left: 256px)
 **Markdown Rendering Flow:**
 - ระหว่าง streaming: `output.textContent = outputText` (plain text)
 - เมื่อ `done` event: `output.innerHTML = marked.parse(outputText)` → switch เป็น HTML
+
+**Scroll Behavior:**
+- Auto-scroll ระหว่าง streaming เมื่อ user ไม่ได้เลื่อนขึ้น
+- `userScrolledUp` flag หยุด auto-scroll เมื่อ user เลื่อนขึ้นอ่าน (v0.4.18)
 
 ---
 
