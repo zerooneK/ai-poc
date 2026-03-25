@@ -268,7 +268,8 @@ print(f"\n{'='*60}")
 print("SUMMARY")
 print('='*60)
 for label, ok in results:
-    print(f"  {'\u2705' if ok else '\u274c'}  {label}")
+    icon = "\u2705" if ok else "\u274c"
+    print(f"  {icon}  {label}")
 passed = sum(1 for _, ok in results if ok)
 print(f"\n  {passed}/{len(results)} passed")
 if passed == len(results):

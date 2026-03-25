@@ -41,7 +41,12 @@ Output: เอกสารภาษาไทยพร้อมใช้
 
 ## สรุปความคืบหน้า — 24 มีนาคม 2569
 
-**สถานะ: Prototype Phase — v0.8.5**
+**สถานะ: Prototype Phase — v0.9.0**
+
+### v0.9.0 — Conversation Memory (25 มีนาคม 2569)
+- ✅ ส่ง last 10 turns ไปยัง Orchestrator + PM Agent + single agents ทุก request
+- ✅ agents เข้าใจ context ก่อนหน้าโดยไม่ต้องพิมพ์ "แก้ไข"
+- ✅ history cleared เมื่อเปลี่ยน workspace
 
 ### v0.8.5 — Bug Fix: Wrong File Context (25 มีนาคม 2569)
 - ✅ ป้องกัน agents อ่านไฟล์ workspace ผิดบริบท — อ่านเฉพาะเมื่อ user ระบุชื่อไฟล์หรือขอแก้ไขเอกสารเดิม
@@ -157,7 +162,7 @@ ai-poc/
 ├── db.py                    ← SQLite persistence layer (jobs, saved_files) — graceful degradation
 ├── mcp_server.py            ← MCP Filesystem Server (FastMCP) + 5 tools (Layer A/B)
 ├── converter.py             ← Multi-format export (.txt/.docx/.xlsx/.pdf)
-├── index.html               ← Web UI ไฟล์เดียว (v0.8.5 — workspace picker modal + format popup)
+├── index.html               ← Web UI ไฟล์เดียว (v0.9.0 — workspace picker modal + format popup + conversation memory)
 ├── history.html             ← Standalone job history viewer (/history route)
 ├── setup.sh                 ← auto-install: venv + pip + WeasyPrint libs + Thai fonts
 ├── start.sh                 ← run script: activate venv + flask run host=0.0.0.0

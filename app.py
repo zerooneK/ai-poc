@@ -405,17 +405,19 @@ def _tool_result_is_error(result: str) -> bool:
 
 def run_agent_with_tools(system_prompt: str, user_message: str, workspace: str,
                          agent_label: str, max_tokens: int = 8000, max_iterations: int = 5,
-                         tools: list = None):
+                         tools: list = None, history: list = None):
     """Agentic loop with true streaming:
     - Text chunks stream to user as they arrive (delta.content)
     - Tool calls accumulate silently in background (delta.tool_calls)
     - After stream ends: execute tools if any, then continue loop if needed
     - tools: defaults to MCP_TOOLS (all); pass READ_ONLY_TOOLS to restrict to read-only
+    - history: prior conversation turns [{role, content}] injected for context
     Generator that yields SSE data strings."""
     if tools is None:
         tools = MCP_TOOLS
     messages = [
         {"role": "system", "content": system_prompt},
+        *(history or []),
         {"role": "user", "content": user_message}
     ]
 
@@ -840,6 +842,12 @@ def chat():
         output_formats = None
     if not isinstance(pending_temp_paths, list):
         pending_temp_paths = []
+    raw_history = request.json.get('conversation_history', [])
+    conversation_history = [
+        {'role': m['role'], 'content': str(m['content'])[:3000]}
+        for m in (raw_history[-20:] if isinstance(raw_history, list) else [])
+        if isinstance(m, dict) and m.get('role') in ('user', 'assistant') and m.get('content')
+    ]
 
     def generate():
         # Create a DB job record for this request (None if DB unavailable)
@@ -924,6 +932,7 @@ def chat():
             for _attempt in range(_MAX_RETRIES):
                 _orch_messages = [
                     {"role": "system", "content": ORCHESTRATOR_PROMPT},
+                    *conversation_history,
                     {"role": "user", "content": user_input}
                 ]
                 if _attempt > 0:
@@ -983,6 +992,7 @@ def chat():
                 for _pm_attempt in range(_MAX_RETRIES):
                     _pm_messages = [
                         {"role": "system", "content": PM_PROMPT},
+                        *conversation_history,
                         {"role": "user", "content": user_input}
                     ]
                     if _pm_attempt > 0:
@@ -1109,7 +1119,8 @@ def chat():
                 for sse_line in run_agent_with_tools(
                     system_prompt, user_input, workspace,
                     agent_label, agent_max_tokens,
-                    tools=READ_ONLY_TOOLS
+                    tools=READ_ONLY_TOOLS,
+                    history=conversation_history
                 ):
                     yield sse_line
                     if sse_line.startswith('data: '):

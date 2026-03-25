@@ -1,5 +1,15 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.9.0] — 25 มีนาคม 2569 · feat
+- feat: conversation memory — ส่ง last 10 turns (20 messages) ไปยัง Orchestrator, PM Agent, และ single agents ทุกครั้ง
+- Orchestrator ใช้ context ประวัติเพื่อ routing ที่แม่นยำขึ้น (เช่น "เพิ่มงบ" หลัง AI team plan = แก้ไข ไม่ใช่งานใหม่)
+- Single agents (HR/Accounting/Manager) เห็น context ก่อนหน้าเพื่อสร้างเอกสารที่ต่อเนื่อง
+- Frontend: เก็บ conversationHistory[], push user turn ก่อน fetch, push assistant turn หลัง done event
+- Frontend: clear history เมื่อเปลี่ยน workspace (new workspace = new context)
+- Backend: sanitize history (max 20 entries, max 3000 chars/entry, role whitelist)
+
+---
+
 ## [v0.8.5] — 25 มีนาคม 2569 · fix
 - fix: agents อ่านไฟล์ workspace ผิดบริบท — ตัวอย่าง Accounting อ่าน travel expense เก่าแทนที่จะสร้างงบใหม่
 - fix: ปรับ system prompts ทั้ง 3 agents ให้อ่านไฟล์เฉพาะเมื่อ user ระบุชื่อไฟล์ หรือขอแก้ไขเอกสารที่มีอยู่โดยตรง

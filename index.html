@@ -1008,7 +1008,7 @@
         <span class="material-symbols-outlined" style="font-size:13px">folder_open</span>
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
-      <span class="version-tag">v0.8.5</span>
+      <span class="version-tag">v0.9.0</span>
     </div>
   </header>
 
@@ -1296,6 +1296,11 @@
   // Per-file formats collected from file format modal before submitting
   let pendingFileFormats = null;
 
+  // Conversation history — sent to backend so agents understand prior context
+  // Each entry: { role: 'user'|'assistant', content: string }
+  const MAX_HISTORY_TURNS = 10;   // keep last 10 full turns (20 messages)
+  let conversationHistory = [];
+
   // Auto-scroll lock — stops forcing scroll-to-bottom when user has scrolled up
   let userScrolledUp = false;
   const outputWrapEl = document.getElementById('outputWrap');
@@ -1574,7 +1579,8 @@
       const reqBody = {
         message,
         session_id: _getSessionId(),
-        output_format: resolvedFormat
+        output_format: resolvedFormat,
+        conversation_history: conversationHistory.slice(-(MAX_HISTORY_TURNS * 2))
       };
       if (isPendingConfirmation) {
         if (pendingTempPaths.length > 0) {
@@ -1587,6 +1593,8 @@
           reqBody.pending_agent = pendingAgent;
         }
       }
+      // Push user turn to history AFTER building reqBody (so this turn isn't in the payload)
+      conversationHistory.push({ role: 'user', content: message });
       isPendingConfirmation = false;
       pendingDoc = '';
       pendingAgent = '';
@@ -1723,6 +1731,10 @@
               pendingFormat = 'md';
               isPendingConfirmation = true;
               _updateInputHint(true, 0);
+            }
+            // Push assistant turn to history so next request has full context
+            if (outputText) {
+              conversationHistory.push({ role: 'assistant', content: outputText });
             }
             wasPMTask = false;
 
@@ -1926,6 +1938,7 @@
       const data = await res.json();
       if (data.error) { alert('ไม่สามารถเปลี่ยน workspace: ' + data.error); return; }
       document.getElementById('workspacePath').textContent = data.path;
+      conversationHistory = [];   // new workspace = new context
       startFileStream();
     } catch (e) {
       alert('เกิดข้อผิดพลาด: ' + e.message);
