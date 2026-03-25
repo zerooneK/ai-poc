@@ -1,5 +1,14 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.7.0] — 25 มีนาคม 2569 · feature
+- เพิ่ม file format selector modal: popup แสดง per-file format dropdown ก่อนบันทึก PM files
+- เพิ่ม cancel confirm modal: ยืนยันก่อนยกเลิก PM files พร้อมแสดงจำนวนไฟล์
+- intercept save/cancel intent ฝั่ง frontend ก่อน submit (ไม่ผ่าน server)
+- app.py: handle_pm_save รับ output_formats list (per-file), fallback ไป output_format ถ้าไม่มี
+- เพิ่ม _isSaveIntentJS / _isCancelIntentJS สำหรับ PM modal intercept
+
+---
+
 ## [v0.6.2] — 25 มีนาคม 2569 · fix
 - fix: format detection จาก message text — "save as pdf", "บันทึกเป็น excel" override dropdown
 - priority: message keyword → dropdown value (pendingFormat lock ถูกเอาออก)

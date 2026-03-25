@@ -50,7 +50,7 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 - **ทุก commit ต้อง bump version** ใน index.html พร้อมกัน
 - **ทุก commit ต้องเพิ่ม entry ใน CHANGELOG.md** ระบุ version, วันที่, ประเภท, รายละเอียด
 - เมื่อ bump Minor ให้ reset Patch เป็น 0 เสมอ (v0.2.3 → v0.3.0)
-- Version ปัจจุบัน: **v0.6.2**
+- Version ปัจจุบัน: **v0.7.0**
 
 ประวัติ:
 - v0.1.0 — initial POC (HR + Accounting agents, SSE streaming)
@@ -96,6 +96,7 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 - v0.6.0 — multi-format export: converter.py (.txt/.docx/.xlsx/.pdf) + format selector UI + pendingFormat state
 - v0.6.1 — fix: suppress WeasyPrint verbose logs + _cleanup_old_temp ข้าม .gitkeep
 - v0.6.2 — fix: format detection จาก message text override dropdown (ลบ pendingFormat lock)
+- v0.7.0 — per-file format selector modal + cancel confirm modal สำหรับ PM multi-file saves
 
 ## Rules ที่ต้องทำตามเสมอ
 - ภาษาไทยใน UI และ system prompts ทั้งหมด

@@ -679,10 +679,12 @@ def _is_safe_temp_path(path: str) -> bool:
         return False
 
 
-def handle_pm_save(temp_paths: list, workspace: str, job_id=None, output_format: str = 'md'):
+def handle_pm_save(temp_paths: list, workspace: str, job_id=None, output_format: str = 'md', output_formats: list = None):
     """Move all PM staged temp files to workspace. Generator that yields SSE data strings."""
     saved = []
-    for temp_path in temp_paths:
+    for i, temp_path in enumerate(temp_paths):
+        # Per-file format: use output_formats[i] if provided, else fall back to output_format
+        fmt = (output_formats[i] if output_formats and i < len(output_formats) else output_format)
         # Security: reject paths outside TEMP_DIR
         if not _is_safe_temp_path(temp_path):
             logger.warning(f"Rejected unsafe temp path: {temp_path}")
@@ -691,10 +693,10 @@ def handle_pm_save(temp_paths: list, workspace: str, job_id=None, output_format:
             logger.warning(f"Temp file not found (expired?): {temp_path}")
             continue
         try:
-            if output_format in ('md', 'txt'):
+            if fmt in ('md', 'txt'):
                 filename = _move_to_workspace(temp_path, workspace)
                 # Rename .md → .txt if needed
-                if output_format == 'txt' and filename.endswith('.md'):
+                if fmt == 'txt' and filename.endswith('.md'):
                     old_path = os.path.join(workspace, filename)
                     filename = filename[:-3] + '.txt'
                     os.rename(old_path, os.path.join(workspace, filename))
@@ -703,8 +705,8 @@ def handle_pm_save(temp_paths: list, workspace: str, job_id=None, output_format:
                 with open(temp_path, 'r', encoding='utf-8') as f:
                     content = f.read()
                 base = os.path.splitext(os.path.basename(temp_path))[0]
-                filename = f"{base}.{output_format}"
-                file_bytes = converter.convert(content, output_format)
+                filename = f"{base}.{fmt}"
+                file_bytes = converter.convert(content, fmt)
                 dest = os.path.join(workspace, filename)
                 with open(dest, 'wb') as f:
                     f.write(file_bytes)
@@ -762,6 +764,11 @@ def chat():
     output_format      = request.json.get('output_format', 'md').strip().lower()
     if output_format not in converter.SUPPORTED_FORMATS:
         output_format = 'md'
+    output_formats     = request.json.get('output_formats', None)
+    if isinstance(output_formats, list):
+        output_formats = [f if f in converter.SUPPORTED_FORMATS else 'md' for f in output_formats]
+    else:
+        output_formats = None
     if not isinstance(pending_temp_paths, list):
         pending_temp_paths = []
 
@@ -777,7 +784,7 @@ def chat():
         # ── Follow-up: PM staged files waiting for confirmation ──────────────
         if pending_temp_paths:
             if _is_save_intent(user_input):
-                for sse in handle_pm_save(pending_temp_paths, workspace, job_id, output_format):
+                for sse in handle_pm_save(pending_temp_paths, workspace, job_id, output_format, output_formats):
                     yield sse
                 db.complete_job(job_id, '')
                 yield f"data: {json.dumps({'type': 'done'})}\n\n"

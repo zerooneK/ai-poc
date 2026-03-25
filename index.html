@@ -819,6 +819,48 @@
       color: var(--text-secondary);
       border: 1px solid var(--surface-hi);
     }
+    .modal-btn-danger {
+      background: var(--error);
+      color: #fff;
+    }
+    .modal-box-wide { max-width: 500px; text-align: left; }
+    .modal-title-center { text-align: center; }
+
+    /* File format modal rows */
+    .file-format-list { margin: 14px 0 20px; }
+    .file-format-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--outline-var);
+      font-size: 13px;
+    }
+    .file-format-row:last-child { border-bottom: none; }
+    .file-format-name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--on-surface);
+    }
+    .file-format-sel {
+      background: var(--surface-hi);
+      border: 1px solid var(--outline-var);
+      color: var(--on-surface);
+      font-family: inherit;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .file-format-sel:focus { outline: none; border-color: var(--primary); }
+    .modal-actions-row {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
   </style>
 </head>
 <body>
@@ -909,7 +951,7 @@
         <span class="material-symbols-outlined" style="font-size:13px">folder_open</span>
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
-      <span class="version-tag">v0.6.2</span>
+      <span class="version-tag">v0.7.0</span>
     </div>
   </header>
 
@@ -964,6 +1006,32 @@
 </div>
 
 <!-- Pending Doc Confirmation Modal -->
+<!-- File Format Selector Modal (PM multi-file save) -->
+<div id="fileFormatModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true">
+  <div class="modal-box modal-box-wide">
+    <div class="modal-icon modal-title-center">💾</div>
+    <p class="modal-title modal-title-center">เลือกรูปแบบไฟล์ก่อนบันทึก</p>
+    <div class="file-format-list" id="fileFormatList"></div>
+    <div class="modal-actions-row">
+      <button class="modal-btn modal-btn-cancel" id="fileFormatCancelBtn">ยกเลิก</button>
+      <button class="modal-btn modal-btn-primary" id="fileFormatSaveBtn">💾 บันทึกทั้งหมด</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cancel Confirm Modal (PM multi-file discard) -->
+<div id="cancelConfirmModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <div class="modal-icon">⚠️</div>
+    <p class="modal-title" id="cancelConfirmTitle">ยืนยันการยกเลิก</p>
+    <p class="modal-body" id="cancelConfirmBody"></p>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-secondary" id="cancelConfirmNoBtn">ไม่ใช่ กลับไป</button>
+      <button class="modal-btn modal-btn-danger" id="cancelConfirmYesBtn">ยืนยันยกเลิก</button>
+    </div>
+  </div>
+</div>
+
 <div id="pendingModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true">
   <div class="modal-box">
     <div class="modal-icon">📄</div>
@@ -989,6 +1057,87 @@
   let startTime = 0;
 
   // Session ID — persisted across page refreshes for history grouping
+  function _isSaveIntentJS(msg) {
+    return /บันทึก|save|ยืนยัน|confirm|ตกลง|ok\b/i.test(msg);
+  }
+
+  function _isCancelIntentJS(msg) {
+    return /ยกเลิก|cancel|discard|ไม่บันทึก|ไม่เอา/i.test(msg);
+  }
+
+  function _showFileFormatModal(originalMessage) {
+    const modal = document.getElementById('fileFormatModal');
+    const list  = document.getElementById('fileFormatList');
+    const defaultFmt = _extractFormatFromMessage(originalMessage)
+                    || document.getElementById('formatSelect').value;
+
+    list.innerHTML = '';
+    pendingTempPaths.forEach((tp, i) => {
+      const fname = tp.split('/').pop();
+
+      const row = document.createElement('div');
+      row.className = 'file-format-row';
+
+      const icon = document.createElement('span');
+      icon.className = 'material-symbols-outlined';
+      icon.style.cssText = 'font-size:16px;color:var(--on-surface-2);flex-shrink:0';
+      icon.textContent = 'description';
+
+      const nameEl = document.createElement('span');
+      nameEl.className = 'file-format-name';
+      nameEl.textContent = fname;
+      nameEl.title = fname;
+
+      const sel = document.createElement('select');
+      sel.className = 'file-format-sel';
+      sel.dataset.index = i;
+      ['md','txt','docx','xlsx','pdf'].forEach(fmt => {
+        const opt = document.createElement('option');
+        opt.value = fmt;
+        opt.textContent = '.' + fmt;
+        if (fmt === defaultFmt) opt.selected = true;
+        sel.appendChild(opt);
+      });
+
+      row.appendChild(icon);
+      row.appendChild(nameEl);
+      row.appendChild(sel);
+      list.appendChild(row);
+    });
+
+    modal.style.display = 'flex';
+
+    document.getElementById('fileFormatCancelBtn').onclick = () => {
+      modal.style.display = 'none';
+      pendingFileFormats = null;
+    };
+
+    document.getElementById('fileFormatSaveBtn').onclick = () => {
+      modal.style.display = 'none';
+      pendingFileFormats = Array.from(
+        list.querySelectorAll('.file-format-sel')
+      ).map(s => s.value);
+      sendMessage(originalMessage);
+    };
+  }
+
+  function _showCancelConfirmModal(originalMessage, fileCount) {
+    const modal = document.getElementById('cancelConfirmModal');
+    document.getElementById('cancelConfirmBody').textContent =
+      `คุณแน่ใจหรือไม่ว่าต้องการยกเลิก? ไฟล์ ${fileCount} ไฟล์จะถูกลบออกทั้งหมด`;
+
+    modal.style.display = 'flex';
+
+    document.getElementById('cancelConfirmNoBtn').onclick = () => {
+      modal.style.display = 'none';
+    };
+
+    document.getElementById('cancelConfirmYesBtn').onclick = () => {
+      modal.style.display = 'none';
+      sendMessage(originalMessage);
+    };
+  }
+
   function _extractFormatFromMessage(msg) {
     const lower = msg.toLowerCase();
     if (/\b(xlsx|excel|เอกเซล)\b/.test(lower)) return 'xlsx';
@@ -1019,6 +1168,9 @@
 
   // Queued task after "save first" modal choice
   let queuedMessage = '';
+
+  // Per-file formats collected from file format modal before submitting
+  let pendingFileFormats = null;
 
   // Auto-scroll lock — stops forcing scroll-to-bottom when user has scrolled up
   let userScrolledUp = false;
@@ -1189,6 +1341,22 @@
     const message = overrideMessage !== undefined ? overrideMessage : input.value.trim();
     if (!message) return;
 
+    // Intercept: PM files pending + save/cancel intent → show dedicated modal
+    if (pendingTempPaths.length > 0 && !overrideMessage) {
+      if (_isSaveIntentJS(message)) {
+        input.value = '';
+        input.style.height = 'auto';
+        _showFileFormatModal(message);
+        return;
+      }
+      if (_isCancelIntentJS(message)) {
+        input.value = '';
+        input.style.height = 'auto';
+        _showCancelConfirmModal(message, pendingTempPaths.length);
+        return;
+      }
+    }
+
     // Intercept: if pending doc and message is a new task → show modal
     if (isPendingConfirmation && _isNewTask(message) && !overrideMessage) {
       input.value = '';
@@ -1280,6 +1448,9 @@
       if (isPendingConfirmation) {
         if (pendingTempPaths.length > 0) {
           reqBody.pending_temp_paths = pendingTempPaths;
+          if (pendingFileFormats) {
+            reqBody.output_formats = pendingFileFormats;
+          }
         } else {
           reqBody.pending_doc = pendingDoc;
           reqBody.pending_agent = pendingAgent;
@@ -1289,6 +1460,7 @@
       pendingDoc = '';
       pendingAgent = '';
       pendingFormat = 'md';
+      pendingFileFormats = null;
       pendingTempPaths = [];
 
       const response = await fetch('/api/chat', {
