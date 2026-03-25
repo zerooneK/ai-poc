@@ -4,3 +4,7 @@ openai
 python-dotenv
 mcp
 watchdog
+python-docx
+openpyxl
+weasyprint
+markdown

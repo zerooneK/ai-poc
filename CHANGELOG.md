@@ -1,5 +1,12 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.5.2] — 25 มีนาคม 2569 · feature
+- อัปเดต `setup.sh`: ติดตั้ง WeasyPrint system libs อัตโนมัติ (libpango, libharfbuzz, libffi, libjpeg, libopenjp2, fonts-thai-tlwg)
+- เพิ่ม library verify step ใน setup.sh (ตรวจสอบ flask, openai, docx, openpyxl, weasyprint, markdown)
+- อัปเดต `requirements.txt`: เพิ่ม python-docx, openpyxl, weasyprint, markdown
+
+---
+
 ## [v0.5.1] — 25 มีนาคม 2569 · feature
 - เพิ่ม `history.html` — หน้าดูประวัติ job แบบ standalone (dark theme เดียวกับ main UI)
 - Stats bar: job ทั้งหมด, สำเร็จ, ไฟล์บันทึก, error

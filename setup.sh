@@ -11,11 +11,33 @@ cd "$PROJECT_DIR"
 echo "🔧 AI POC — WSL Setup"
 echo "================================"
 
-# Check Python version
+# ─── 1. System dependencies (WeasyPrint + PDF rendering) ──────────────────────
+echo ""
+echo "📦 ติดตั้ง system libraries สำหรับ PDF export..."
+echo "   (WeasyPrint ต้องการ libpango, libharfbuzz, libffi, libjpeg, libopenjp2)"
+
+if command -v apt-get &>/dev/null; then
+    sudo apt-get update -qq
+    sudo apt-get install -y -qq \
+        libpango-1.0-0 \
+        libpangoft2-1.0-0 \
+        libharfbuzz0b \
+        libffi-dev \
+        libjpeg-dev \
+        libopenjp2-7 \
+        fonts-thai-tlwg
+    echo "✅ ติดตั้ง system libraries สำเร็จ"
+else
+    echo "⚠️  ไม่พบ apt-get — ข้ามการติดตั้ง system libraries"
+    echo "   หากใช้ระบบอื่น ให้ติดตั้ง: libpango, libharfbuzz, libffi, libjpeg, libopenjp2 ด้วยตนเอง"
+fi
+
+# ─── 2. Python version check ──────────────────────────────────────────────────
+echo ""
 PYTHON_VERSION=$(python3 --version 2>&1)
 echo "✅ $PYTHON_VERSION"
 
-# Create venv if not exists
+# ─── 3. Virtual environment ───────────────────────────────────────────────────
 if [ -d "venv" ]; then
     echo "✅ venv มีอยู่แล้ว"
 else
@@ -24,18 +46,37 @@ else
     echo "✅ สร้าง venv สำเร็จ"
 fi
 
-# Activate and install deps
+# ─── 4. Python dependencies ───────────────────────────────────────────────────
 source venv/bin/activate
-echo "📦 ติดตั้ง dependencies..."
+echo "📦 ติดตั้ง Python dependencies..."
+echo "   flask, openai, python-docx, openpyxl, weasyprint, markdown ..."
 pip install -q --upgrade pip
 pip install -q -r requirements.txt
-echo "✅ ติดตั้ง dependencies สำเร็จ"
+echo "✅ ติดตั้ง Python dependencies สำเร็จ"
 
-# Create required directories
-mkdir -p workspace temp
-echo "✅ สร้าง workspace/ และ temp/ แล้ว"
+# ─── 5. Verify key libraries ──────────────────────────────────────────────────
+echo ""
+echo "🔍 ตรวจสอบ libraries ที่สำคัญ..."
 
-# Setup .env if not exists
+check_lib() {
+    python3 -c "import $1" 2>/dev/null \
+        && echo "   ✅ $1" \
+        || echo "   ❌ $1 — ติดตั้งไม่สำเร็จ ตรวจสอบ log ด้านบน"
+}
+
+check_lib flask
+check_lib openai
+check_lib docx
+check_lib openpyxl
+check_lib weasyprint
+check_lib markdown
+
+# ─── 6. Required directories ──────────────────────────────────────────────────
+mkdir -p workspace temp data
+echo ""
+echo "✅ สร้าง workspace/ temp/ data/ แล้ว"
+
+# ─── 7. .env setup ────────────────────────────────────────────────────────────
 if [ -f ".env" ]; then
     echo "✅ .env มีอยู่แล้ว"
 else
@@ -46,7 +87,7 @@ else
     echo "   nano .env"
 fi
 
-# Make start.sh executable
+# ─── 8. Make start.sh executable ─────────────────────────────────────────────
 chmod +x start.sh
 echo "✅ start.sh พร้อมใช้งาน"
 
@@ -58,3 +99,4 @@ echo "ขั้นตอนต่อไป:"
 echo "  1. แก้ไข .env ใส่ OPENROUTER_API_KEY"
 echo "  2. รัน: ./start.sh"
 echo "  3. เปิดเบราว์เซอร์: http://localhost:5000"
+echo "  4. ประวัติงาน:       http://localhost:5000/history"
