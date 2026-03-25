@@ -19,6 +19,10 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Suppress WeasyPrint's extremely verbose font subsetting logs
+logging.getLogger('fontTools').setLevel(logging.ERROR)
+logging.getLogger('weasyprint').setLevel(logging.WARNING)
+
 
 def _extract_json(raw: str) -> str:
     """Extract JSON from LLM output that may have markdown fences or surrounding prose.
@@ -560,6 +564,8 @@ def _cleanup_old_temp():
     cutoff = datetime.now().timestamp() - 3600
     try:
         for fname in os.listdir(TEMP_DIR):
+            if fname == '.gitkeep':
+                continue
             fpath = os.path.join(TEMP_DIR, fname)
             if os.path.isfile(fpath) and os.path.getmtime(fpath) < cutoff:
                 os.remove(fpath)

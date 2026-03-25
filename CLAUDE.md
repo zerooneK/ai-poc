@@ -50,7 +50,7 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 - **ทุก commit ต้อง bump version** ใน index.html พร้อมกัน
 - **ทุก commit ต้องเพิ่ม entry ใน CHANGELOG.md** ระบุ version, วันที่, ประเภท, รายละเอียด
 - เมื่อ bump Minor ให้ reset Patch เป็น 0 เสมอ (v0.2.3 → v0.3.0)
-- Version ปัจจุบัน: **v0.6.0**
+- Version ปัจจุบัน: **v0.6.1**
 
 ประวัติ:
 - v0.1.0 — initial POC (HR + Accounting agents, SSE streaming)
@@ -94,6 +94,7 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 - v0.5.1 — history.html: standalone history viewer page + Flask route /history
 - v0.5.2 — setup.sh: auto-install WeasyPrint system libs + library verify step; requirements.txt เพิ่ม python-docx, openpyxl, weasyprint, markdown
 - v0.6.0 — multi-format export: converter.py (.txt/.docx/.xlsx/.pdf) + format selector UI + pendingFormat state
+- v0.6.1 — fix: suppress WeasyPrint verbose logs + _cleanup_old_temp ข้าม .gitkeep
 
 ## Rules ที่ต้องทำตามเสมอ
 - ภาษาไทยใน UI และ system prompts ทั้งหมด

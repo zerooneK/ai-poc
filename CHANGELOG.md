@@ -1,5 +1,11 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.6.1] — 25 มีนาคม 2569 · fix
+- fix: suppress WeasyPrint/fontTools verbose font subsetting logs (ตั้ง log level ERROR/WARNING)
+- fix: _cleanup_old_temp() ข้าม .gitkeep ป้องกันถูกลบทุกครั้งที่ส่ง request
+
+---
+
 ## [v0.6.0] — 25 มีนาคม 2569 · feature
 - เพิ่ม `converter.py`: แปลง markdown → .txt / .docx / .xlsx / .pdf ที่ save time
 - .docx: parse headings, lists, tables, bold ผ่าน python-docx
