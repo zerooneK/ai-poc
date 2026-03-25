@@ -58,7 +58,7 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 - **ทุก commit ต้อง bump version** ใน index.html พร้อมกัน
 - **ทุก commit ต้องเพิ่ม entry ใน CHANGELOG.md** ระบุ version, วันที่, ประเภท, รายละเอียด
 - เมื่อ bump Minor ให้ reset Patch เป็น 0 เสมอ (v0.2.3 → v0.3.0)
-- Version ปัจจุบัน: **v0.8.3**
+- Version ปัจจุบัน: **v0.8.4**
 
 ประวัติ:
 - v0.1.0 — initial POC (HR + Accounting agents, SSE streaming)
@@ -111,6 +111,7 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 - v0.8.1 — fix: test_cases.py เพิ่ม PM Agent tests + routing/keyword validation สำหรับทุก cases
 - v0.8.2 — fix: Orchestrator + PM Agent retry up to 3 times on bad JSON format before raising error
 - v0.8.3 — fix: sidebar file panel not refreshing after agent saves to a recreated workspace directory
+- v0.8.4 — feat: HR/Accounting/Manager agents read workspace files before writing (READ_ONLY_TOOLS + tool allow-list enforcement)
 
 ## Rules ที่ต้องทำตามเสมอ
 - ภาษาไทยใน UI และ system prompts ทั้งหมด

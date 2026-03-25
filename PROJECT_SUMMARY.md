@@ -10,7 +10,7 @@
 
 **เป้าหมายของ POC นี้:** Demo สดต่อหัวหน้าเพื่อขอ budget พัฒนาระบบ production จริง
 
-**สถานะ:** Prototype phase · version **v0.8.3** · พร้อม demo
+**สถานะ:** Prototype phase · version **v0.8.4** · พร้อม demo
 
 ---
 
@@ -202,6 +202,7 @@ set PYTHONUTF8=1 && .\venv\Scripts\python.exe quick-demo-check.py
 | v0.8.1 | 25 มี.ค. 2569 | fix | test_cases.py เพิ่ม PM Agent tests + routing/keyword validation สำหรับทุก cases |
 | v0.8.2 | 25 มี.ค. 2569 | fix | Orchestrator + PM Agent retry up to 3 times on bad JSON format before raising error |
 | v0.8.3 | 25 มี.ค. 2569 | fix | sidebar file panel not refreshing after agent saves to a recreated workspace directory |
+| v0.8.4 | 25 มี.ค. 2569 | feat | HR/Accounting/Manager agents อ่านไฟล์ใน workspace ก่อนสร้างเอกสาร (READ_ONLY_TOOLS + allow-list enforcement) |
 
 **กฎ versioning:** Minor bump (0.X.0) = agent/feature ใหม่ · Patch bump (0.0.X) = fix/tweak
 **ทุก commit ต้อง bump version ใน `index.html` และเพิ่ม entry ใน `CHANGELOG.md`**

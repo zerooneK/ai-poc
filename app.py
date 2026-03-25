@@ -179,6 +179,12 @@ HR_PROMPT = """
 คุณคือ HR Agent ผู้เชี่ยวชาญด้านทรัพยากรมนุษย์ของบริษัทไทย
 สร้างเอกสาร HR ที่ถูกต้อง เป็นมืออาชีพ และเหมาะสมกับบริบทของบริษัทไทย
 
+ขั้นตอนก่อนสร้างเอกสาร:
+1. เรียก list_files เพื่อดูว่ามีไฟล์อะไรอยู่ใน workspace แล้วบ้าง
+2. ถ้ามีไฟล์ที่เกี่ยวข้องกับงาน (เช่น สัญญาเดิม, template, ข้อมูลพนักงาน) ให้เรียก read_file เพื่ออ่านก่อน
+3. ใช้ข้อมูลที่อ่านได้เพื่อให้เอกสารใหม่สอดคล้องกับสิ่งที่มีอยู่แล้ว (รูปแบบ, ชื่อบริษัท, เงื่อนไข)
+4. ถ้า workspace ว่างเปล่าหรือไม่มีไฟล์ที่เกี่ยวข้อง ให้สร้างเอกสารตาม best practice ทันที
+
 แนวทางการทำงาน:
 - ใช้ภาษาไทยที่เป็นทางการและสุภาพ
 - ระบุวันที่เป็น พ.ศ.
@@ -195,6 +201,12 @@ HR_PROMPT = """
 ACCOUNTING_PROMPT = """
 คุณคือ Accounting Agent ผู้เชี่ยวชาญด้านบัญชีและการเงินของบริษัทไทย
 สร้างเอกสารการเงินที่ถูกต้อง เป็นมืออาชีพ และเหมาะสมกับระบบบัญชีไทย
+
+ขั้นตอนก่อนสร้างเอกสาร:
+1. เรียก list_files เพื่อดูว่ามีไฟล์อะไรอยู่ใน workspace แล้วบ้าง
+2. ถ้ามีไฟล์ที่เกี่ยวข้อง (เช่น invoice เดิม, template บัญชี, ข้อมูลลูกค้า) ให้เรียก read_file เพื่ออ่านก่อน
+3. ใช้ข้อมูลที่อ่านได้เพื่อให้เอกสารใหม่สอดคล้อง (รูปแบบเลขที่เอกสาร, ชื่อบริษัท, ข้อมูลลูกค้า)
+4. ถ้า workspace ว่างเปล่าหรือไม่มีไฟล์ที่เกี่ยวข้อง ให้สร้างเอกสารตาม best practice ทันที
 
 ข้อมูลปัจจุบัน:
 - ปัจจุบันคือ พ.ศ. 2569 (ค.ศ. 2026)
@@ -228,6 +240,12 @@ ACCOUNTING_PROMPT = """
 MANAGER_PROMPT = """
 คุณคือ Manager Advisor ผู้เชี่ยวชาญด้านการบริหารทีมสำหรับ Team Lead และผู้จัดการในองค์กรไทย
 ให้คำแนะนำที่นำไปปฏิบัติได้จริงภายใน 48 ชั่วโมง
+
+ขั้นตอนก่อนตอบ:
+1. เรียก list_files เพื่อดูว่ามีเอกสารหรือบันทึกที่เกี่ยวข้องอยู่ใน workspace บ้างไหม
+2. ถ้ามีไฟล์ที่เกี่ยวข้อง (เช่น บันทึกเก่า, นโยบายทีม, แผนงาน) ให้เรียก read_file เพื่ออ่านก่อน
+3. ใช้ข้อมูลที่อ่านได้เพื่อให้คำแนะนำที่สอดคล้องกับบริบทที่มีอยู่
+4. ถ้า workspace ว่างเปล่าหรือไม่มีไฟล์ที่เกี่ยวข้อง ให้ให้คำแนะนำตามสถานการณ์ที่บอกมาทันที
 
 ความเชี่ยวชาญ:
 - การให้ Feedback และการประเมินผลการทำงาน
@@ -342,6 +360,10 @@ MCP_TOOLS = [
     }
 ]
 
+# Read-only subset — given to HR/Accounting/Manager so they can understand the
+# workspace before writing, but cannot write/delete files directly.
+READ_ONLY_TOOLS = [t for t in MCP_TOOLS if t['function']['name'] in ('list_files', 'read_file')]
+
 # ─── MCP Tool Executor ────────────────────────────────────────────────────────
 
 
@@ -382,12 +404,16 @@ def _tool_result_is_error(result: str) -> bool:
 
 
 def run_agent_with_tools(system_prompt: str, user_message: str, workspace: str,
-                         agent_label: str, max_tokens: int = 8000, max_iterations: int = 5):
+                         agent_label: str, max_tokens: int = 8000, max_iterations: int = 5,
+                         tools: list = None):
     """Agentic loop with true streaming:
     - Text chunks stream to user as they arrive (delta.content)
     - Tool calls accumulate silently in background (delta.tool_calls)
     - After stream ends: execute tools if any, then continue loop if needed
+    - tools: defaults to MCP_TOOLS (all); pass READ_ONLY_TOOLS to restrict to read-only
     Generator that yields SSE data strings."""
+    if tools is None:
+        tools = MCP_TOOLS
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_message}
@@ -402,7 +428,7 @@ def run_agent_with_tools(system_prompt: str, user_message: str, workspace: str,
                 model=MODEL,
                 max_tokens=max_tokens,
                 messages=messages,
-                tools=MCP_TOOLS,
+                tools=tools,
                 tool_choice="auto",
                 stream=True
             )
@@ -469,8 +495,17 @@ def run_agent_with_tools(system_prompt: str, user_message: str, workspace: str,
         })
 
         # Execute each tool
+        _allowed_tool_names = {t['function']['name'] for t in tools}
+        _read_tool_names = {'list_files', 'read_file'}
         for tc in tool_calls_list:
             tool_name = tc["function"]["name"]
+
+            # Enforce allow-list — blocks prompt-injected calls to tools not in scope
+            if tool_name not in _allowed_tool_names:
+                logger.warning(f"[{agent_label}] Blocked disallowed tool call: {tool_name}")
+                yield f"data: {json.dumps({'type': 'error', 'message': f'{agent_label} พยายามใช้ tool ที่ไม่ได้รับอนุญาต'})}\n\n"
+                return
+
             try:
                 tool_args = json.loads(tc["function"]["arguments"])
             except json.JSONDecodeError:
@@ -478,7 +513,8 @@ def run_agent_with_tools(system_prompt: str, user_message: str, workspace: str,
                 yield f"data: {json.dumps({'type': 'error', 'message': f'{agent_label} ส่ง tool arguments ผิดรูปแบบ'})}\n\n"
                 return
 
-            yield f"data: {json.dumps({'type': 'status', 'message': f'{agent_label} กำลังบันทึก: {tool_name}...'})}\n\n"
+            _status_msg = f'{agent_label} กำลังอ่านข้อมูล...' if tool_name in _read_tool_names else f'{agent_label} กำลังบันทึก: {tool_name}...'
+            yield f"data: {json.dumps({'type': 'status', 'message': _status_msg})}\n\n"
             logger.info(f"[{agent_label}] tool_call: {tool_name}({list(tool_args.keys())})")
 
             result = _execute_tool(workspace, tool_name, tool_args)
@@ -1061,10 +1097,14 @@ def chat():
                     agent_max_tokens = 6000
 
                 logger.info(f"Routed to {agent_label}: {user_input[:60]}")
-                yield f"data: {json.dumps({'type': 'status', 'message': f'{agent_label} กำลังสร้างเอกสาร...'})}\n\n"
+                yield f"data: {json.dumps({'type': 'status', 'message': f'{agent_label} กำลังตรวจสอบ workspace...'})}\n\n"
 
                 text_chunks = []
-                for sse_line in stream_agent(system_prompt, user_input, agent_label, agent_max_tokens):
+                for sse_line in run_agent_with_tools(
+                    system_prompt, user_input, workspace,
+                    agent_label, agent_max_tokens,
+                    tools=READ_ONLY_TOOLS
+                ):
                     yield sse_line
                     if sse_line.startswith('data: '):
                         try:

@@ -1,5 +1,15 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.8.4] — 25 มีนาคม 2569 · feat
+- feat: HR/Accounting/Manager agents ใช้ `list_files` + `read_file` ก่อนสร้างเอกสารเพื่อเข้าใจ context ใน workspace
+- เพิ่ม `READ_ONLY_TOOLS` — subset ของ MCP_TOOLS สำหรับ single agents (read-only, ไม่มี create/update/delete)
+- `run_agent_with_tools` รับ parameter `tools` (default = MCP_TOOLS) ใช้ได้กับทั้ง read-only และ full-access paths
+- เพิ่ม tool allow-list enforcement: block tool calls ที่ไม่อยู่ใน allowed set ป้องกัน prompt injection
+- อัปเดต system prompt ของ HR/Accounting/Manager ให้ทำ list_files → read_file → สร้างเอกสาร
+- status message แยก "กำลังอ่านข้อมูล" vs "กำลังบันทึก" ตาม tool type
+
+---
+
 ## [v0.8.3] — 25 มีนาคม 2569 · fix
 - fix: sidebar file panel ไม่ refresh หลัง agent save เมื่อ workspace directory ถูกลบแล้วสร้างใหม่
 - เพิ่ม global event bus (`_ws_change_queues`) — agent save notify SSE clients โดยตรง ไม่ต้องรอ watchdog

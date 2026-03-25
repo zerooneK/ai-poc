@@ -41,7 +41,12 @@ Output: เอกสารภาษาไทยพร้อมใช้
 
 ## สรุปความคืบหน้า — 24 มีนาคม 2569
 
-**สถานะ: Prototype Phase — v0.8.3**
+**สถานะ: Prototype Phase — v0.8.4**
+
+### v0.8.4 — Workspace-Aware Single Agents (25 มีนาคม 2569)
+- ✅ HR/Accounting/Manager อ่าน workspace ก่อนสร้างเอกสาร ด้วย READ_ONLY_TOOLS (list_files + read_file)
+- ✅ Tool allow-list enforcement — block prompt-injected write tool calls
+- ✅ run_agent_with_tools รับ parameter tools (default = MCP_TOOLS)
 
 ### v0.8.1–v0.8.3 — Stability & Bug Fixes (25 มีนาคม 2569)
 - ✅ test_cases.py เพิ่ม PM Agent tests + routing/keyword validation (v0.8.1)
@@ -148,7 +153,7 @@ ai-poc/
 ├── db.py                    ← SQLite persistence layer (jobs, saved_files) — graceful degradation
 ├── mcp_server.py            ← MCP Filesystem Server (FastMCP) + 5 tools (Layer A/B)
 ├── converter.py             ← Multi-format export (.txt/.docx/.xlsx/.pdf)
-├── index.html               ← Web UI ไฟล์เดียว (v0.8.3 — workspace picker modal + format popup)
+├── index.html               ← Web UI ไฟล์เดียว (v0.8.4 — workspace picker modal + format popup)
 ├── history.html             ← Standalone job history viewer (/history route)
 ├── setup.sh                 ← auto-install: venv + pip + WeasyPrint libs + Thai fonts
 ├── start.sh                 ← run script: activate venv + flask run host=0.0.0.0
