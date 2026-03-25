@@ -1,5 +1,13 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.8.2] — 25 มีนาคม 2569 · fix
+- fix: Orchestrator retry loop — retry API call up to 3 times เมื่อ JSON parse ล้มเหลว ก่อน raise error
+- fix: PM Agent retry loop — retry API call up to 3 times เมื่อ JSON parse ล้มเหลว ก่อน raise error
+- fix: PM Agent API error ไม่ส่ง str(e) ไปยัง frontend (log server-side แทน)
+- แต่ละ retry จะส่ง hint message "ตอบกลับด้วย JSON เท่านั้น" เพื่อ nudge LLM
+
+---
+
 ## [v0.8.1] — 25 มีนาคม 2569 · fix
 - test_cases.py: เพิ่ม PM Agent test cases (#7, #8) — two-step flow: generate → confirm save
 - เพิ่ม routing validation, min_chars check, keyword check สำหรับ cases 1-6

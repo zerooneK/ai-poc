@@ -58,7 +58,7 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 - **ทุก commit ต้อง bump version** ใน index.html พร้อมกัน
 - **ทุก commit ต้องเพิ่ม entry ใน CHANGELOG.md** ระบุ version, วันที่, ประเภท, รายละเอียด
 - เมื่อ bump Minor ให้ reset Patch เป็น 0 เสมอ (v0.2.3 → v0.3.0)
-- Version ปัจจุบัน: **v0.8.1**
+- Version ปัจจุบัน: **v0.8.2**
 
 ประวัติ:
 - v0.1.0 — initial POC (HR + Accounting agents, SSE streaming)
@@ -109,6 +109,7 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 - v0.7.2 — fix: ลบ format dropdown ออกจาก input area (popup เป็นตัวเลือก format หลักแทน)
 - v0.8.0 — feature: Workspace Picker Modal + ALLOWED_WORKSPACE_ROOTS env var + /api/workspaces + /api/workspace/new
 - v0.8.1 — fix: test_cases.py เพิ่ม PM Agent tests + routing/keyword validation สำหรับทุก cases
+- v0.8.2 — fix: Orchestrator + PM Agent retry up to 3 times on bad JSON format before raising error
 
 ## Rules ที่ต้องทำตามเสมอ
 - ภาษาไทยใน UI และ system prompts ทั้งหมด
@@ -195,7 +196,14 @@ These rules apply without needing to be asked:
 ### At end of each work session
 → Run project-documenter to update docs/poc-plan.md
 
-### After finishing all tasks in a session
+### After finishing ALL tasks in a session — MANDATORY
 → Update ALL related documents listed in "เอกสารที่ต้องอัปเดตเมื่อโค้ดเปลี่ยน" before considering done
 → Verify: CLAUDE.md file structure, CHANGELOG.md, PROJECT_SUMMARY.md, DEMO-READINESS-REPORT.md are in sync with current version
 → Do NOT mark work as complete if any doc still shows an older version number
+→ **This is non-negotiable: no task is "done" until all related files are updated**
+
+### After every version bump — MANDATORY git commit
+→ Every time version is bumped in index.html, a git commit MUST be created immediately
+→ Commit message format: `vX.X.X — [fix/feature/docs]: <brief description>`
+→ Do NOT leave version bumps uncommitted — they must be committed in the same step as the change
+→ **Forgetting to commit after a version bump is an error, not a skip**

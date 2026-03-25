@@ -856,39 +856,53 @@ def chat():
             # Step 1: Orchestrator เลือก Agent
             yield f"data: {json.dumps({'type': 'status', 'message': 'กำลังวิเคราะห์งาน...'})}\n\n"
 
-            try:
-                orchestrator_response = client.chat.completions.create(
-                    model=MODEL,
-                    max_tokens=7500,
-                    messages=[
-                        {"role": "system", "content": ORCHESTRATOR_PROMPT},
-                        {"role": "user", "content": user_input}
-                    ]
-                )
-            except RateLimitError:
-                db.fail_job(job_id)
-                yield f"data: {json.dumps({'type': 'error', 'message': 'API ถูกใช้งานเกิน limit กรุณารอสักครู่แล้วลองใหม่'})}\n\n"
-                return
-            except APITimeoutError:
-                db.fail_job(job_id)
-                yield f"data: {json.dumps({'type': 'error', 'message': 'API ใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้ง'})}\n\n"
-                return
-            except APIError:
-                db.fail_job(job_id)
-                yield f"data: {json.dumps({'type': 'error', 'message': 'เกิดข้อผิดพลาดจาก API กรุณาลองใหม่'})}\n\n"
-                return
+            _MAX_RETRIES = 3
+            routing = None
+            for _attempt in range(_MAX_RETRIES):
+                _orch_messages = [
+                    {"role": "system", "content": ORCHESTRATOR_PROMPT},
+                    {"role": "user", "content": user_input}
+                ]
+                if _attempt > 0:
+                    _orch_messages.append({"role": "user", "content": "ตอบกลับด้วย JSON เท่านั้น ห้ามมีข้อความอื่น"})
+                    logger.warning(f"Orchestrator retry attempt {_attempt + 1}/{_MAX_RETRIES}")
+                try:
+                    orchestrator_response = client.chat.completions.create(
+                        model=MODEL,
+                        max_tokens=7500,
+                        messages=_orch_messages
+                    )
+                except RateLimitError:
+                    db.fail_job(job_id)
+                    yield f"data: {json.dumps({'type': 'error', 'message': 'API ถูกใช้งานเกิน limit กรุณารอสักครู่แล้วลองใหม่'})}\n\n"
+                    return
+                except APITimeoutError:
+                    db.fail_job(job_id)
+                    yield f"data: {json.dumps({'type': 'error', 'message': 'API ใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้ง'})}\n\n"
+                    return
+                except APIError:
+                    db.fail_job(job_id)
+                    yield f"data: {json.dumps({'type': 'error', 'message': 'เกิดข้อผิดพลาดจาก API กรุณาลองใหม่'})}\n\n"
+                    return
 
-            orch_choice = orchestrator_response.choices[0]
-            if orch_choice.finish_reason == 'length':
-                logger.warning("Orchestrator response truncated by max_tokens")
-            raw = orch_choice.message.content
-            if not raw:
-                yield f"data: {json.dumps({'type': 'error', 'message': 'Orchestrator ไม่ตอบกลับ กรุณาลองใหม่'})}\n\n"
-                return
-            try:
-                raw = _extract_json(raw)
-                routing = json.loads(raw)
-            except (json.JSONDecodeError, ValueError):
+                orch_choice = orchestrator_response.choices[0]
+                if orch_choice.finish_reason == 'length':
+                    logger.warning("Orchestrator response truncated by max_tokens")
+                raw = orch_choice.message.content
+                if not raw:
+                    if _attempt == _MAX_RETRIES - 1:
+                        yield f"data: {json.dumps({'type': 'error', 'message': 'Orchestrator ไม่ตอบกลับ กรุณาลองใหม่'})}\n\n"
+                        return
+                    continue
+                try:
+                    routing = json.loads(_extract_json(raw))
+                    break
+                except (json.JSONDecodeError, ValueError):
+                    logger.warning(f"Orchestrator bad JSON (attempt {_attempt + 1}): {raw[:200]!r}")
+                    if _attempt == _MAX_RETRIES - 1:
+                        yield f"data: {json.dumps({'type': 'error', 'message': 'Orchestrator ตอบกลับผิดรูปแบบ กรุณาลองใหม่'})}\n\n"
+                        return
+            if routing is None:
                 yield f"data: {json.dumps({'type': 'error', 'message': 'Orchestrator ตอบกลับผิดรูปแบบ กรุณาลองใหม่'})}\n\n"
                 return
             agent = routing.get('agent', 'hr')
@@ -902,36 +916,48 @@ def chat():
                 # PM path: decompose → multiple agents
                 yield f"data: {json.dumps({'type': 'status', 'message': 'PM Agent กำลังวางแผนงาน...'})}\n\n"
 
-                try:
-                    pm_response = client.chat.completions.create(
-                        model=MODEL,
-                        max_tokens=6000,
-                        messages=[
-                            {"role": "system", "content": PM_PROMPT},
-                            {"role": "user", "content": user_input}
-                        ]
-                    )
-                except Exception as e:
-                    db.fail_job(job_id)
-                    yield f"data: {json.dumps({'type': 'error', 'message': f'PM Agent เกิดข้อผิดพลาด: {str(e)}'})}\n\n"
-                    return
+                _pm_subtasks = None
+                for _pm_attempt in range(_MAX_RETRIES):
+                    _pm_messages = [
+                        {"role": "system", "content": PM_PROMPT},
+                        {"role": "user", "content": user_input}
+                    ]
+                    if _pm_attempt > 0:
+                        _pm_messages.append({"role": "user", "content": "ตอบกลับด้วย JSON เท่านั้น ห้ามมีข้อความอื่น"})
+                        logger.warning(f"PM Agent retry attempt {_pm_attempt + 1}/{_MAX_RETRIES}")
+                    try:
+                        pm_response = client.chat.completions.create(
+                            model=MODEL,
+                            max_tokens=6000,
+                            messages=_pm_messages
+                        )
+                    except Exception as e:
+                        logger.error(f"PM Agent API error: {e}")
+                        db.fail_job(job_id)
+                        yield f"data: {json.dumps({'type': 'error', 'message': 'PM Agent เกิดข้อผิดพลาด กรุณาลองใหม่'})}\n\n"
+                        return
 
-                # Log finish_reason to detect future truncation issues
-                pm_choice = pm_response.choices[0]
-                if pm_choice.finish_reason == 'length':
-                    logger.warning("PM Agent response truncated by max_tokens — consider increasing further")
-                else:
-                    logger.info(f"PM Agent finish_reason: {pm_choice.finish_reason}")
+                    # Log finish_reason to detect future truncation issues
+                    pm_choice = pm_response.choices[0]
+                    if pm_choice.finish_reason == 'length':
+                        logger.warning("PM Agent response truncated by max_tokens — consider increasing further")
+                    else:
+                        logger.info(f"PM Agent finish_reason: {pm_choice.finish_reason}")
 
-                raw_pm = pm_choice.message.content or ''
-                try:
-                    raw_pm = _extract_json(raw_pm)
-                    pm_data = json.loads(raw_pm)
-                    subtasks = pm_data.get('subtasks', [])
-                except (json.JSONDecodeError, ValueError):
-                    logger.warning(f"PM Agent bad response: {raw_pm[:300]!r}")
+                    raw_pm = pm_choice.message.content or ''
+                    try:
+                        pm_data = json.loads(_extract_json(raw_pm))
+                        _pm_subtasks = pm_data.get('subtasks', [])
+                        break
+                    except (json.JSONDecodeError, ValueError):
+                        logger.warning(f"PM Agent bad JSON (attempt {_pm_attempt + 1}): {raw_pm[:300]!r}")
+                        if _pm_attempt == _MAX_RETRIES - 1:
+                            yield f"data: {json.dumps({'type': 'error', 'message': 'PM Agent ตอบกลับผิดรูปแบบ กรุณาลองใหม่'})}\n\n"
+                            return
+                if _pm_subtasks is None:
                     yield f"data: {json.dumps({'type': 'error', 'message': 'PM Agent ตอบกลับผิดรูปแบบ กรุณาลองใหม่'})}\n\n"
                     return
+                subtasks = _pm_subtasks
 
                 # Filter out invalid agents (e.g. 'pm' self-reference)
                 valid_agents = {'hr', 'accounting', 'manager'}
