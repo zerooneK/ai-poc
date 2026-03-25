@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from mcp_server import fs_list_files, fs_create_file, fs_read_file, fs_update_file, fs_delete_file
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+import db
 import json
 import logging
 import os
@@ -54,12 +55,14 @@ TEMP_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'temp'))
 os.makedirs(TEMP_DIR, exist_ok=True)
 
 app = Flask(__name__)
+app.json.ensure_ascii = False  # Return Thai text as-is in JSON responses
 CORS(app, origins=["http://localhost:5000", "http://127.0.0.1:5000",
                    "http://0.0.0.0:5000"])
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=OPENROUTER_API_KEY,
 )
+db.init_db()
 
 # ─── System Prompts ───────────────────────────────────────────────────────────
 
@@ -512,12 +515,15 @@ def _is_edit_intent(message: str) -> bool:
 
 
 def _suggest_filename(agent: str, content: str) -> str:
-    """Generate a meaningful filename from agent type and document content."""
+    """Generate a meaningful English filename from agent type and document content.
+    Extracts ASCII words only — no Thai or non-Latin characters in filenames."""
     ts = datetime.now().strftime('%Y%m%d_%H%M%S')
-    m = re.search(r'#\s*(.{3,30})', content)
+    m = re.search(r'#\s*(.{3,60})', content)
     if m:
-        slug = re.sub(r'[^\w]', '_', m.group(1).strip())
-        slug = re.sub(r'_+', '_', slug)[:22].strip('_')
+        # Keep only ASCII letters, digits, spaces — strip Thai and other non-ASCII
+        ascii_only = re.sub(r'[^\x20-\x7E]', ' ', m.group(1).strip())
+        slug = re.sub(r'[^a-zA-Z0-9]+', '_', ascii_only)
+        slug = slug.strip('_')[:30]
         if len(slug) >= 3:
             return f"{agent}_{slug}_{ts}.md"
     return f"{agent}_{ts}.md"
@@ -591,7 +597,8 @@ def stream_agent(system_prompt: str, message: str, agent_label: str, max_tokens:
         yield f"data: {json.dumps({'type': 'error', 'message': 'เกิดข้อผิดพลาดระหว่าง streaming กรุณาลองใหม่'})}\n\n"
 
 
-def handle_save(pending_doc: str, pending_agent: str, workspace: str):
+def handle_save(pending_doc: str, pending_agent: str, workspace: str,
+                job_id=None):
     """Save the pending document to workspace without another LLM call.
     Generator that yields SSE data strings."""
     try:
@@ -606,6 +613,9 @@ def handle_save(pending_doc: str, pending_agent: str, workspace: str):
             yield f"data: {json.dumps({'type': 'save_failed', 'message': result, 'filename': filename})}\n\n"
             yield f"data: {json.dumps({'type': 'tool_result', 'tool': 'create_file', 'result': result})}\n\n"
             return
+        # Record file in DB (non-critical — errors are swallowed)
+        size = len(pending_doc.encode('utf-8'))
+        db.record_file(job_id, filename, pending_agent, size)
         yield f"data: {json.dumps({'type': 'text', 'content': f'✅ {result}'})}\n\n"
         yield f"data: {json.dumps({'type': 'tool_result', 'tool': 'create_file', 'result': result})}\n\n"
     except Exception as e:
@@ -651,7 +661,7 @@ def _is_safe_temp_path(path: str) -> bool:
         return False
 
 
-def handle_pm_save(temp_paths: list, workspace: str):
+def handle_pm_save(temp_paths: list, workspace: str, job_id=None):
     """Move all PM staged temp files to workspace. Generator that yields SSE data strings."""
     saved = []
     for temp_path in temp_paths:
@@ -665,6 +675,14 @@ def handle_pm_save(temp_paths: list, workspace: str):
         try:
             filename = _move_to_workspace(temp_path, workspace)
             saved.append(filename)
+            # Infer agent from filename prefix (set by _suggest_filename)
+            agent_prefix = filename.split('_')[0] if '_' in filename else 'pm'
+            size = 0
+            try:
+                size = os.path.getsize(os.path.join(workspace, filename))
+            except OSError:
+                pass
+            db.record_file(job_id, filename, agent_prefix, size)
             yield f"data: {json.dumps({'type': 'tool_result', 'tool': 'create_file', 'result': f'บันทึก {filename} เรียบร้อย'})}\n\n"
         except Exception as e:
             logger.error(f"Failed to move temp file {temp_path}: {e}")
@@ -686,6 +704,11 @@ def index():
     return send_file('index.html')
 
 
+@app.route('/history')
+def history_page():
+    return send_file('history.html')
+
+
 @app.route('/api/chat', methods=['POST'])
 def chat():
     if not request.json:
@@ -700,10 +723,14 @@ def chat():
     pending_doc        = request.json.get('pending_doc', '').strip()
     pending_agent      = request.json.get('pending_agent', '').strip()
     pending_temp_paths = request.json.get('pending_temp_paths', [])
+    session_id         = request.json.get('session_id', None)
     if not isinstance(pending_temp_paths, list):
         pending_temp_paths = []
 
     def generate():
+        # Create a DB job record for this request (None if DB unavailable)
+        job_id = db.create_job(user_input, session_id)
+
         with _workspace_lock:
             workspace = WORKSPACE_PATH
         os.makedirs(workspace, exist_ok=True)
@@ -712,8 +739,9 @@ def chat():
         # ── Follow-up: PM staged files waiting for confirmation ──────────────
         if pending_temp_paths:
             if _is_save_intent(user_input):
-                for sse in handle_pm_save(pending_temp_paths, workspace):
+                for sse in handle_pm_save(pending_temp_paths, workspace, job_id):
                     yield sse
+                db.complete_job(job_id, '')
                 yield f"data: {json.dumps({'type': 'done'})}\n\n"
                 return
             # Discard temp files regardless
@@ -723,6 +751,7 @@ def chat():
                     logger.info(f"Discarded temp file: {os.path.basename(tp)}")
             if _is_pure_discard(user_input):
                 # Pure cancel keyword — just confirm and stop
+                db.discard_job(job_id)
                 yield f"data: {json.dumps({'type': 'text', 'content': '🗑️ ยกเลิกการบันทึกไฟล์เรียบร้อย'})}\n\n"
                 yield f"data: {json.dumps({'type': 'done'})}\n\n"
                 return
@@ -732,13 +761,15 @@ def chat():
         # ── Follow-up: single-agent doc confirming/editing ───────────────────
         if pending_doc and pending_agent:
             if _is_save_intent(user_input):
-                for sse in handle_save(pending_doc, pending_agent, workspace):
+                for sse in handle_save(pending_doc, pending_agent, workspace, job_id):
                     yield sse
+                db.complete_job(job_id, pending_doc)
                 yield f"data: {json.dumps({'type': 'done'})}\n\n"
                 return
             elif _is_discard_intent(user_input):
                 if _is_pure_discard(user_input):
                     # Pure cancel keyword — just confirm and stop
+                    db.discard_job(job_id)
                     yield f"data: {json.dumps({'type': 'text', 'content': '🗑️ ยกเลิกเอกสารแล้ว สามารถส่งคำสั่งใหม่ได้เลย'})}\n\n"
                     yield f"data: {json.dumps({'type': 'done'})}\n\n"
                     return
@@ -746,8 +777,17 @@ def chat():
                 yield f"data: {json.dumps({'type': 'status', 'message': '🗑️ ยกเลิกเอกสารเดิมแล้ว กำลังดำเนินการคำสั่งใหม่...'})}\n\n"
             elif _is_edit_intent(user_input):
                 # Explicit edit instruction → revise the pending doc
+                text_chunks = []
                 for sse in handle_revise(pending_doc, pending_agent, user_input, workspace):
                     yield sse
+                    if sse.startswith('data: '):
+                        try:
+                            d = json.loads(sse[6:])
+                            if d.get('type') == 'text':
+                                text_chunks.append(d.get('content', ''))
+                        except Exception:
+                            pass
+                db.complete_job(job_id, ''.join(text_chunks))
                 yield f"data: {json.dumps({'type': 'done'})}\n\n"
                 return
             else:
@@ -762,19 +802,22 @@ def chat():
             try:
                 orchestrator_response = client.chat.completions.create(
                     model=MODEL,
-                    max_tokens=1024,
+                    max_tokens=7500,
                     messages=[
                         {"role": "system", "content": ORCHESTRATOR_PROMPT},
                         {"role": "user", "content": user_input}
                     ]
                 )
             except RateLimitError:
+                db.fail_job(job_id)
                 yield f"data: {json.dumps({'type': 'error', 'message': 'API ถูกใช้งานเกิน limit กรุณารอสักครู่แล้วลองใหม่'})}\n\n"
                 return
             except APITimeoutError:
+                db.fail_job(job_id)
                 yield f"data: {json.dumps({'type': 'error', 'message': 'API ใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้ง'})}\n\n"
                 return
             except APIError:
+                db.fail_job(job_id)
                 yield f"data: {json.dumps({'type': 'error', 'message': 'เกิดข้อผิดพลาดจาก API กรุณาลองใหม่'})}\n\n"
                 return
 
@@ -794,6 +837,7 @@ def chat():
             agent = routing.get('agent', 'hr')
             reason = routing.get('reason', '')
 
+            db.update_job_agent(job_id, agent, reason)
             yield f"data: {json.dumps({'type': 'agent', 'agent': agent, 'reason': reason})}\n\n"
 
             # Step 2: Route to agent(s)
@@ -811,6 +855,7 @@ def chat():
                         ]
                     )
                 except Exception as e:
+                    db.fail_job(job_id)
                     yield f"data: {json.dumps({'type': 'error', 'message': f'PM Agent เกิดข้อผิดพลาด: {str(e)}'})}\n\n"
                     return
 
@@ -842,6 +887,7 @@ def chat():
                 yield f"data: {json.dumps({'type': 'pm_plan', 'subtasks': subtasks})}\n\n"
                 logger.info(f"PM Agent decomposed into {len(subtasks)} subtasks")
 
+                all_pm_chunks = []  # collect all subtask output for DB
                 for i, subtask in enumerate(subtasks):
                     sub_agent = subtask.get('agent', 'hr')
                     sub_task = subtask.get('task', user_input)
@@ -863,7 +909,7 @@ def chat():
                     yield f"data: {json.dumps({'type': 'status', 'message': f'{sub_label} กำลังสร้างเอกสาร...'})}\n\n"
                     logger.info(f"PM → {sub_label}: {sub_task[:60]}")
 
-                    # Stream content to frontend AND capture it for temp staging
+                    # Stream content to frontend AND capture it for temp staging + DB
                     subtask_chunks = []
                     subtask_failed = False
                     for sse_line in stream_agent(sub_prompt, sub_task, sub_label, sub_max_tokens):
@@ -882,12 +928,18 @@ def chat():
 
                     # Write captured content to temp staging (hidden from workspace/file panel)
                     full_content = ''.join(subtask_chunks)
+                    all_pm_chunks.append(full_content)
                     if full_content.strip():
                         temp_path = _write_temp(full_content, sub_agent)
                         filename = os.path.basename(temp_path)
                         yield f"data: {json.dumps({'type': 'pending_file', 'temp_path': temp_path, 'filename': filename, 'agent': sub_agent})}\n\n"
 
                     yield f"data: {json.dumps({'type': 'subtask_done', 'agent': sub_agent, 'index': i, 'total': len(subtasks)})}\n\n"
+
+                if subtask_failed:
+                    db.fail_job(job_id)
+                else:
+                    db.complete_job(job_id, '\n\n---\n\n'.join(all_pm_chunks))
 
             else:
                 # Single-agent path — stream only, no auto-save (user confirms later)
@@ -907,15 +959,26 @@ def chat():
                 logger.info(f"Routed to {agent_label}: {user_input[:60]}")
                 yield f"data: {json.dumps({'type': 'status', 'message': f'{agent_label} กำลังสร้างเอกสาร...'})}\n\n"
 
+                text_chunks = []
                 for sse_line in stream_agent(system_prompt, user_input, agent_label, agent_max_tokens):
                     yield sse_line
+                    if sse_line.startswith('data: '):
+                        try:
+                            d = json.loads(sse_line[6:])
+                            if d.get('type') == 'text':
+                                text_chunks.append(d.get('content', ''))
+                        except Exception:
+                            pass
+                db.complete_job(job_id, ''.join(text_chunks))
 
             yield f"data: {json.dumps({'type': 'done'})}\n\n"
 
         except json.JSONDecodeError:
+            db.fail_job(job_id)
             yield f"data: {json.dumps({'type': 'error', 'message': 'Orchestrator ตอบกลับผิดรูปแบบ กรุณาลองใหม่'})}\n\n"
             yield f"data: {json.dumps({'type': 'done'})}\n\n"
         except Exception as e:
+            db.fail_job(job_id)
             logger.error(f"Unexpected error in chat: {e}")
             yield f"data: {json.dumps({'type': 'error', 'message': 'เกิดข้อผิดพลาดจากระบบ กรุณาลองใหม่อีกครั้ง'})}\n\n"
             yield f"data: {json.dumps({'type': 'done'})}\n\n"
@@ -1044,8 +1107,25 @@ def health():
         'provider': 'openrouter',
         'api_key_configured': bool(OPENROUTER_API_KEY),
         'workspace': wp,
-        'workspace_exists': os.path.isdir(wp)
+        'workspace_exists': os.path.isdir(wp),
+        'db': db.db_status()
     })
+
+
+@app.route('/api/history')
+def history():
+    """Return the last 50 jobs with their saved files."""
+    limit = min(int(request.args.get('limit', 50)), 200)
+    return jsonify({'jobs': db.get_history(limit), 'db_available': db.DB_AVAILABLE})
+
+
+@app.route('/api/history/<job_id>')
+def history_job(job_id: str):
+    """Return a single job with full output_text and files."""
+    job = db.get_job(job_id)
+    if not job:
+        return jsonify({'error': 'ไม่พบประวัติงานนี้'}), 404
+    return jsonify(job)
 
 
 if __name__ == '__main__':

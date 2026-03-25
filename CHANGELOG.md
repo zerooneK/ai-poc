@@ -1,5 +1,28 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.5.1] — 25 มีนาคม 2569 · feature
+- เพิ่ม `history.html` — หน้าดูประวัติ job แบบ standalone (dark theme เดียวกับ main UI)
+- Stats bar: job ทั้งหมด, สำเร็จ, ไฟล์บันทึก, error
+- Job card: agent badge, status dot, truncated input, วันที่
+- คลิก card เพื่อ expand: แสดง output text (markdown rendered) + file chips
+- เพิ่ม Flask route `/history` เสิร์ฟ `history.html`
+- Back button กลับหน้าหลัก
+
+---
+
+## [v0.5.0] — 25 มีนาคม 2569 · feature
+- เพิ่ม SQLite persistence layer (`db.py`) — บันทึกทุก job, agent routing, output text, และไฟล์ที่ save
+- DB schema: 2 ตาราง (`jobs`, `saved_files`) พร้อม WAL mode + foreign keys + index
+- Graceful degradation: DB error ไม่กระทบ chat flow — ถ้า DB ใช้ไม่ได้ระบบยังทำงานปกติ
+- Zombie job cleanup: job ที่ค้าง `pending` เกิน 1 ชั่วโมงถูก mark เป็น `error` อัตโนมัติทุก startup
+- เพิ่ม `session_id` (localStorage UUID) ส่งมากับทุก request เพื่อเตรียมรองรับ auth
+- เพิ่ม `/api/history` และ `/api/history/<job_id>` routes
+- อัปเดต `/api/health` ให้รายงานสถานะ DB
+- เพิ่ม `data/` directory (gitignored) สำหรับเก็บ `assistant.db`
+- Prototype phase เริ่มต้น: v0.5.x
+
+---
+
 ## [v0.4.21] — 24 มีนาคม 2569 · fix
 - เพิ่ม `start.sh` และ `setup.sh` สำหรับรัน app บน WSL โดยตรง
 - เปลี่ยน Flask host เป็น `0.0.0.0` (configurable ด้วย `FLASK_HOST`) เพื่อให้เข้าถึงได้จาก Windows browser ผ่าน WSL

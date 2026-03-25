@@ -41,7 +41,16 @@ Output: เอกสารภาษาไทยพร้อมใช้
 
 ## สรุปความคืบหน้า — 24 มีนาคม 2569
 
-**สถานะ POC: เสร็จสมบูรณ์ 100% — พร้อม demo**
+**สถานะ: Prototype Phase เริ่มต้นแล้ว — v0.5.0**
+
+### v0.5.0 — Prototype Phase เริ่มต้น (25 มีนาคม 2569)
+- ✅ SQLite persistence layer (`db.py`) — บันทึกทุก job, routing decision, output text, saved files
+- ✅ 2 tables: `jobs` + `saved_files` พร้อม WAL mode + indexes + foreign keys
+- ✅ Graceful degradation — DB error ไม่กระทบ chat flow เลย
+- ✅ Zombie job cleanup อัตโนมัติทุก startup (pending > 1 ชม. → error)
+- ✅ Session ID (localStorage UUID) ส่งทุก request เพื่อเตรียมรองรับ auth
+- ✅ `/api/history` + `/api/history/<job_id>` routes
+- ✅ `/api/health` รายงานสถานะ DB
 
 ### ทำอะไรไปบ้างคืนนี้ (v0.1.0 → v0.4.20)
 - ✅ Setup เสร็จครบ: app.py, index.html, requirements.txt, .env.example, .gitignore
@@ -109,12 +118,13 @@ Output: เอกสารภาษาไทยพร้อมใช้
 
 ```
 ai-poc/
-├── app.py                   ← Flask backend + Orchestrator + HR/Accounting/Manager/PM agents + Agentic loop
+├── app.py                   ← Flask backend + Orchestrator + HR/Accounting/Manager/PM agents + Agentic loop + DB integration
+├── db.py                    ← SQLite persistence layer (jobs, saved_files) — graceful degradation
 ├── mcp_server.py            ← MCP Filesystem Server (FastMCP) + 5 tools (Layer A/B)
-├── index.html               ← Web UI ไฟล์เดียว (v0.4.20 — chat bubbles + confirmation flow + cancel button + confirmation modal)
+├── index.html               ← Web UI ไฟล์เดียว (v0.5.0 — chat bubbles + confirmation flow + cancel button + confirmation modal + session_id)
 ├── test_cases.py            ← Automated test script (6 use cases)
 ├── quick-demo-check.py      ← Full validation (7 checks: 6 cases + health)
-├── CHANGELOG.md             ← Version history (v0.1.0 → v0.4.20)
+├── CHANGELOG.md             ← Version history (v0.1.0 → v0.5.0)
 ├── PROJECT_SUMMARY.md       ← ภาพรวมโปรเจกต์สำหรับ AI context
 ├── CLAUDE.md                ← Rules สำหรับ Claude Code
 ├── PRE-DEMO-CHECKLIST.md    ← Checklist 30 นาทีก่อน demo
@@ -125,6 +135,7 @@ ai-poc/
 ├── requirements.txt         ← Dependencies (flask, openai, python-dotenv, flask-cors, mcp, watchdog)
 ├── workspace/               ← workspace directory สำหรับ agent สร้างไฟล์ (gitignored ยกเว้น .gitkeep)
 ├── temp/                    ← staging area สำหรับไฟล์ที่รอ user confirm (gitignored ยกเว้น .gitkeep)
+├── data/                    ← SQLite database directory — assistant.db สร้างอัตโนมัติ (gitignored ยกเว้น .gitkeep)
 ├── backup/
 │   ├── demo-inputs.txt      ← copy-paste inputs ทั้ง 6 cases พร้อมใช้
 │   ├── demo-script.md       ← demo script พร้อม timing และ talking points (3 cases)

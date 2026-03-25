@@ -14,7 +14,7 @@
 
 ## Tech Stack
 
-### POC (ทำแล้ว — v0.4.20)
+### POC (ทำแล้ว — v0.5.0)
 
 | Layer | Technology |
 |---|---|
@@ -136,7 +136,7 @@ Local Network บริษัท
 - [ ] สร้างโครงสร้างโปรเจกต์ Flask
 - [ ] กำหนด API routes: `/api/chat`, `/api/stream`, `/api/history`, `/api/download`
 - [ ] ตั้งค่า CORS สำหรับ React dev server
-- [ ] สร้าง SQLite database + schema: users, jobs, results
+- [x] สร้าง SQLite database + schema: jobs, saved_files (v0.5.0 — db.py)
 
 **1.2 LangGraph — Orchestrator**
 - [ ] สร้าง `FlowState` (shared state ระหว่าง nodes)

@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job History — AI Assistant</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    /* ─── Design Tokens (same as main app) ──────────────────────── */
+    :root {
+      --bg:           #13171f;
+      --surface-lo:   #111520;
+      --surface:      #1b2130;
+      --surface-hi:   #222a3a;
+      --surface-top:  #2a3347;
+      --on-surface:   #f0f4f8;
+      --on-surface-2: #c8d2d8;
+      --primary:      #5856D6;
+      --on-primary:   #faf6ff;
+      --outline:      #586064;
+      --outline-var:  #2b3437;
+      --error:        #ff8b9a;
+      --hr-bg:  #0d2012; --hr-fg:  #4ade80; --hr-border:  #166534;
+      --ac-bg:  #0d0d1f; --ac-fg:  #818cf8; --ac-border:  #3730a3;
+      --mg-bg:  #1a0d1a; --mg-fg:  #e879f9; --mg-border:  #7e22ce;
+      --pm-bg:  #0d1a26; --pm-fg:  #38bdf8; --pm-border:  #0369a1;
+    }
+
+    /* ─── Base ───────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', 'Sarabun', sans-serif;
+      background: var(--bg);
+      color: var(--on-surface);
+      min-height: 100vh;
+    }
+
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      font-size: 18px;
+      line-height: 1;
+      user-select: none;
+      vertical-align: middle;
+    }
+
+    /* ─── Header ─────────────────────────────────────────────────── */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--surface);
+      border-bottom: 1px solid var(--outline-var);
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .back-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--on-surface-2);
+      text-decoration: none;
+      font-size: 13px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .back-btn:hover { background: var(--surface-hi); color: var(--on-surface); }
+
+    .header-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--on-surface);
+      flex: 1;
+    }
+
+    .header-sub {
+      font-size: 12px;
+      color: var(--on-surface-2);
+    }
+
+    .refresh-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface-hi);
+      border: 1px solid var(--outline-var);
+      color: var(--on-surface-2);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .refresh-btn:hover { background: var(--surface-top); color: var(--on-surface); }
+
+    /* ─── Main layout ────────────────────────────────────────────── */
+    .main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 24px 20px 48px;
+    }
+
+    /* ─── Stats bar ──────────────────────────────────────────────── */
+    .stats-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .stat-chip {
+      background: var(--surface);
+      border: 1px solid var(--outline-var);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 12px;
+      color: var(--on-surface-2);
+    }
+    .stat-chip strong {
+      color: var(--on-surface);
+      font-size: 18px;
+      font-weight: 600;
+      display: block;
+      line-height: 1.2;
+    }
+
+    /* ─── Empty state ────────────────────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 64px 20px;
+      color: var(--on-surface-2);
+    }
+    .empty-state .material-symbols-outlined {
+      font-size: 48px;
+      opacity: 0.3;
+      display: block;
+      margin-bottom: 12px;
+    }
+    .empty-state p { font-size: 14px; }
+
+    /* ─── Job card ───────────────────────────────────────────────── */
+    .job-card {
+      background: var(--surface);
+      border: 1px solid var(--outline-var);
+      border-radius: 12px;
+      margin-bottom: 10px;
+      overflow: hidden;
+      transition: border-color 0.15s;
+    }
+    .job-card:hover { border-color: var(--outline); }
+
+    .job-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .agent-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+      border: 1px solid;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .agent-hr  { background: var(--hr-bg); color: var(--hr-fg); border-color: var(--hr-border); }
+    .agent-accounting { background: var(--ac-bg); color: var(--ac-fg); border-color: var(--ac-border); }
+    .agent-manager    { background: var(--mg-bg); color: var(--mg-fg); border-color: var(--mg-border); }
+    .agent-pm         { background: var(--pm-bg); color: var(--pm-fg); border-color: var(--pm-border); }
+    .agent-unknown    { background: var(--surface-hi); color: var(--on-surface-2); border-color: var(--outline-var); }
+
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .status-dot.completed { background: #4ade80; }
+    .status-dot.error     { background: var(--error); }
+    .status-dot.discarded { background: var(--outline); }
+    .status-dot.pending   { background: #facc15; }
+
+    .job-input {
+      flex: 1;
+      font-size: 13px;
+      color: var(--on-surface);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .job-meta {
+      font-size: 11px;
+      color: var(--on-surface-2);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .expand-icon {
+      color: var(--on-surface-2);
+      flex-shrink: 0;
+      transition: transform 0.2s;
+      font-size: 16px !important;
+    }
+    .job-card.open .expand-icon { transform: rotate(180deg); }
+
+    /* ─── Job body (expanded) ────────────────────────────────────── */
+    .job-body {
+      display: none;
+      border-top: 1px solid var(--outline-var);
+    }
+    .job-card.open .job-body { display: block; }
+
+    .job-reason {
+      padding: 10px 16px;
+      font-size: 11px;
+      color: var(--on-surface-2);
+      background: var(--surface-lo);
+      border-bottom: 1px solid var(--outline-var);
+    }
+    .job-reason strong { color: var(--on-surface); }
+
+    .output-section {
+      padding: 16px;
+    }
+
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--on-surface-2);
+      margin-bottom: 10px;
+    }
+
+    /* Markdown output */
+    .markdown-output {
+      font-size: 13px;
+      line-height: 1.8;
+      color: var(--on-surface);
+      background: var(--surface-lo);
+      border: 1px solid var(--outline-var);
+      border-radius: 8px;
+      padding: 14px 16px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .markdown-output h1,
+    .markdown-output h2,
+    .markdown-output h3 {
+      font-size: 14px; font-weight: 600;
+      margin: 12px 0 6px;
+      color: var(--on-surface);
+    }
+    .markdown-output h1 { font-size: 15px; }
+    .markdown-output p  { margin: 6px 0; }
+    .markdown-output ul,
+    .markdown-output ol { padding-left: 20px; margin: 6px 0; }
+    .markdown-output li { margin: 3px 0; }
+    .markdown-output table {
+      border-collapse: collapse; width: 100%; margin: 10px 0;
+    }
+    .markdown-output th,
+    .markdown-output td {
+      border: 1px solid var(--outline-var);
+      padding: 6px 10px;
+      font-size: 12px;
+      text-align: left;
+    }
+    .markdown-output th { background: var(--surface-hi); font-weight: 600; }
+    .markdown-output code {
+      background: var(--surface-top); padding: 2px 5px; border-radius: 4px;
+      font-size: 12px;
+    }
+    .markdown-output pre {
+      background: var(--surface-top); border-radius: 6px; padding: 10px;
+      overflow-x: auto; margin: 8px 0;
+    }
+    .markdown-output pre code { background: none; padding: 0; }
+    .markdown-output hr { border: none; border-top: 1px solid var(--outline-var); margin: 12px 0; }
+    .markdown-output blockquote {
+      border-left: 3px solid var(--primary); padding-left: 12px;
+      color: var(--on-surface-2); margin: 8px 0;
+    }
+
+    .no-output {
+      font-size: 12px;
+      color: var(--on-surface-2);
+      font-style: italic;
+      padding: 10px 0;
+    }
+
+    /* Files */
+    .files-section {
+      padding: 0 16px 14px;
+    }
+    .file-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface-hi);
+      border: 1px solid var(--outline-var);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 11px;
+      color: var(--on-surface-2);
+      margin: 3px 4px 3px 0;
+    }
+    .file-chip .material-symbols-outlined { font-size: 13px !important; }
+
+    /* ─── Loading ────────────────────────────────────────────────── */
+    .loading {
+      text-align: center;
+      padding: 48px;
+      color: var(--on-surface-2);
+      font-size: 13px;
+    }
+
+    /* ─── DB warning ─────────────────────────────────────────────── */
+    .db-warning {
+      background: #2a1a00;
+      border: 1px solid #a36a00;
+      color: #fbbf24;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 12px;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <a href="/" class="back-btn">
+    <span class="material-symbols-outlined">arrow_back</span>
+    กลับหน้าหลัก
+  </a>
+  <span class="header-title">ประวัติการใช้งาน</span>
+  <span class="header-sub" id="lastRefresh"></span>
+  <button class="refresh-btn" onclick="loadHistory()">
+    <span class="material-symbols-outlined">refresh</span>
+    รีเฟรช
+  </button>
+</header>
+
+<main class="main">
+  <div id="dbWarning" style="display:none" class="db-warning">
+    ⚠️ ฐานข้อมูลไม่พร้อมใช้งาน — ประวัติอาจแสดงไม่ครบ
+  </div>
+
+  <div class="stats-bar" id="statsBar" style="display:none">
+    <div class="stat-chip"><strong id="statTotal">0</strong>งานทั้งหมด</div>
+    <div class="stat-chip"><strong id="statCompleted">0</strong>สำเร็จ</div>
+    <div class="stat-chip"><strong id="statFiles">0</strong>ไฟล์ที่บันทึก</div>
+    <div class="stat-chip"><strong id="statError">0</strong>เกิดข้อผิดพลาด</div>
+  </div>
+
+  <div id="jobsContainer">
+    <div class="loading">
+      <span class="material-symbols-outlined" style="font-size:32px;opacity:0.3;display:block;margin-bottom:8px">history</span>
+      กำลังโหลดประวัติ...
+    </div>
+  </div>
+</main>
+
+<script>
+  // ─── Helpers ───────────────────────────────────────────────────
+
+  function agentLabel(agent) {
+    const map = {
+      hr: 'HR Agent',
+      accounting: 'Accounting Agent',
+      manager: 'Manager Advisor',
+      pm: 'PM Agent'
+    };
+    return map[agent] || agent || 'ไม่ทราบ';
+  }
+
+  function agentClass(agent) {
+    const map = {
+      hr: 'agent-hr',
+      accounting: 'agent-accounting',
+      manager: 'agent-manager',
+      pm: 'agent-pm'
+    };
+    return map[agent] || 'agent-unknown';
+  }
+
+  function statusClass(status) {
+    return ['completed', 'error', 'discarded', 'pending'].includes(status) ? status : 'pending';
+  }
+
+  function statusLabel(status) {
+    const map = {
+      completed: 'สำเร็จ',
+      error: 'ผิดพลาด',
+      discarded: 'ยกเลิก',
+      pending: 'รอดำเนินการ'
+    };
+    return map[status] || status;
+  }
+
+  function formatDate(iso) {
+    if (!iso) return '—';
+    try {
+      const d = new Date(iso);
+      return d.toLocaleString('th-TH', {
+        day: 'numeric', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    } catch { return iso; }
+  }
+
+  function formatBytes(bytes) {
+    if (!bytes) return '';
+    if (bytes < 1024) return bytes + ' B';
+    return (bytes / 1024).toFixed(1) + ' KB';
+  }
+
+  function truncate(text, max = 80) {
+    if (!text) return '(ไม่มีข้อความ)';
+    return text.length > max ? text.slice(0, max) + '…' : text;
+  }
+
+  function safeMarkdown(text) {
+    if (!text || !text.trim()) return null;
+    try {
+      return marked.parse(text, { breaks: true, gfm: true });
+    } catch {
+      // Fallback: plain text with line breaks
+      const escaped = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+      return '<pre style="white-space:pre-wrap">' + escaped + '</pre>';
+    }
+  }
+
+  // ─── Render ────────────────────────────────────────────────────
+
+  function renderJob(job, index) {
+    const card = document.createElement('div');
+    card.className = 'job-card';
+    card.dataset.id = job.id;
+
+    // ── Header ──
+    const header = document.createElement('div');
+    header.className = 'job-header';
+
+    const badge = document.createElement('span');
+    badge.className = 'agent-badge ' + agentClass(job.agent);
+    badge.textContent = agentLabel(job.agent);
+
+    const dot = document.createElement('span');
+    dot.className = 'status-dot ' + statusClass(job.status);
+    dot.title = statusLabel(job.status);
+
+    const input = document.createElement('div');
+    input.className = 'job-input';
+    input.textContent = truncate(job.user_input);
+    input.title = job.user_input || '';
+
+    const meta = document.createElement('div');
+    meta.className = 'job-meta';
+    meta.textContent = formatDate(job.created_at);
+
+    const icon = document.createElement('span');
+    icon.className = 'material-symbols-outlined expand-icon';
+    icon.textContent = 'expand_more';
+
+    header.appendChild(badge);
+    header.appendChild(dot);
+    header.appendChild(input);
+    header.appendChild(meta);
+    header.appendChild(icon);
+
+    // ── Body ──
+    const body = document.createElement('div');
+    body.className = 'job-body';
+
+    // Reason row
+    if (job.reason) {
+      const reason = document.createElement('div');
+      reason.className = 'job-reason';
+      reason.innerHTML = '<strong>เหตุผล:</strong> ' + escapeHtml(job.reason);
+      body.appendChild(reason);
+    }
+
+    // Output section
+    const outputSec = document.createElement('div');
+    outputSec.className = 'output-section';
+
+    const outputLabel = document.createElement('div');
+    outputLabel.className = 'section-label';
+    outputLabel.textContent = 'ผลลัพธ์จาก AI';
+    outputSec.appendChild(outputLabel);
+
+    const mdHtml = safeMarkdown(job.output_text);
+    if (mdHtml) {
+      const outputDiv = document.createElement('div');
+      outputDiv.className = 'markdown-output';
+      outputDiv.innerHTML = mdHtml;
+      outputSec.appendChild(outputDiv);
+    } else {
+      const noOut = document.createElement('div');
+      noOut.className = 'no-output';
+      noOut.textContent = job.status === 'discarded'
+        ? 'เอกสารถูกยกเลิกก่อนบันทึก'
+        : 'ไม่มีผลลัพธ์';
+      outputSec.appendChild(noOut);
+    }
+
+    body.appendChild(outputSec);
+
+    // Files section
+    if (job.files && job.files.length > 0) {
+      const filesSec = document.createElement('div');
+      filesSec.className = 'files-section';
+
+      const filesLabel = document.createElement('div');
+      filesLabel.className = 'section-label';
+      filesLabel.textContent = 'ไฟล์ที่บันทึก';
+      filesSec.appendChild(filesLabel);
+
+      job.files.forEach(f => {
+        const chip = document.createElement('span');
+        chip.className = 'file-chip';
+        chip.innerHTML =
+          '<span class="material-symbols-outlined">description</span>' +
+          escapeHtml(f.filename) +
+          (f.size_bytes ? ' <span style="opacity:0.5">· ' + formatBytes(f.size_bytes) + '</span>' : '');
+        filesSec.appendChild(chip);
+      });
+
+      body.appendChild(filesSec);
+    }
+
+    card.appendChild(header);
+    card.appendChild(body);
+
+    // Toggle expand
+    header.addEventListener('click', () => {
+      card.classList.toggle('open');
+    });
+
+    return card;
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // ─── Load data ─────────────────────────────────────────────────
+
+  async function loadHistory() {
+    const container = document.getElementById('jobsContainer');
+    container.innerHTML = '<div class="loading"><span class="material-symbols-outlined" style="font-size:32px;opacity:0.3;display:block;margin-bottom:8px">sync</span>กำลังโหลด...</div>';
+
+    try {
+      const resp = await fetch('/api/history?limit=100');
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const data = await resp.json();
+
+      // DB warning
+      document.getElementById('dbWarning').style.display =
+        data.db_available ? 'none' : 'block';
+
+      const jobs = data.jobs || [];
+
+      // Stats
+      const statsBar = document.getElementById('statsBar');
+      if (jobs.length > 0) {
+        statsBar.style.display = 'flex';
+        document.getElementById('statTotal').textContent = jobs.length;
+        document.getElementById('statCompleted').textContent =
+          jobs.filter(j => j.status === 'completed').length;
+        document.getElementById('statFiles').textContent =
+          jobs.reduce((sum, j) => sum + (j.files ? j.files.length : 0), 0);
+        document.getElementById('statError').textContent =
+          jobs.filter(j => j.status === 'error').length;
+      } else {
+        statsBar.style.display = 'none';
+      }
+
+      // Last refresh time
+      document.getElementById('lastRefresh').textContent =
+        'อัปเดตเมื่อ ' + new Date().toLocaleTimeString('th-TH');
+
+      // Render jobs
+      container.innerHTML = '';
+      if (jobs.length === 0) {
+        container.innerHTML =
+          '<div class="empty-state">' +
+          '<span class="material-symbols-outlined">history</span>' +
+          '<p>ยังไม่มีประวัติการใช้งาน<br>กลับไปหน้าหลักและลองส่งคำสั่งดู</p>' +
+          '</div>';
+        return;
+      }
+
+      jobs.forEach((job, i) => {
+        container.appendChild(renderJob(job, i));
+      });
+
+    } catch (err) {
+      container.innerHTML =
+        '<div class="empty-state">' +
+        '<span class="material-symbols-outlined" style="color:var(--error)">error</span>' +
+        '<p style="color:var(--error)">โหลดข้อมูลไม่สำเร็จ<br>' +
+        escapeHtml(err.message) + '</p></div>';
+    }
+  }
+
+  // ─── Init ──────────────────────────────────────────────────────
+  loadHistory();
+</script>
+</body>
+</html>

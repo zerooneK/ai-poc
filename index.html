@@ -895,7 +895,7 @@
         <span class="material-symbols-outlined" style="font-size:13px">folder_open</span>
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
-      <span class="version-tag">v0.4.21</span>
+      <span class="version-tag">v0.5.1</span>
     </div>
   </header>
 
@@ -966,6 +966,16 @@
   }
 
   let startTime = 0;
+
+  // Session ID — persisted across page refreshes for history grouping
+  function _getSessionId() {
+    let sid = localStorage.getItem('ai_session_id');
+    if (!sid) {
+      sid = crypto.randomUUID();
+      localStorage.setItem('ai_session_id', sid);
+    }
+    return sid;
+  }
 
   // Confirmation flow state
   let pendingDoc = '';
@@ -1222,7 +1232,7 @@
     };
 
     try {
-      const reqBody = { message };
+      const reqBody = { message, session_id: _getSessionId() };
       if (isPendingConfirmation) {
         if (pendingTempPaths.length > 0) {
           reqBody.pending_temp_paths = pendingTempPaths;
@@ -1248,6 +1258,7 @@
       const decoder = new TextDecoder();
       let buffer = '';
       let outputText = '';
+      let totalChars = 0;
       let saveFailed = false;
       let receivedAgentEvent = false;
 
@@ -1310,6 +1321,7 @@
             typingIndicator.style.display = 'none';
             container.classList.remove('typing');
             outputText += data.content;
+            totalChars += data.content.length;
             currentOutputEl.textContent = outputText;
             _scrollToBottom();
 
@@ -1342,7 +1354,7 @@
               _renderMarkdown(currentOutputEl, outputText);
             }
             const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-            const charCount = outputText.length.toLocaleString('th-TH');
+            const charCount = totalChars.toLocaleString('th-TH');
             status.textContent = `✅ เสร็จสิ้น · ${elapsed} วินาที · ${charCount} ตัวอักษร`;
             container.classList.remove('streaming');
             container.classList.remove('typing');

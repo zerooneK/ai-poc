@@ -16,7 +16,8 @@ Output: เอกสารภาษาไทย (สัญญาจ้าง, in
 - index.html ไฟล์เดียว ไม่มี framework — dark mode default, toggle light/dark ได้
 
 ## โครงสร้างไฟล์
-- app.py          — Flask server + Orchestrator + PM Agent + Agentic loop
+- app.py          — Flask server + Orchestrator + PM Agent + Agentic loop + DB integration
+- db.py           — SQLite persistence layer (jobs, saved_files) — graceful degradation
 - mcp_server.py   — MCP Filesystem Server (FastMCP) + 5 tools (Layer A/B)
 - index.html      — Web UI (dark/light toggle, Enter ส่ง, Shift+Enter ขึ้นบรรทัดใหม่)
 - .env            — `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `WORKSPACE_PATH` (ห้าม commit)
@@ -24,6 +25,7 @@ Output: เอกสารภาษาไทย (สัญญาจ้าง, in
 - requirements.txt — flask, flask-cors, openai, python-dotenv, mcp, watchdog
 - workspace/       — workspace directory สำหรับ agent สร้างไฟล์ (gitignored ยกเว้น .gitkeep)
 - temp/            — staging area สำหรับไฟล์ที่รอ confirm ก่อน move ไป workspace (gitignored ยกเว้น .gitkeep)
+- data/            — SQLite database directory (gitignored ยกเว้น .gitkeep) — assistant.db สร้างอัตโนมัติ
 - test_cases.py   — ทดสอบ 5 use cases อัตโนมัติ (`PYTHONUTF8=1 python test_cases.py`)
 - docs/           — project-plan.md, poc-plan.md
 - .claude/agents/ — subagents ทั้งหมด
@@ -48,7 +50,7 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 - **ทุก commit ต้อง bump version** ใน index.html พร้อมกัน
 - **ทุก commit ต้องเพิ่ม entry ใน CHANGELOG.md** ระบุ version, วันที่, ประเภท, รายละเอียด
 - เมื่อ bump Minor ให้ reset Patch เป็น 0 เสมอ (v0.2.3 → v0.3.0)
-- Version ปัจจุบัน: **v0.4.21**
+- Version ปัจจุบัน: **v0.5.1**
 
 ประวัติ:
 - v0.1.0 — initial POC (HR + Accounting agents, SSE streaming)
@@ -88,6 +90,8 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 - v0.4.19 — fix typing indicator ค้าง + discard notification ปนในเอกสาร: status type + always-hide on text
 - v0.4.20 — feature pending doc modal: popup ถามก่อนยกเลิก บันทึกก่อน/ข้ามไป/ยกเลิก + auto-send queue
 - v0.4.21 — WSL support: เพิ่ม start.sh/setup.sh, Flask host=0.0.0.0 สำหรับ access จาก Windows browser, แก้ Python 3.10 f-string fix
+- v0.5.0 — Prototype phase: SQLite persistence (db.py), job history, session_id, /api/history routes, graceful DB degradation
+- v0.5.1 — history.html: standalone history viewer page + Flask route /history
 
 ## Rules ที่ต้องทำตามเสมอ
 - ภาษาไทยใน UI และ system prompts ทั้งหมด
@@ -96,6 +100,7 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 - ห้าม hardcode API key ใน code เด็ดขาด
 - ก่อนเริ่มงานใหม่ทุกครั้ง อ่าน docs/poc-plan.md ก่อน
 - **ทุกครั้งที่มีการเปลี่ยนแปลงโค้ดที่อาจส่งผลต่อเอกสาร ให้อัปเดตเอกสารที่เกี่ยวข้องทันที** ดูตารางด้านล่าง
+- **ชื่อไฟล์ทุกไฟล์ที่สร้างต้องเป็นภาษาอังกฤษเท่านั้น** — สะท้อนเนื้อหาภายในไฟล์, ใช้ snake_case, ห้ามใช้ภาษาไทยหรือภาษาอื่น เช่น `employment_contract_somchai_2025.docx`, `invoice_project_alpha_001.xlsx`
 
 ### เอกสารที่ต้องอัปเดตเมื่อโค้ดเปลี่ยน
 
@@ -107,6 +112,44 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 | โครงสร้างไฟล์เปลี่ยน | PROJECT_SUMMARY.md (โครงสร้างไฟล์), CLAUDE.md (โครงสร้างไฟล์), docs/poc-plan.md (file tree) |
 | Demo use cases เปลี่ยน | PROJECT_SUMMARY.md (Demo Use Cases), docs/poc-plan.md (session log), DEMO-READINESS-REPORT.md (USE CASES STATUS), backup/demo-inputs.txt |
 
+## Working Process Rules — Follow Every Task
+
+กฎเหล่านี้ใช้กับทุกงาน ไม่ต้องรอให้บอก:
+
+### 1. ทำความเข้าใจคำสั่งให้ชัดเจนก่อน
+→ ก่อนวางแผนหรือลงมือทำ ต้องเข้าใจ scope, goal, และ constraint ให้ครบ
+→ ถ้ามีส่วนไหนที่คลุมเครือ ให้ถามก่อน อย่าสมมติเอง
+
+### 2. วางแผนละเอียดก่อนลงมือทำทุกครั้ง
+→ ระบุไฟล์ที่จะแก้, สิ่งที่จะเปลี่ยน, และลำดับขั้นตอนให้ชัดเจน
+→ แสดงแผนให้ user เห็นก่อนเริ่มลงมือ
+
+### 3. คำนึงถึงไฟล์อื่นที่อาจได้รับผลกระทบเสมอ
+→ ทุกครั้งที่แก้ไฟล์ใด ให้ตรวจสอบว่าไฟล์อื่นที่ import, reference, หรือ depend ได้รับผลกระทบหรือไม่
+→ อย่าแก้แบบ isolated โดยไม่มองภาพรวม
+
+### 4. หลังทำเสร็จ ให้ลิสต์ไฟล์ที่ได้รับผลกระทบทั้งหมดก่อน
+→ ระบุชื่อไฟล์ + สิ่งที่เปลี่ยนไป + เหตุผลที่เปลี่ยน
+→ ทำก่อนขั้นตอน update docs และ commit
+
+### 5. อัปเดตไฟล์ที่ได้รับผลกระทบให้เป็นปัจจุบัน
+→ ดูตาราง "เอกสารที่ต้องอัปเดตเมื่อโค้ดเปลี่ยน" ด้านบนเสมอ
+→ อัปเดต inline ทันที อย่ารอไว้ทีหลัง
+
+### 6. Commit ทุกครั้งที่มีการเปลี่ยนแปลงที่ส่งผลต่อการทำงานของโปรเจค
+→ commit message ต้องระบุ version, ประเภท (fix/feature/docs), และสิ่งที่เปลี่ยน
+→ bump version ใน index.html พร้อมกันทุกครั้ง
+
+### 7. งานที่มีความเสี่ยงต่อโปรเจค ต้องถาม user ก่อนเสมอ
+→ ตัวอย่างงานเสี่ยง: เปลี่ยน DB schema, refactor core routing, ลบไฟล์, แก้ auth flow
+→ อธิบายความเสี่ยงให้ชัด + เสนอทางเลือก ก่อนขอ confirm
+
+### 8. ดู subagents ที่มีก่อน และเลือกตัวที่ตรงกับงานมากที่สุด
+→ อ่านรายชื่อจาก `.claude/agents/` ก่อนลงมือทุกครั้ง
+→ ใช้ subagent ที่ความสามารถตรงกับงานที่สุด อย่าทำเองทั้งหมดถ้ามี subagent รองรับ
+
+---
+
 ## Agent Workflow Rules — Follow Automatically
 
 These rules apply without needing to be asked:
@@ -114,7 +157,7 @@ These rules apply without needing to be asked:
 ### After writing or editing any .py file
 → ALWAYS run python-reviewer before considering done
 
-### After any error or exception appears  
+### After any error or exception appears
 → ALWAYS run debug-assistant immediately
 
 ### After generating any Thai document output
