@@ -1,5 +1,16 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.6.0] — 25 มีนาคม 2569 · feature
+- เพิ่ม `converter.py`: แปลง markdown → .txt / .docx / .xlsx / .pdf ที่ save time
+- .docx: parse headings, lists, tables, bold ผ่าน python-docx
+- .xlsx: ดึง markdown table → openpyxl rows; fallback เนื้อหาทั้งหมดใน A1
+- .pdf: markdown → HTML → WeasyPrint พร้อม Thai font (Norasi/Garuda)
+- อัปเดต `app.py`: `_suggest_filename` รองรับ extension, `handle_save` และ `handle_pm_save` รับ `output_format`
+- อัปเดต `index.html`: format selector dropdown (.md/.txt/.docx/.xlsx/.pdf) ใน input area
+- `pendingFormat` lock format ตอน doc pending, restore ผ่าน previousPendingState
+
+---
+
 ## [v0.5.2] — 25 มีนาคม 2569 · feature
 - อัปเดต `setup.sh`: ติดตั้ง WeasyPrint system libs อัตโนมัติ (libpango, libharfbuzz, libffi, libjpeg, libopenjp2, fonts-thai-tlwg)
 - เพิ่ม library verify step ใน setup.sh (ตรวจสอบ flask, openai, docx, openpyxl, weasyprint, markdown)

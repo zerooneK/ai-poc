@@ -6,6 +6,7 @@ from mcp_server import fs_list_files, fs_create_file, fs_read_file, fs_update_fi
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import db
+import converter
 import json
 import logging
 import os
@@ -514,9 +515,10 @@ def _is_edit_intent(message: str) -> bool:
     return any(kw in msg for kw in _EDIT_KEYWORDS)
 
 
-def _suggest_filename(agent: str, content: str) -> str:
+def _suggest_filename(agent: str, content: str, fmt: str = 'md') -> str:
     """Generate a meaningful English filename from agent type and document content.
     Extracts ASCII words only — no Thai or non-Latin characters in filenames."""
+    ext = fmt if fmt in converter.SUPPORTED_FORMATS else 'md'
     ts = datetime.now().strftime('%Y%m%d_%H%M%S')
     m = re.search(r'#\s*(.{3,60})', content)
     if m:
@@ -525,8 +527,8 @@ def _suggest_filename(agent: str, content: str) -> str:
         slug = re.sub(r'[^a-zA-Z0-9]+', '_', ascii_only)
         slug = slug.strip('_')[:30]
         if len(slug) >= 3:
-            return f"{agent}_{slug}_{ts}.md"
-    return f"{agent}_{ts}.md"
+            return f"{agent}_{slug}_{ts}.{ext}"
+    return f"{agent}_{ts}.{ext}"
 
 
 def _write_temp(content: str, agent: str) -> str:
@@ -598,23 +600,33 @@ def stream_agent(system_prompt: str, message: str, agent_label: str, max_tokens:
 
 
 def handle_save(pending_doc: str, pending_agent: str, workspace: str,
-                job_id=None):
+                job_id=None, output_format: str = 'md'):
     """Save the pending document to workspace without another LLM call.
     Generator that yields SSE data strings."""
     try:
-        filename = _suggest_filename(pending_agent, pending_doc)
+        filename = _suggest_filename(pending_agent, pending_doc, output_format)
         yield f"data: {json.dumps({'type': 'status', 'message': f'กำลังบันทึกไฟล์ {filename}...'})}\n\n"
-        result = _execute_tool(workspace, 'create_file', {
-            'filename': filename,
-            'content': pending_doc
-        })
-        if _tool_result_is_error(result):
-            logger.warning(f"Save failed for {filename}: {result}")
-            yield f"data: {json.dumps({'type': 'save_failed', 'message': result, 'filename': filename})}\n\n"
-            yield f"data: {json.dumps({'type': 'tool_result', 'tool': 'create_file', 'result': result})}\n\n"
-            return
-        # Record file in DB (non-critical — errors are swallowed)
-        size = len(pending_doc.encode('utf-8'))
+
+        if output_format in ('md', 'txt'):
+            # Text formats — use existing MCP tool path
+            result = _execute_tool(workspace, 'create_file', {
+                'filename': filename,
+                'content': pending_doc
+            })
+            if _tool_result_is_error(result):
+                logger.warning(f"Save failed for {filename}: {result}")
+                yield f"data: {json.dumps({'type': 'save_failed', 'message': result, 'filename': filename})}\n\n"
+                yield f"data: {json.dumps({'type': 'tool_result', 'tool': 'create_file', 'result': result})}\n\n"
+                return
+        else:
+            # Binary formats — convert and write directly
+            file_bytes = converter.convert(pending_doc, output_format)
+            dest = os.path.join(workspace, filename)
+            with open(dest, 'wb') as f:
+                f.write(file_bytes)
+            result = f"บันทึก {filename} เรียบร้อย"
+
+        size = len(pending_doc.encode('utf-8')) if output_format in ('md', 'txt') else os.path.getsize(os.path.join(workspace, filename))
         db.record_file(job_id, filename, pending_agent, size)
         yield f"data: {json.dumps({'type': 'text', 'content': f'✅ {result}'})}\n\n"
         yield f"data: {json.dumps({'type': 'tool_result', 'tool': 'create_file', 'result': result})}\n\n"
@@ -661,7 +673,7 @@ def _is_safe_temp_path(path: str) -> bool:
         return False
 
 
-def handle_pm_save(temp_paths: list, workspace: str, job_id=None):
+def handle_pm_save(temp_paths: list, workspace: str, job_id=None, output_format: str = 'md'):
     """Move all PM staged temp files to workspace. Generator that yields SSE data strings."""
     saved = []
     for temp_path in temp_paths:
@@ -673,9 +685,26 @@ def handle_pm_save(temp_paths: list, workspace: str, job_id=None):
             logger.warning(f"Temp file not found (expired?): {temp_path}")
             continue
         try:
-            filename = _move_to_workspace(temp_path, workspace)
+            if output_format in ('md', 'txt'):
+                filename = _move_to_workspace(temp_path, workspace)
+                # Rename .md → .txt if needed
+                if output_format == 'txt' and filename.endswith('.md'):
+                    old_path = os.path.join(workspace, filename)
+                    filename = filename[:-3] + '.txt'
+                    os.rename(old_path, os.path.join(workspace, filename))
+            else:
+                # Read temp content, convert, write with new extension
+                with open(temp_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                base = os.path.splitext(os.path.basename(temp_path))[0]
+                filename = f"{base}.{output_format}"
+                file_bytes = converter.convert(content, output_format)
+                dest = os.path.join(workspace, filename)
+                with open(dest, 'wb') as f:
+                    f.write(file_bytes)
+                os.remove(temp_path)
+
             saved.append(filename)
-            # Infer agent from filename prefix (set by _suggest_filename)
             agent_prefix = filename.split('_')[0] if '_' in filename else 'pm'
             size = 0
             try:
@@ -685,7 +714,7 @@ def handle_pm_save(temp_paths: list, workspace: str, job_id=None):
             db.record_file(job_id, filename, agent_prefix, size)
             yield f"data: {json.dumps({'type': 'tool_result', 'tool': 'create_file', 'result': f'บันทึก {filename} เรียบร้อย'})}\n\n"
         except Exception as e:
-            logger.error(f"Failed to move temp file {temp_path}: {e}")
+            logger.error(f"Failed to save temp file {temp_path}: {e}")
             yield f"data: {json.dumps({'type': 'error', 'message': f'ไม่สามารถบันทึก {os.path.basename(temp_path)}: {str(e)}'})}\n\n"
 
     count = len(saved)
@@ -724,6 +753,9 @@ def chat():
     pending_agent      = request.json.get('pending_agent', '').strip()
     pending_temp_paths = request.json.get('pending_temp_paths', [])
     session_id         = request.json.get('session_id', None)
+    output_format      = request.json.get('output_format', 'md').strip().lower()
+    if output_format not in converter.SUPPORTED_FORMATS:
+        output_format = 'md'
     if not isinstance(pending_temp_paths, list):
         pending_temp_paths = []
 
@@ -739,7 +771,7 @@ def chat():
         # ── Follow-up: PM staged files waiting for confirmation ──────────────
         if pending_temp_paths:
             if _is_save_intent(user_input):
-                for sse in handle_pm_save(pending_temp_paths, workspace, job_id):
+                for sse in handle_pm_save(pending_temp_paths, workspace, job_id, output_format):
                     yield sse
                 db.complete_job(job_id, '')
                 yield f"data: {json.dumps({'type': 'done'})}\n\n"
@@ -761,7 +793,7 @@ def chat():
         # ── Follow-up: single-agent doc confirming/editing ───────────────────
         if pending_doc and pending_agent:
             if _is_save_intent(user_input):
-                for sse in handle_save(pending_doc, pending_agent, workspace, job_id):
+                for sse in handle_save(pending_doc, pending_agent, workspace, job_id, output_format):
                     yield sse
                 db.complete_job(job_id, pending_doc)
                 yield f"data: {json.dumps({'type': 'done'})}\n\n"

@@ -591,6 +591,20 @@
     }
     .send-btn .material-symbols-outlined { font-size: 18px; }
 
+    .format-select {
+      background: var(--surface-hi);
+      border: 1px solid var(--outline-var);
+      color: var(--on-surface-2);
+      font-family: inherit;
+      font-size: 11px;
+      padding: 3px 6px;
+      border-radius: 6px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .format-select:focus { outline: none; border-color: var(--primary); }
+    body.light-mode .format-select { background: var(--surface); color: var(--on-surface); }
+
     .input-hint-row {
       display: flex;
       align-items: center;
@@ -895,7 +909,7 @@
         <span class="material-symbols-outlined" style="font-size:13px">folder_open</span>
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
-      <span class="version-tag">v0.5.2</span>
+      <span class="version-tag">v0.6.0</span>
     </div>
   </header>
 
@@ -932,6 +946,13 @@
           </button>
         </div>
         <div class="input-hint-row">
+          <select id="formatSelect" class="format-select" title="รูปแบบไฟล์ที่บันทึก">
+            <option value="md">.md</option>
+            <option value="txt">.txt</option>
+            <option value="docx">.docx</option>
+            <option value="xlsx">.xlsx</option>
+            <option value="pdf">.pdf</option>
+          </select>
           <p class="input-hint" id="inputHint">INTERNAL POC · DRAFT OUTPUT ONLY</p>
           <button class="cancel-pending-btn" id="cancelPendingBtn" onclick="cancelPending()">✕ ยกเลิก</button>
         </div>
@@ -980,6 +1001,7 @@
   // Confirmation flow state
   let pendingDoc = '';
   let pendingAgent = '';
+  let pendingFormat = 'md';    // output format locked at generation time
   let pendingTempPaths = [];   // PM task: staged temp file paths waiting for confirm
   let isPendingConfirmation = false;
   let wasPMTask = false;
@@ -1027,6 +1049,7 @@
     isPendingConfirmation = false;
     pendingDoc = '';
     pendingAgent = '';
+    pendingFormat = 'md';
     pendingTempPaths = [];
     _updateInputHint(false, 0);
     // Temp files in temp/ will be auto-cleaned after 1hr by _cleanup_old_temp()
@@ -1219,6 +1242,7 @@
     const previousPendingState = {
       doc: pendingDoc,
       agent: pendingAgent,
+      format: pendingFormat,
       tempPaths: [...pendingTempPaths],
       isPending: isPendingConfirmation
     };
@@ -1226,13 +1250,18 @@
       if (!previousPendingState.isPending) return;
       pendingDoc = previousPendingState.doc;
       pendingAgent = previousPendingState.agent;
+      pendingFormat = previousPendingState.format;
       pendingTempPaths = [...previousPendingState.tempPaths];
       isPendingConfirmation = true;
       _updateInputHint(true, pendingTempPaths.length);
     };
 
     try {
-      const reqBody = { message, session_id: _getSessionId() };
+      const reqBody = {
+        message,
+        session_id: _getSessionId(),
+        output_format: pendingFormat || document.getElementById('formatSelect').value
+      };
       if (isPendingConfirmation) {
         if (pendingTempPaths.length > 0) {
           reqBody.pending_temp_paths = pendingTempPaths;
@@ -1244,6 +1273,7 @@
       isPendingConfirmation = false;
       pendingDoc = '';
       pendingAgent = '';
+      pendingFormat = 'md';
       pendingTempPaths = [];
 
       const response = await fetch('/api/chat', {
@@ -1372,6 +1402,7 @@
               // Single-agent: new document generated, waiting for confirm
               pendingDoc = outputText;
               pendingAgent = lastAgent;
+              pendingFormat = document.getElementById('formatSelect').value;
               isPendingConfirmation = true;
               _updateInputHint(true, 0);
             }
@@ -1398,6 +1429,7 @@
               isPendingConfirmation = false;
               pendingDoc = '';
               pendingAgent = '';
+              pendingFormat = 'md';
               pendingTempPaths = [];
               _updateInputHint(false, 0);
             }
@@ -1418,6 +1450,7 @@
         isPendingConfirmation = false;
         pendingDoc = '';
         pendingAgent = '';
+        pendingFormat = 'md';
         pendingTempPaths = [];
         _updateInputHint(false, 0);
       }
