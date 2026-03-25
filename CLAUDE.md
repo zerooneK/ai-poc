@@ -16,19 +16,27 @@ Output: เอกสารภาษาไทย (สัญญาจ้าง, in
 - index.html ไฟล์เดียว ไม่มี framework — dark mode default, toggle light/dark ได้
 
 ## โครงสร้างไฟล์
-- app.py          — Flask server + Orchestrator + PM Agent + Agentic loop + DB integration
-- db.py           — SQLite persistence layer (jobs, saved_files) — graceful degradation
-- mcp_server.py   — MCP Filesystem Server (FastMCP) + 5 tools (Layer A/B)
-- index.html      — Web UI (dark/light toggle, Enter ส่ง, Shift+Enter ขึ้นบรรทัดใหม่)
-- .env            — `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `WORKSPACE_PATH` (ห้าม commit)
-- .env.example    — template สำหรับ setup ใหม่
-- requirements.txt — flask, flask-cors, openai, python-dotenv, mcp, watchdog
-- workspace/       — workspace directory สำหรับ agent สร้างไฟล์ (gitignored ยกเว้น .gitkeep)
-- temp/            — staging area สำหรับไฟล์ที่รอ confirm ก่อน move ไป workspace (gitignored ยกเว้น .gitkeep)
-- data/            — SQLite database directory (gitignored ยกเว้น .gitkeep) — assistant.db สร้างอัตโนมัติ
-- test_cases.py   — ทดสอบ 5 use cases อัตโนมัติ (`PYTHONUTF8=1 python test_cases.py`)
-- docs/           — project-plan.md, poc-plan.md
-- .claude/agents/ — subagents ทั้งหมด
+- app.py                  — Flask server + Orchestrator + PM Agent + Agentic loop + DB integration
+- db.py                   — SQLite persistence layer (jobs, saved_files) — graceful degradation
+- converter.py            — Multi-format export (.txt/.docx/.xlsx/.pdf) — deferred imports, no startup crash
+- mcp_server.py           — MCP Filesystem Server (FastMCP) + 5 tools (Layer A/B)
+- index.html              — Web UI (dark/light toggle, Enter ส่ง, Shift+Enter ขึ้นบรรทัดใหม่)
+- history.html            — Standalone job history viewer page (Flask route /history)
+- .env                    — `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `WORKSPACE_PATH` (ห้าม commit)
+- .env.example            — template สำหรับ setup ใหม่
+- requirements.txt        — flask, flask-cors, openai, python-dotenv, mcp, watchdog, python-docx, openpyxl, weasyprint, markdown
+- setup.sh                — auto-install script: venv, pip deps, WeasyPrint system libs, Thai fonts, verify step
+- start.sh                — run script: activate venv + flask run host=0.0.0.0 (WSL-compatible)
+- workspace/              — workspace directory สำหรับ agent สร้างไฟล์ (gitignored ยกเว้น .gitkeep)
+- temp/                   — staging area สำหรับไฟล์ที่รอ confirm ก่อน move ไป workspace (gitignored ยกเว้น .gitkeep)
+- data/                   — SQLite database directory (gitignored ยกเว้น .gitkeep) — assistant.db สร้างอัตโนมัติ
+- test_cases.py           — ทดสอบ 5 use cases อัตโนมัติ (`PYTHONUTF8=1 python test_cases.py`)
+- smoke_test_phase0.py    — Phase 0 smoke test (5 checks, urllib-based, Thai confirmation safe on Windows)
+- quick-demo-check.py     — Full validation script (7 checks รวม health)
+- PRE-DEMO-CHECKLIST.md   — Checklist 30 นาทีก่อน demo
+- docs/                   — project-plan.md, poc-plan.md, phase-0-safe-execution-plan.md
+- backup/                 — demo-inputs.txt, demo-script.md, screenshots/
+- .claude/agents/         — subagents ทั้งหมด
 
 ## Known Issues & Quirks
 - **Reasoning models** (เช่น minimax/minimax-m2.7) ใช้ token ไปกับ internal thinking ก่อน — Orchestrator ต้องใช้ `max_tokens=1024` ขึ้นไป ไม่เช่นนั้น `content` จะเป็น `None`
@@ -50,7 +58,7 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 - **ทุก commit ต้อง bump version** ใน index.html พร้อมกัน
 - **ทุก commit ต้องเพิ่ม entry ใน CHANGELOG.md** ระบุ version, วันที่, ประเภท, รายละเอียด
 - เมื่อ bump Minor ให้ reset Patch เป็น 0 เสมอ (v0.2.3 → v0.3.0)
-- Version ปัจจุบัน: **v0.7.1**
+- Version ปัจจุบัน: **v0.8.0**
 
 ประวัติ:
 - v0.1.0 — initial POC (HR + Accounting agents, SSE streaming)
@@ -98,6 +106,8 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 - v0.6.2 — fix: format detection จาก message text override dropdown (ลบ pendingFormat lock)
 - v0.7.0 — per-file format selector modal + cancel confirm modal สำหรับ PM multi-file saves
 - v0.7.1 — fix: format popup แสดงสำหรับ single-agent doc ด้วย (HR/Accounting/Manager)
+- v0.7.2 — fix: ลบ format dropdown ออกจาก input area (popup เป็นตัวเลือก format หลักแทน)
+- v0.8.0 — feature: Workspace Picker Modal + ALLOWED_WORKSPACE_ROOTS env var + /api/workspaces + /api/workspace/new
 
 ## Rules ที่ต้องทำตามเสมอ
 - ภาษาไทยใน UI และ system prompts ทั้งหมด
@@ -183,3 +193,8 @@ These rules apply without needing to be asked:
 
 ### At end of each work session
 → Run project-documenter to update docs/poc-plan.md
+
+### After finishing all tasks in a session
+→ Update ALL related documents listed in "เอกสารที่ต้องอัปเดตเมื่อโค้ดเปลี่ยน" before considering done
+→ Verify: CLAUDE.md file structure, CHANGELOG.md, PROJECT_SUMMARY.md, DEMO-READINESS-REPORT.md are in sync with current version
+→ Do NOT mark work as complete if any doc still shows an older version number

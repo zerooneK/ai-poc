@@ -48,6 +48,14 @@ if not OPENROUTER_API_KEY:
 MODEL = os.getenv("OPENROUTER_MODEL", "anthropic/claude-sonnet-4-5")
 _PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
+# Allowed workspace roots — comma-separated absolute paths from env
+# Fallback: project root only (same behaviour as before)
+_ALLOWED_ROOTS = [
+    os.path.realpath(p.strip())
+    for p in os.getenv("ALLOWED_WORKSPACE_ROOTS", _PROJECT_ROOT).split(",")
+    if p.strip()
+] or [_PROJECT_ROOT]
+
 # Workspace state — mutable at runtime via /api/workspace
 _DEFAULT_WORKSPACE = os.path.abspath(
     os.getenv("WORKSPACE_PATH", os.path.join(_PROJECT_ROOT, "workspace"))
@@ -77,9 +85,13 @@ def _normalize_workspace_path(path: str) -> str:
 
 
 def _is_allowed_workspace_path(path: str) -> bool:
-    """Allow runtime workspace changes only under the repository root."""
+    """Allow runtime workspace changes only under configured allowed roots."""
     try:
-        return os.path.commonpath([_PROJECT_ROOT, path]) == _PROJECT_ROOT and path != _PROJECT_ROOT
+        real = os.path.realpath(path)
+        return any(
+            os.path.commonpath([root, real]) == root and real != root
+            for root in _ALLOWED_ROOTS
+        )
     except ValueError:
         return False
 
@@ -1062,8 +1074,9 @@ def set_workspace():
     if len(abs_path) <= 3:
         return jsonify({'error': 'Path ไม่ปลอดภัย กรุณาระบุ directory ที่ชัดเจนกว่านี้'}), 400
     if not _is_allowed_workspace_path(abs_path):
+        roots_str = ", ".join(_ALLOWED_ROOTS)
         return jsonify({
-            'error': f'อนุญาตเฉพาะ workspace ภายใต้โปรเจกต์นี้เท่านั้น: {_PROJECT_ROOT}'
+            'error': f'อนุญาตเฉพาะ workspace ภายใต้ directories ที่กำหนดไว้: {roots_str}'
         }), 400
     try:
         os.makedirs(abs_path, exist_ok=True)
@@ -1073,6 +1086,66 @@ def set_workspace():
         WORKSPACE_PATH = abs_path
     logger.info(f"Workspace changed to: {abs_path}")
     return jsonify({'path': abs_path, 'exists': True})
+
+
+@app.route('/api/workspaces', methods=['GET'])
+def list_workspaces():
+    """Return all available workspace directories grouped by allowed root."""
+    with _workspace_lock:
+        current = os.path.realpath(WORKSPACE_PATH)
+
+    result = {'current': current, 'roots': []}
+    for root in _ALLOWED_ROOTS:
+        if not os.path.isdir(root):
+            continue
+        label = os.path.basename(root) or root
+        workspaces = []
+        try:
+            for entry in sorted(os.scandir(root), key=lambda e: e.name.lower()):
+                if entry.is_dir() and not entry.name.startswith('.'):
+                    workspaces.append({
+                        'path': entry.path,
+                        'name': entry.name,
+                        'active': os.path.realpath(entry.path) == current
+                    })
+        except PermissionError:
+            pass
+        result['roots'].append({'root': root, 'label': label, 'workspaces': workspaces})
+
+    return jsonify(result)
+
+
+@app.route('/api/workspace/new', methods=['POST'])
+def create_workspace_folder():
+    """Create a new workspace folder under an allowed root and switch to it."""
+    import re as _re
+    global WORKSPACE_PATH
+    data = request.json or {}
+    root = data.get('root', '').strip()
+    name = data.get('name', '').strip()
+
+    if not root or not name:
+        return jsonify({'error': 'ระบุ root และ name ให้ครบ'}), 400
+    if not _re.match(r'^[a-zA-Z0-9_-]{1,50}$', name):
+        return jsonify({'error': 'ชื่อโฟลเดอร์ใช้ได้เฉพาะ a-z, A-Z, 0-9, _ และ - เท่านั้น (ไม่เกิน 50 ตัว)'}), 400
+
+    real_root = os.path.realpath(root)
+    if real_root not in [os.path.realpath(r) for r in _ALLOWED_ROOTS]:
+        return jsonify({'error': 'root ไม่ได้รับอนุญาต'}), 400
+
+    new_path = os.path.realpath(os.path.join(real_root, name))
+    if os.path.dirname(new_path) != real_root:
+        return jsonify({'error': 'ไม่อนุญาตให้สร้าง subdirectory ซ้อน'}), 400
+
+    try:
+        os.makedirs(new_path, exist_ok=True)
+    except OSError as e:
+        return jsonify({'error': f'ไม่สามารถสร้าง directory ได้: {str(e)}'}), 400
+
+    with _workspace_lock:
+        WORKSPACE_PATH = new_path
+    logger.info(f"Workspace created and switched to: {new_path}")
+    return jsonify({'path': new_path, 'name': name})
 
 
 @app.route('/api/files')

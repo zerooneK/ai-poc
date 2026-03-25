@@ -41,7 +41,28 @@ Output: เอกสารภาษาไทยพร้อมใช้
 
 ## สรุปความคืบหน้า — 24 มีนาคม 2569
 
-**สถานะ: Prototype Phase เริ่มต้นแล้ว — v0.5.0**
+**สถานะ: Prototype Phase — v0.8.0**
+
+### v0.8.0 — Workspace Picker Modal (25 มีนาคม 2569)
+- ✅ แทนที่ prompt() ด้วย Workspace Picker Modal — คลิกเลือก workspace แบบ visual
+- ✅ ALLOWED_WORKSPACE_ROOTS env var — admin กำหนด roots ที่อนุญาต
+- ✅ GET /api/workspaces — scan subdirs ภายใน allowed roots จัดกลุ่มตาม root
+- ✅ POST /api/workspace/new — สร้างโฟลเดอร์ใหม่ (validate name) + auto-switch
+- ✅ _is_allowed_workspace_path() ตรวจสอบ realpath + all roots (symlink-safe)
+
+### v0.7.x — Format Selector & Polish (25 มีนาคม 2569)
+- ✅ Per-file format selector modal สำหรับ PM multi-file saves (v0.7.0)
+- ✅ Format popup แสดงสำหรับ single-agent doc ด้วย (v0.7.1)
+- ✅ ลบ format dropdown ออกจาก input area — popup เป็น format selector หลัก (v0.7.2)
+
+### v0.6.x — Multi-format Export (25 มีนาคม 2569)
+- ✅ converter.py — save as .md/.txt/.docx/.xlsx/.pdf (v0.6.0)
+- ✅ Suppress WeasyPrint logs + .gitkeep fix (v0.6.1)
+- ✅ Format detection จาก message text ("save as pdf") (v0.6.2)
+
+### v0.5.x — Prototype Foundation (25 มีนาคม 2569)
+- ✅ history.html — standalone history viewer page (v0.5.1)
+- ✅ setup.sh: WeasyPrint system libs + Thai fonts + verify step (v0.5.2)
 
 ### v0.5.0 — Prototype Phase เริ่มต้น (25 มีนาคม 2569)
 - ✅ SQLite persistence layer (`db.py`) — บันทึกทุก job, routing decision, output text, saved files
@@ -121,10 +142,14 @@ ai-poc/
 ├── app.py                   ← Flask backend + Orchestrator + HR/Accounting/Manager/PM agents + Agentic loop + DB integration
 ├── db.py                    ← SQLite persistence layer (jobs, saved_files) — graceful degradation
 ├── mcp_server.py            ← MCP Filesystem Server (FastMCP) + 5 tools (Layer A/B)
-├── index.html               ← Web UI ไฟล์เดียว (v0.5.0 — chat bubbles + confirmation flow + cancel button + confirmation modal + session_id)
-├── test_cases.py            ← Automated test script (6 use cases)
+├── converter.py             ← Multi-format export (.txt/.docx/.xlsx/.pdf)
+├── index.html               ← Web UI ไฟล์เดียว (v0.8.0 — workspace picker modal + format popup)
+├── history.html             ← Standalone job history viewer (/history route)
+├── setup.sh                 ← auto-install: venv + pip + WeasyPrint libs + Thai fonts
+├── start.sh                 ← run script: activate venv + flask run host=0.0.0.0
+├── test_cases.py            ← Automated test script (5 use cases)
 ├── quick-demo-check.py      ← Full validation (7 checks: 6 cases + health)
-├── CHANGELOG.md             ← Version history (v0.1.0 → v0.5.0)
+├── CHANGELOG.md             ← Version history (v0.1.0 → v0.8.0)
 ├── PROJECT_SUMMARY.md       ← ภาพรวมโปรเจกต์สำหรับ AI context
 ├── CLAUDE.md                ← Rules สำหรับ Claude Code
 ├── PRE-DEMO-CHECKLIST.md    ← Checklist 30 นาทีก่อน demo

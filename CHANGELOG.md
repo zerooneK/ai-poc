@@ -1,5 +1,23 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.8.0] — 25 มีนาคม 2569 · feature
+- feature: Workspace Picker Modal — แทนที่ prompt() ด้วย modal แสดง workspace ทั้งหมดแบบคลิกเลือก
+- เพิ่ม ALLOWED_WORKSPACE_ROOTS env var — admin กำหนด roots ที่อนุญาต (comma-separated)
+- เพิ่ม GET /api/workspaces — scan subdirs ภายใน allowed roots จัดกลุ่มตาม root
+- เพิ่ม POST /api/workspace/new — สร้างโฟลเดอร์ใหม่ (validate: a-z/0-9/_/-) + auto-switch
+- อัปเดต _is_allowed_workspace_path() ให้ตรวจสอบกับ all allowed roots + realpath symlink-safe
+- อัปเดต .env.example เพิ่ม ALLOWED_WORKSPACE_ROOTS example
+
+---
+
+## [v0.7.2] — 25 มีนาคม 2569 · fix
+- fix: ลบ format dropdown ออกจาก input-hint-row (ไม่จำเป็นแล้ว เพราะ popup เป็นตัวเลือก format หลัก)
+- resolvedFormat ใช้ detectedFormat || pendingFormat || 'md' แทน dropdown value
+- pendingFormat ใน single-agent flow ตั้งค่าจาก popup แทน dropdown
+- ลบ .format-select CSS และ formatSelect HTML element ออกทั้งหมด
+
+---
+
 ## [v0.7.1] — 25 มีนาคม 2569 · fix
 - fix: format popup แสดงสำหรับ single-agent doc (HR/Accounting/Manager) ด้วย ไม่ใช่แค่ PM
 - เพิ่ม _showSingleFileFormatModal(): แสดง popup 1 row พร้อม agent label + format dropdown

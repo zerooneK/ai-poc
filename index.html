@@ -591,19 +591,6 @@
     }
     .send-btn .material-symbols-outlined { font-size: 18px; }
 
-    .format-select {
-      background: var(--surface-hi);
-      border: 1px solid var(--outline-var);
-      color: var(--on-surface-2);
-      font-family: inherit;
-      font-size: 11px;
-      padding: 3px 6px;
-      border-radius: 6px;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-    .format-select:focus { outline: none; border-color: var(--primary); }
-    body.light-mode .format-select { background: var(--surface); color: var(--on-surface); }
 
     .input-hint-row {
       display: flex;
@@ -861,6 +848,76 @@
       gap: 8px;
       justify-content: flex-end;
     }
+
+    /* ─── Workspace Picker Modal ─────────────────────────────────────── */
+    .workspace-picker-list {
+      max-height: 220px;
+      overflow-y: auto;
+      margin: 12px 0 8px;
+      border: 1px solid var(--outline-var);
+      border-radius: 8px;
+    }
+    .workspace-picker-list::-webkit-scrollbar { width: 3px; }
+    .workspace-picker-list::-webkit-scrollbar-thumb { background: var(--outline-var); border-radius: 4px; }
+    .workspace-group-header {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--on-surface-2);
+      opacity: 0.5;
+      padding: 8px 12px 4px;
+    }
+    .workspace-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      font-size: 13px;
+      font-family: 'Inter', monospace;
+      color: var(--on-surface);
+      cursor: pointer;
+      border-bottom: 1px solid var(--outline-var);
+      transition: background 0.15s;
+    }
+    .workspace-item:last-child { border-bottom: none; }
+    .workspace-item:hover { background: var(--surface-hi); }
+    .workspace-item.ws-active {
+      background: color-mix(in srgb, var(--primary) 12%, transparent);
+      color: var(--primary);
+      font-weight: 600;
+      cursor: default;
+    }
+    .workspace-item .ws-icon { font-size: 15px; flex-shrink: 0; }
+    .workspace-item .ws-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .workspace-new-section {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--outline-var);
+    }
+    .workspace-new-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--on-surface-2);
+      margin-bottom: 8px;
+    }
+    .workspace-new-row { display: flex; gap: 8px; align-items: center; }
+    .workspace-new-input {
+      flex: 1;
+      background: var(--surface-hi);
+      border: 1px solid var(--outline-var);
+      color: var(--on-surface);
+      font-family: 'Inter', monospace;
+      font-size: 13px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      outline: none;
+    }
+    .workspace-new-input:focus { border-color: var(--primary); }
+    .workspace-new-input::placeholder { color: var(--on-surface-2); opacity: 0.45; }
+    .workspace-new-root-sel { flex-shrink: 0; max-width: 150px; }
+    .workspace-new-btn { padding: 7px 14px; font-size: 12px; flex-shrink: 0; }
+    .workspace-new-error { font-size: 11px; color: var(--error); margin-top: 6px; min-height: 16px; }
   </style>
 </head>
 <body>
@@ -951,7 +1008,7 @@
         <span class="material-symbols-outlined" style="font-size:13px">folder_open</span>
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
-      <span class="version-tag">v0.7.1</span>
+      <span class="version-tag">v0.8.0</span>
     </div>
   </header>
 
@@ -988,13 +1045,6 @@
           </button>
         </div>
         <div class="input-hint-row">
-          <select id="formatSelect" class="format-select" title="รูปแบบไฟล์ที่บันทึก">
-            <option value="md">.md</option>
-            <option value="txt">.txt</option>
-            <option value="docx">.docx</option>
-            <option value="xlsx">.xlsx</option>
-            <option value="pdf">.pdf</option>
-          </select>
           <p class="input-hint" id="inputHint">INTERNAL POC · DRAFT OUTPUT ONLY</p>
           <button class="cancel-pending-btn" id="cancelPendingBtn" onclick="cancelPending()">✕ ยกเลิก</button>
         </div>
@@ -1006,6 +1056,27 @@
 </div>
 
 <!-- Pending Doc Confirmation Modal -->
+<!-- Workspace Picker Modal -->
+<div id="workspaceModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true">
+  <div class="modal-box modal-box-wide">
+    <div class="modal-icon modal-title-center">📁</div>
+    <p class="modal-title modal-title-center">เลือก Workspace</p>
+    <div id="workspacePickerList" class="workspace-picker-list"></div>
+    <div class="workspace-new-section">
+      <p class="workspace-new-label">➕ สร้างโฟลเดอร์ใหม่</p>
+      <div class="workspace-new-row">
+        <select id="workspaceNewRoot" class="file-format-sel workspace-new-root-sel" style="display:none"></select>
+        <input id="workspaceNewName" type="text" class="workspace-new-input" placeholder="folder-name (a-z, 0-9, _, -)">
+        <button class="modal-btn modal-btn-primary workspace-new-btn" onclick="_createWorkspaceFolder()">สร้าง</button>
+      </div>
+      <p id="workspaceNewError" class="workspace-new-error"></p>
+    </div>
+    <div class="modal-actions-row" style="margin-top:16px">
+      <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('workspaceModal').style.display='none'">ปิด</button>
+    </div>
+  </div>
+</div>
+
 <!-- File Format Selector Modal (PM multi-file save) -->
 <div id="fileFormatModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true">
   <div class="modal-box modal-box-wide">
@@ -1068,8 +1139,7 @@
   function _showFileFormatModal(originalMessage) {
     const modal = document.getElementById('fileFormatModal');
     const list  = document.getElementById('fileFormatList');
-    const defaultFmt = _extractFormatFromMessage(originalMessage)
-                    || document.getElementById('formatSelect').value;
+    const defaultFmt = _extractFormatFromMessage(originalMessage) || 'md';
 
     list.innerHTML = '';
     pendingTempPaths.forEach((tp, i) => {
@@ -1124,8 +1194,7 @@
   function _showSingleFileFormatModal(originalMessage) {
     const modal = document.getElementById('fileFormatModal');
     const list  = document.getElementById('fileFormatList');
-    const defaultFmt = _extractFormatFromMessage(originalMessage)
-                    || document.getElementById('formatSelect').value;
+    const defaultFmt = _extractFormatFromMessage(originalMessage) || 'md';
 
     const agentLabels = {
       hr: 'HR Agent', accounting: 'Accounting Agent',
@@ -1171,7 +1240,7 @@
     document.getElementById('fileFormatSaveBtn').onclick = () => {
       modal.style.display = 'none';
       const selectedFmt = document.getElementById('singleFileFormatSel').value;
-      document.getElementById('formatSelect').value = selectedFmt;
+      pendingFormat = selectedFmt;
       sendMessage(originalMessage);
     };
   }
@@ -1501,10 +1570,7 @@
 
     try {
       const detectedFormat = _extractFormatFromMessage(message);
-      const resolvedFormat = detectedFormat || document.getElementById('formatSelect').value;
-      if (detectedFormat) {
-        document.getElementById('formatSelect').value = detectedFormat;
-      }
+      const resolvedFormat = detectedFormat || pendingFormat || 'md';
       const reqBody = {
         message,
         session_id: _getSessionId(),
@@ -1654,7 +1720,7 @@
               // Single-agent: new document generated, waiting for confirm
               pendingDoc = outputText;
               pendingAgent = lastAgent;
-              pendingFormat = document.getElementById('formatSelect').value;
+              pendingFormat = 'md';
               isPendingConfirmation = true;
               _updateInputHint(true, 0);
             }
@@ -1776,21 +1842,121 @@
   }
 
   async function changeWorkspace() {
-    const current = document.getElementById('workspacePath').textContent;
-    const newPath = prompt('ระบุ path ของ workspace directory:', current);
-    if (!newPath || newPath.trim() === current) return;
+    const modal    = document.getElementById('workspaceModal');
+    const listEl   = document.getElementById('workspacePickerList');
+    const rootSel  = document.getElementById('workspaceNewRoot');
+    const errEl    = document.getElementById('workspaceNewError');
+
+    // Reset create-new section
+    document.getElementById('workspaceNewName').value = '';
+    errEl.textContent = '';
+    listEl.innerHTML = '<div class="file-empty">กำลังโหลด...</div>';
+    modal.style.display = 'flex';
+
     try {
-      const res = await fetch('/api/workspace', {
+      const res  = await fetch('/api/workspaces');
+      const data = await res.json();
+
+      listEl.innerHTML = '';
+      rootSel.innerHTML = '';
+      const multiRoot = data.roots.length > 1;
+      rootSel.style.display = multiRoot ? '' : 'none';
+
+      data.roots.forEach(group => {
+        // Root selector option for create-new
+        const opt = document.createElement('option');
+        opt.value = group.root;
+        opt.textContent = group.label;
+        rootSel.appendChild(opt);
+
+        if (multiRoot) {
+          const hdr = document.createElement('div');
+          hdr.className = 'workspace-group-header';
+          hdr.textContent = group.label;
+          listEl.appendChild(hdr);
+        }
+
+        if (group.workspaces.length === 0) {
+          const empty = document.createElement('div');
+          empty.className = 'workspace-item';
+          empty.style.cssText = 'opacity:0.4;font-style:italic;cursor:default';
+          empty.textContent = 'ยังไม่มีโฟลเดอร์';
+          listEl.appendChild(empty);
+          return;
+        }
+
+        group.workspaces.forEach(ws => {
+          const item = document.createElement('div');
+          item.className = 'workspace-item' + (ws.active ? ' ws-active' : '');
+
+          const icon = document.createElement('span');
+          icon.className = 'ws-icon material-symbols-outlined';
+          icon.textContent = ws.active ? 'check_circle' : 'folder';
+
+          const name = document.createElement('span');
+          name.className = 'ws-name';
+          name.textContent = ws.name;
+          name.title = ws.path;
+
+          item.appendChild(icon);
+          item.appendChild(name);
+
+          if (!ws.active) {
+            item.onclick = async () => {
+              modal.style.display = 'none';
+              await _applyWorkspace(ws.path);
+            };
+          }
+          listEl.appendChild(item);
+        });
+      });
+
+    } catch (e) {
+      listEl.innerHTML = `<div class="file-empty" style="color:var(--error)">โหลดล้มเหลว: ${e.message}</div>`;
+    }
+  }
+
+  async function _applyWorkspace(path) {
+    try {
+      const res  = await fetch('/api/workspace', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: newPath.trim() })
+        body: JSON.stringify({ path })
       });
       const data = await res.json();
-      if (data.error) { alert('ไม่สามารถตั้งค่า workspace: ' + data.error); return; }
+      if (data.error) { alert('ไม่สามารถเปลี่ยน workspace: ' + data.error); return; }
       document.getElementById('workspacePath').textContent = data.path;
       startFileStream();
     } catch (e) {
       alert('เกิดข้อผิดพลาด: ' + e.message);
+    }
+  }
+
+  async function _createWorkspaceFolder() {
+    const name   = document.getElementById('workspaceNewName').value.trim();
+    const root   = document.getElementById('workspaceNewRoot').value;
+    const errEl  = document.getElementById('workspaceNewError');
+    errEl.textContent = '';
+
+    if (!name) { errEl.textContent = 'กรุณาระบุชื่อโฟลเดอร์'; return; }
+    if (!/^[a-zA-Z0-9_-]{1,50}$/.test(name)) {
+      errEl.textContent = 'ชื่อใช้ได้เฉพาะ a-z, A-Z, 0-9, _, - (ไม่เกิน 50 ตัว)';
+      return;
+    }
+
+    try {
+      const res  = await fetch('/api/workspace/new', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ root, name })
+      });
+      const data = await res.json();
+      if (data.error) { errEl.textContent = data.error; return; }
+      document.getElementById('workspaceModal').style.display = 'none';
+      document.getElementById('workspacePath').textContent = data.path;
+      startFileStream();
+    } catch (e) {
+      errEl.textContent = 'เกิดข้อผิดพลาด: ' + e.message;
     }
   }
 

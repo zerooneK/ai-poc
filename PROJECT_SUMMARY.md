@@ -10,7 +10,7 @@
 
 **เป้าหมายของ POC นี้:** Demo สดต่อหัวหน้าเพื่อขอ budget พัฒนาระบบ production จริง
 
-**สถานะ:** POC เสร็จสมบูรณ์ 100% · version **v0.4.20** · พร้อม demo
+**สถานะ:** Prototype phase · version **v0.8.0** · พร้อม demo
 
 ---
 
@@ -80,13 +80,18 @@ SSE stream → Frontend แสดงผล real-time
 
 ```
 ai-poc/
-├── app.py                   ← Flask backend + Orchestrator + Agents + PM Agent + Agentic loop (MAIN FILE)
+├── app.py                   ← Flask backend + Orchestrator + Agents + PM Agent + Agentic loop + DB integration
+├── db.py                    ← SQLite persistence layer (jobs, saved_files) — graceful degradation
+├── converter.py             ← Multi-format export (.txt/.docx/.xlsx/.pdf) — deferred imports
 ├── mcp_server.py            ← MCP Filesystem Server (FastMCP) + 5 tools (Layer A/B)
-├── index.html               ← Web UI ไฟล์เดียว (The Silent Concierge design + chat bubbles + confirmation flow)
-├── requirements.txt         ← flask, flask-cors, openai, python-dotenv, mcp, watchdog
-├── test_cases.py            ← Automated test (6 use cases) — PYTHONUTF8=1 python test_cases.py
+├── index.html               ← Web UI ไฟล์เดียว (The Silent Concierge + chat bubbles + format popup)
+├── history.html             ← Standalone job history viewer page (Flask route /history)
+├── requirements.txt         ← flask, flask-cors, openai, python-dotenv, mcp, watchdog, python-docx, openpyxl, weasyprint, markdown
+├── setup.sh                 ← auto-install: venv + pip + WeasyPrint system libs + Thai fonts + verify
+├── start.sh                 ← run script: activate venv + flask run host=0.0.0.0 (WSL-compatible)
+├── test_cases.py            ← Automated test (5 use cases) — PYTHONUTF8=1 python test_cases.py
 ├── quick-demo-check.py      ← Full validation script (7 checks รวม health)
-├── smoke_test_phase0.py     ← Focused Phase 0 smoke test (5 checks, urllib-based, Thai confirmation safe on Windows)
+├── smoke_test_phase0.py     ← Focused Phase 0 smoke test (5 checks, urllib-based, Thai-safe on Windows)
 ├── CHANGELOG.md             ← Version history
 ├── PROJECT_SUMMARY.md       ← ไฟล์นี้
 ├── CLAUDE.md                ← Rules สำหรับ Claude Code
@@ -94,16 +99,18 @@ ai-poc/
 ├── DEMO-READINESS-REPORT.md ← สรุปผลการตรวจสอบ demo readiness
 ├── .env                     ← OPENROUTER_API_KEY, OPENROUTER_MODEL, WORKSPACE_PATH (ห้าม commit)
 ├── .env.example             ← Template
-├── .gitignore               ← exclude: .env, venv/, backup/screenshots/, workspace/*, temp/*
+├── .gitignore               ← exclude: .env, venv/, backup/screenshots/, workspace/*, temp/*, data/*
 ├── workspace/               ← workspace directory สำหรับ agent สร้างไฟล์ (gitignored ยกเว้น .gitkeep)
 ├── temp/                    ← staging area สำหรับไฟล์ที่รอ user confirm (gitignored ยกเว้น .gitkeep)
+├── data/                    ← SQLite database directory — assistant.db สร้างอัตโนมัติ (gitignored)
 ├── backup/
 │   ├── demo-inputs.txt      ← copy-paste inputs ทั้ง 6 cases พร้อมใช้
 │   ├── demo-script.md       ← demo script พร้อม timing และ talking points
 │   └── screenshots/         ← ภาพหน้าจอ backup (ไม่ commit)
 └── docs/
     ├── poc-plan.md          ← แผน POC 2 คืน + session logs
-    └── project-plan.md      ← แผน production Phase 0-4 (8 สัปดาห์)
+    ├── project-plan.md      ← แผน production Phase 0-4 (8 สัปดาห์)
+    └── phase-0-safe-execution-plan.md ← แผนการ execute Phase 0 อย่างปลอดภัย
 ```
 
 ---
@@ -181,13 +188,24 @@ set PYTHONUTF8=1 && .\venv\Scripts\python.exe quick-demo-check.py
 | v0.4.18 | 24 มี.ค. 2569 | fix | userScrolledUp flag หยุด auto-scroll เมื่อ user เลื่อนขึ้นอ่านระหว่าง streaming |
 | v0.4.19 | 24 มี.ค. 2569 | fix | typing indicator ค้าง + discard notification ปนในเอกสาร: เปลี่ยนเป็น status type + always-hide typing on text |
 | v0.4.20 | 24 มี.ค. 2569 | feat | pending doc confirmation modal — popup ถามก่อนยกเลิก (บันทึกก่อน/ข้ามไป/ยกเลิก) + auto-send queue |
+| v0.4.21 | 25 มี.ค. 2569 | feat | WSL support: start.sh/setup.sh, Flask host=0.0.0.0, Python 3.10 f-string fix |
+| v0.5.0 | 25 มี.ค. 2569 | feat | Prototype phase: SQLite persistence (db.py), job history, session_id, /api/history routes, graceful DB degradation |
+| v0.5.1 | 25 มี.ค. 2569 | feat | history.html: standalone history viewer page + Flask route /history |
+| v0.5.2 | 25 มี.ค. 2569 | feat | setup.sh: auto-install WeasyPrint system libs + Thai fonts + verify step; requirements.txt เพิ่ม python-docx, openpyxl, weasyprint, markdown |
+| v0.6.0 | 25 มี.ค. 2569 | feat | multi-format export: converter.py (.txt/.docx/.xlsx/.pdf) + format selector UI + pendingFormat state |
+| v0.6.1 | 25 มี.ค. 2569 | fix | suppress WeasyPrint verbose logs + _cleanup_old_temp ข้าม .gitkeep |
+| v0.6.2 | 25 มี.ค. 2569 | fix | format detection จาก message text override dropdown (ลบ pendingFormat lock) |
+| v0.7.0 | 25 มี.ค. 2569 | feat | per-file format selector modal + cancel confirm modal สำหรับ PM multi-file saves |
+| v0.7.1 | 25 มี.ค. 2569 | fix | format popup แสดงสำหรับ single-agent doc ด้วย (HR/Accounting/Manager) |
+| v0.7.2 | 25 มี.ค. 2569 | fix | ลบ format dropdown ออกจาก input area (popup เป็นตัวเลือก format หลักแทน) |
+| v0.8.0 | 25 มี.ค. 2569 | feat | Workspace Picker Modal — คลิกเลือก workspace + ALLOWED_WORKSPACE_ROOTS + /api/workspaces + /api/workspace/new |
 
 **กฎ versioning:** Minor bump (0.X.0) = agent/feature ใหม่ · Patch bump (0.0.X) = fix/tweak
 **ทุก commit ต้อง bump version ใน `index.html` และเพิ่ม entry ใน `CHANGELOG.md`**
 
 ---
 
-## UI Architecture (v0.4.x)
+## UI Architecture (v0.7.x)
 
 index.html ใช้ design system "The Silent Concierge":
 
@@ -246,12 +264,13 @@ Main area (margin-left: 256px)
 
 ---
 
-## สิ่งที่ POC นี้ไม่มี (ต้องบอกหัวหน้าตรงๆ)
+## สิ่งที่ Prototype นี้ไม่มี (ต้องบอกหัวหน้าตรงๆ)
 
 - ❌ Login / Authentication
-- ❌ บันทึกประวัติการใช้งาน (แสดงแค่ session ปัจจุบัน)
-- ❌ Database
 - ❌ LangGraph (ใช้ direct API call + agentic loop แทน)
+- ✅ บันทึกประวัติการใช้งาน — SQLite + /history page (เพิ่มแล้ว v0.5.0)
+- ✅ Database — SQLite graceful degradation (เพิ่มแล้ว v0.5.0)
+- ✅ Multi-format export — .md/.txt/.docx/.xlsx/.pdf (เพิ่มแล้ว v0.6.0)
 
 ---
 
@@ -274,7 +293,8 @@ Main area (margin-left: 256px)
 1. ทุกครั้งที่แก้ `.py` → รัน `python-reviewer` ก่อน done
 2. ทุกครั้งที่มี error → รัน `debug-assistant` ทันที
 3. ทุกครั้งที่สร้าง Thai document output → รัน `thai-doc-checker`
-4. ทุกครั้งที่แก้ `index.html` → รัน `frontend-developer`
+4. ทุกครั้งที่แก้ `index.html` → รัน `frontend-developer` แล้วตามด้วย `ui-ux-reviewer`
 5. ก่อน demo → รัน `security-checker` แล้วตามด้วย `demo-preparer`
 6. ท้ายทุก session → รัน `project-documenter` อัปเดต `docs/poc-plan.md`
 7. **ทุก commit** → bump version ใน `index.html` + เพิ่ม entry ใน `CHANGELOG.md`
+8. **หลังทำงานทุกครั้ง** → อัปเดต CLAUDE.md, CHANGELOG.md, PROJECT_SUMMARY.md, DEMO-READINESS-REPORT.md ให้ sync กับ version ปัจจุบันก่อนถือว่าเสร็จ
