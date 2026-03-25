@@ -1,5 +1,13 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.8.3] — 25 มีนาคม 2569 · fix
+- fix: sidebar file panel ไม่ refresh หลัง agent save เมื่อ workspace directory ถูกลบแล้วสร้างใหม่
+- เพิ่ม global event bus (`_ws_change_queues`) — agent save notify SSE clients โดยตรง ไม่ต้องรอ watchdog
+- watchdog ยังทำงานอยู่ (สำหรับ external file changes) แต่ agent save path ผ่าน event bus เสมอ
+- fix: cleanup orphaned empty bucket key เมื่อ SSE client disconnect
+
+---
+
 ## [v0.8.2] — 25 มีนาคม 2569 · fix
 - fix: Orchestrator retry loop — retry API call up to 3 times เมื่อ JSON parse ล้มเหลว ก่อน raise error
 - fix: PM Agent retry loop — retry API call up to 3 times เมื่อ JSON parse ล้มเหลว ก่อน raise error

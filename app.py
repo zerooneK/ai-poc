@@ -63,6 +63,25 @@ _DEFAULT_WORKSPACE = os.path.abspath(
 WORKSPACE_PATH = _DEFAULT_WORKSPACE
 _workspace_lock = threading.Lock()
 
+# Global event bus: notify sidebar SSE clients when a file is saved by any agent.
+# Keyed by workspace path; each value is a list of queue.Queue objects (one per SSE client).
+# This ensures the sidebar refreshes immediately even when watchdog misses events
+# (e.g., after the watched directory was deleted and recreated).
+_ws_change_queues: dict = {}
+_ws_change_lock = threading.Lock()
+
+
+def _notify_workspace_changed(wp: str) -> None:
+    """Push a 'changed' event to all sidebar SSE clients watching `wp`."""
+    with _ws_change_lock:
+        queues = list(_ws_change_queues.get(wp, []))
+    for q in queues:
+        try:
+            q.put_nowait('changed')
+        except queue.Full:
+            pass
+
+
 # Temp staging directory — files wait here until user confirms save
 TEMP_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'temp'))
 os.makedirs(TEMP_DIR, exist_ok=True)
@@ -646,6 +665,7 @@ def handle_save(pending_doc: str, pending_agent: str, workspace: str,
 
         size = len(pending_doc.encode('utf-8')) if output_format in ('md', 'txt') else os.path.getsize(os.path.join(workspace, filename))
         db.record_file(job_id, filename, pending_agent, size)
+        _notify_workspace_changed(workspace)
         yield f"data: {json.dumps({'type': 'text', 'content': f'✅ {result}'})}\n\n"
         yield f"data: {json.dumps({'type': 'tool_result', 'tool': 'create_file', 'result': result})}\n\n"
     except Exception as e:
@@ -732,6 +752,7 @@ def handle_pm_save(temp_paths: list, workspace: str, job_id=None, output_format:
             except OSError:
                 pass
             db.record_file(job_id, filename, agent_prefix, size)
+            _notify_workspace_changed(workspace)
             yield f"data: {json.dumps({'type': 'tool_result', 'tool': 'create_file', 'result': f'บันทึก {filename} เรียบร้อย'})}\n\n"
         except Exception as e:
             logger.error(f"Failed to save temp file {temp_path}: {e}")
@@ -1190,6 +1211,10 @@ def files_stream():
 
         event_queue = queue.Queue(maxsize=20)
 
+        # Register with global event bus so agent saves notify this client directly
+        with _ws_change_lock:
+            _ws_change_queues.setdefault(wp, []).append(event_queue)
+
         class Handler(FileSystemEventHandler):
             def on_any_event(self, event):
                 if not event.is_directory:
@@ -1229,6 +1254,15 @@ def files_stream():
         finally:
             observer.stop()
             observer.join(timeout=2)
+            # Unregister from global event bus
+            with _ws_change_lock:
+                bucket = _ws_change_queues.get(wp, [])
+                try:
+                    bucket.remove(event_queue)
+                except ValueError:
+                    pass
+                if not bucket:
+                    _ws_change_queues.pop(wp, None)
 
     return Response(
         generate(),
