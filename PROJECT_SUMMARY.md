@@ -10,7 +10,7 @@
 
 **เป้าหมายของ POC นี้:** Demo สดต่อหัวหน้าเพื่อขอ budget พัฒนาระบบ production จริง
 
-**สถานะ:** Prototype phase · version **v0.8.0** · พร้อม demo
+**สถานะ:** Prototype phase · version **v0.8.3** · พร้อม demo
 
 ---
 
@@ -199,13 +199,16 @@ set PYTHONUTF8=1 && .\venv\Scripts\python.exe quick-demo-check.py
 | v0.7.1 | 25 มี.ค. 2569 | fix | format popup แสดงสำหรับ single-agent doc ด้วย (HR/Accounting/Manager) |
 | v0.7.2 | 25 มี.ค. 2569 | fix | ลบ format dropdown ออกจาก input area (popup เป็นตัวเลือก format หลักแทน) |
 | v0.8.0 | 25 มี.ค. 2569 | feat | Workspace Picker Modal — คลิกเลือก workspace + ALLOWED_WORKSPACE_ROOTS + /api/workspaces + /api/workspace/new |
+| v0.8.1 | 25 มี.ค. 2569 | fix | test_cases.py เพิ่ม PM Agent tests + routing/keyword validation สำหรับทุก cases |
+| v0.8.2 | 25 มี.ค. 2569 | fix | Orchestrator + PM Agent retry up to 3 times on bad JSON format before raising error |
+| v0.8.3 | 25 มี.ค. 2569 | fix | sidebar file panel not refreshing after agent saves to a recreated workspace directory |
 
 **กฎ versioning:** Minor bump (0.X.0) = agent/feature ใหม่ · Patch bump (0.0.X) = fix/tweak
 **ทุก commit ต้อง bump version ใน `index.html` และเพิ่ม entry ใน `CHANGELOG.md`**
 
 ---
 
-## UI Architecture (v0.7.x)
+## UI Architecture (v0.8.x)
 
 index.html ใช้ design system "The Silent Concierge":
 

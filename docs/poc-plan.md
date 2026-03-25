@@ -41,7 +41,12 @@ Output: เอกสารภาษาไทยพร้อมใช้
 
 ## สรุปความคืบหน้า — 24 มีนาคม 2569
 
-**สถานะ: Prototype Phase — v0.8.0**
+**สถานะ: Prototype Phase — v0.8.3**
+
+### v0.8.1–v0.8.3 — Stability & Bug Fixes (25 มีนาคม 2569)
+- ✅ test_cases.py เพิ่ม PM Agent tests + routing/keyword validation (v0.8.1)
+- ✅ Orchestrator + PM Agent retry 3 ครั้งเมื่อ JSON format ผิดก่อน raise error (v0.8.2)
+- ✅ sidebar file panel refresh ทันทีหลัง agent save ด้วย global event bus (v0.8.3)
 
 ### v0.8.0 — Workspace Picker Modal (25 มีนาคม 2569)
 - ✅ แทนที่ prompt() ด้วย Workspace Picker Modal — คลิกเลือก workspace แบบ visual
@@ -143,13 +148,13 @@ ai-poc/
 ├── db.py                    ← SQLite persistence layer (jobs, saved_files) — graceful degradation
 ├── mcp_server.py            ← MCP Filesystem Server (FastMCP) + 5 tools (Layer A/B)
 ├── converter.py             ← Multi-format export (.txt/.docx/.xlsx/.pdf)
-├── index.html               ← Web UI ไฟล์เดียว (v0.8.0 — workspace picker modal + format popup)
+├── index.html               ← Web UI ไฟล์เดียว (v0.8.3 — workspace picker modal + format popup)
 ├── history.html             ← Standalone job history viewer (/history route)
 ├── setup.sh                 ← auto-install: venv + pip + WeasyPrint libs + Thai fonts
 ├── start.sh                 ← run script: activate venv + flask run host=0.0.0.0
 ├── test_cases.py            ← Automated test script (5 use cases)
 ├── quick-demo-check.py      ← Full validation (7 checks: 6 cases + health)
-├── CHANGELOG.md             ← Version history (v0.1.0 → v0.8.0)
+├── CHANGELOG.md             ← Version history (v0.1.0 → v0.8.3)
 ├── PROJECT_SUMMARY.md       ← ภาพรวมโปรเจกต์สำหรับ AI context
 ├── CLAUDE.md                ← Rules สำหรับ Claude Code
 ├── PRE-DEMO-CHECKLIST.md    ← Checklist 30 นาทีก่อน demo

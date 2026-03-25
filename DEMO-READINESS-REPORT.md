@@ -99,9 +99,9 @@
 
 ---
 
-## UI FEATURES (v0.8.0)
+## UI FEATURES (v0.8.3)
 
-- ✅ Navbar: Fixed, frosted glass, version tag แสดง v0.8.0
+- ✅ Navbar: Fixed, frosted glass, version tag แสดง v0.8.3
 - ✅ Sidebar:
   - Workspace selector (dropdown + เลือก folder)
   - Agent badge (reserved space + idle state + overflow ellipsis)
@@ -137,7 +137,7 @@
 - ✅ Format detection (v0.6.2): "save as pdf" / "บันทึกเป็น excel" → auto-detect format จาก message
 - ✅ Per-file format modal (v0.7.0): popup เลือก format แยกต่อไฟล์ก่อน PM save
 - ✅ Single-agent format popup (v0.7.1): popup แสดงสำหรับ HR/Accounting/Manager doc ด้วย
-- ✅ Format dropdown removed (v0.8.0): popup เป็นตัวเลือก format หลัก — ไม่มี dropdown ซ้ำซ้อน
+- ✅ Format dropdown removed (v0.7.2): popup เป็นตัวเลือก format หลัก — ไม่มี dropdown ซ้ำซ้อน
 
 ---
 
@@ -146,7 +146,7 @@
 **30 Minutes Before Demo:**
 - [ ] Server running (`python app.py`)
 - [ ] Browser ready at http://localhost:5000
-- [ ] Version tag แสดง v0.8.0 ใน navbar (ขวาบน) ✅
+- [ ] Version tag แสดง v0.8.3 ใน navbar (ขวาบน) ✅
 - [ ] Model name แสดงใน sidebar footer
 - [ ] Workspace path configured in .env (WORKSPACE_PATH)
 - [ ] workspace/ and temp/ directories exist
@@ -208,5 +208,5 @@
 
 ---
 
-**Report Updated:** 25 มีนาคม 2569 (v0.8.0)
+**Report Updated:** 25 มีนาคม 2569 (v0.8.3)
 **For details, see:** PRE-DEMO-CHECKLIST.md
