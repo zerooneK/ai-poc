@@ -14,7 +14,7 @@
 
 ## Tech Stack
 
-### POC/Prototype (ทำแล้ว — v0.8.4)
+### POC/Prototype (ทำแล้ว — v0.8.5)
 
 | Layer | Technology |
 |---|---|

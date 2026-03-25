@@ -41,7 +41,11 @@ Output: เอกสารภาษาไทยพร้อมใช้
 
 ## สรุปความคืบหน้า — 24 มีนาคม 2569
 
-**สถานะ: Prototype Phase — v0.8.4**
+**สถานะ: Prototype Phase — v0.8.5**
+
+### v0.8.5 — Bug Fix: Wrong File Context (25 มีนาคม 2569)
+- ✅ ป้องกัน agents อ่านไฟล์ workspace ผิดบริบท — อ่านเฉพาะเมื่อ user ระบุชื่อไฟล์หรือขอแก้ไขเอกสารเดิม
+- ✅ PM pending + edit intent → แจ้งให้ user บันทึก/ยกเลิกก่อน แทนลบไฟล์ temp silent
 
 ### v0.8.4 — Workspace-Aware Single Agents (25 มีนาคม 2569)
 - ✅ HR/Accounting/Manager อ่าน workspace ก่อนสร้างเอกสาร ด้วย READ_ONLY_TOOLS (list_files + read_file)
@@ -153,7 +157,7 @@ ai-poc/
 ├── db.py                    ← SQLite persistence layer (jobs, saved_files) — graceful degradation
 ├── mcp_server.py            ← MCP Filesystem Server (FastMCP) + 5 tools (Layer A/B)
 ├── converter.py             ← Multi-format export (.txt/.docx/.xlsx/.pdf)
-├── index.html               ← Web UI ไฟล์เดียว (v0.8.4 — workspace picker modal + format popup)
+├── index.html               ← Web UI ไฟล์เดียว (v0.8.5 — workspace picker modal + format popup)
 ├── history.html             ← Standalone job history viewer (/history route)
 ├── setup.sh                 ← auto-install: venv + pip + WeasyPrint libs + Thai fonts
 ├── start.sh                 ← run script: activate venv + flask run host=0.0.0.0

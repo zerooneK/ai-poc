@@ -99,9 +99,9 @@
 
 ---
 
-## UI FEATURES (v0.8.4)
+## UI FEATURES (v0.8.5)
 
-- ✅ Navbar: Fixed, frosted glass, version tag แสดง v0.8.4
+- ✅ Navbar: Fixed, frosted glass, version tag แสดง v0.8.5
 - ✅ Sidebar:
   - Workspace selector (dropdown + เลือก folder)
   - Agent badge (reserved space + idle state + overflow ellipsis)
@@ -146,7 +146,7 @@
 **30 Minutes Before Demo:**
 - [ ] Server running (`python app.py`)
 - [ ] Browser ready at http://localhost:5000
-- [ ] Version tag แสดง v0.8.4 ใน navbar (ขวาบน) ✅
+- [ ] Version tag แสดง v0.8.5 ใน navbar (ขวาบน) ✅
 - [ ] Model name แสดงใน sidebar footer
 - [ ] Workspace path configured in .env (WORKSPACE_PATH)
 - [ ] workspace/ and temp/ directories exist
@@ -208,5 +208,5 @@
 
 ---
 
-**Report Updated:** 25 มีนาคม 2569 (v0.8.4)
+**Report Updated:** 25 มีนาคม 2569 (v0.8.5)
 **For details, see:** PRE-DEMO-CHECKLIST.md

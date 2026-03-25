@@ -1,5 +1,12 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.8.5] — 25 มีนาคม 2569 · fix
+- fix: agents อ่านไฟล์ workspace ผิดบริบท — ตัวอย่าง Accounting อ่าน travel expense เก่าแทนที่จะสร้างงบใหม่
+- fix: ปรับ system prompts ทั้ง 3 agents ให้อ่านไฟล์เฉพาะเมื่อ user ระบุชื่อไฟล์ หรือขอแก้ไขเอกสารที่มีอยู่โดยตรง
+- fix: PM pending state + edit-intent → แจ้งให้ user บันทึก/ยกเลิกก่อน แทนที่จะลบไฟล์ temp โดยไม่แจ้งเตือน
+
+---
+
 ## [v0.8.4] — 25 มีนาคม 2569 · feat
 - feat: HR/Accounting/Manager agents ใช้ `list_files` + `read_file` ก่อนสร้างเอกสารเพื่อเข้าใจ context ใน workspace
 - เพิ่ม `READ_ONLY_TOOLS` — subset ของ MCP_TOOLS สำหรับ single agents (read-only, ไม่มี create/update/delete)
