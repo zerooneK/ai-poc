@@ -1,5 +1,12 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.6.2] — 25 มีนาคม 2569 · fix
+- fix: format detection จาก message text — "save as pdf", "บันทึกเป็น excel" override dropdown
+- priority: message keyword → dropdown value (pendingFormat lock ถูกเอาออก)
+- dropdown อัปเดตอัตโนมัติเมื่อ detect format จาก message
+
+---
+
 ## [v0.6.1] — 25 มีนาคม 2569 · fix
 - fix: suppress WeasyPrint/fontTools verbose font subsetting logs (ตั้ง log level ERROR/WARNING)
 - fix: _cleanup_old_temp() ข้าม .gitkeep ป้องกันถูกลบทุกครั้งที่ส่ง request

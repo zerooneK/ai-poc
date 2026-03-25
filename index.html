@@ -909,7 +909,7 @@
         <span class="material-symbols-outlined" style="font-size:13px">folder_open</span>
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
-      <span class="version-tag">v0.6.1</span>
+      <span class="version-tag">v0.6.2</span>
     </div>
   </header>
 
@@ -989,6 +989,16 @@
   let startTime = 0;
 
   // Session ID — persisted across page refreshes for history grouping
+  function _extractFormatFromMessage(msg) {
+    const lower = msg.toLowerCase();
+    if (/\b(xlsx|excel|เอกเซล)\b/.test(lower)) return 'xlsx';
+    if (/\b(docx|word|เวิร์ด)\b/.test(lower))  return 'docx';
+    if (/\b(pdf)\b/.test(lower))                return 'pdf';
+    if (/\b(txt|text)\b/.test(lower))           return 'txt';
+    if (/\b(md|markdown)\b/.test(lower))        return 'md';
+    return null;
+  }
+
   function _getSessionId() {
     let sid = localStorage.getItem('ai_session_id');
     if (!sid) {
@@ -1257,10 +1267,15 @@
     };
 
     try {
+      const detectedFormat = _extractFormatFromMessage(message);
+      const resolvedFormat = detectedFormat || document.getElementById('formatSelect').value;
+      if (detectedFormat) {
+        document.getElementById('formatSelect').value = detectedFormat;
+      }
       const reqBody = {
         message,
         session_id: _getSessionId(),
-        output_format: pendingFormat || document.getElementById('formatSelect').value
+        output_format: resolvedFormat
       };
       if (isPendingConfirmation) {
         if (pendingTempPaths.length > 0) {
