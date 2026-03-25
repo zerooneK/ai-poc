@@ -951,7 +951,7 @@
         <span class="material-symbols-outlined" style="font-size:13px">folder_open</span>
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
-      <span class="version-tag">v0.7.0</span>
+      <span class="version-tag">v0.7.1</span>
     </div>
   </header>
 
@@ -1117,6 +1117,61 @@
       pendingFileFormats = Array.from(
         list.querySelectorAll('.file-format-sel')
       ).map(s => s.value);
+      sendMessage(originalMessage);
+    };
+  }
+
+  function _showSingleFileFormatModal(originalMessage) {
+    const modal = document.getElementById('fileFormatModal');
+    const list  = document.getElementById('fileFormatList');
+    const defaultFmt = _extractFormatFromMessage(originalMessage)
+                    || document.getElementById('formatSelect').value;
+
+    const agentLabels = {
+      hr: 'HR Agent', accounting: 'Accounting Agent',
+      manager: 'Manager Advisor', pm: 'PM Agent'
+    };
+
+    list.innerHTML = '';
+
+    const row = document.createElement('div');
+    row.className = 'file-format-row';
+
+    const icon = document.createElement('span');
+    icon.className = 'material-symbols-outlined';
+    icon.style.cssText = 'font-size:16px;color:var(--on-surface-2);flex-shrink:0';
+    icon.textContent = 'description';
+
+    const nameEl = document.createElement('span');
+    nameEl.className = 'file-format-name';
+    nameEl.textContent = agentLabels[pendingAgent] || pendingAgent || 'เอกสาร';
+
+    const sel = document.createElement('select');
+    sel.className = 'file-format-sel';
+    sel.id = 'singleFileFormatSel';
+    ['md','txt','docx','xlsx','pdf'].forEach(fmt => {
+      const opt = document.createElement('option');
+      opt.value = fmt;
+      opt.textContent = '.' + fmt;
+      if (fmt === defaultFmt) opt.selected = true;
+      sel.appendChild(opt);
+    });
+
+    row.appendChild(icon);
+    row.appendChild(nameEl);
+    row.appendChild(sel);
+    list.appendChild(row);
+
+    modal.style.display = 'flex';
+
+    document.getElementById('fileFormatCancelBtn').onclick = () => {
+      modal.style.display = 'none';
+    };
+
+    document.getElementById('fileFormatSaveBtn').onclick = () => {
+      modal.style.display = 'none';
+      const selectedFmt = document.getElementById('singleFileFormatSel').value;
+      document.getElementById('formatSelect').value = selectedFmt;
       sendMessage(originalMessage);
     };
   }
@@ -1353,6 +1408,16 @@
         input.value = '';
         input.style.height = 'auto';
         _showCancelConfirmModal(message, pendingTempPaths.length);
+        return;
+      }
+    }
+
+    // Intercept: single-agent doc pending + save intent → show format modal
+    if (pendingDoc && pendingAgent && !overrideMessage) {
+      if (_isSaveIntentJS(message)) {
+        input.value = '';
+        input.style.height = 'auto';
+        _showSingleFileFormatModal(message);
         return;
       }
     }

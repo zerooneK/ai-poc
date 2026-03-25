@@ -1,5 +1,12 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.7.1] — 25 มีนาคม 2569 · fix
+- fix: format popup แสดงสำหรับ single-agent doc (HR/Accounting/Manager) ด้วย ไม่ใช่แค่ PM
+- เพิ่ม _showSingleFileFormatModal(): แสดง popup 1 row พร้อม agent label + format dropdown
+- intercept save intent เมื่อ pendingDoc && pendingAgent → popup ก่อน submit
+
+---
+
 ## [v0.7.0] — 25 มีนาคม 2569 · feature
 - เพิ่ม file format selector modal: popup แสดง per-file format dropdown ก่อนบันทึก PM files
 - เพิ่ม cancel confirm modal: ยืนยันก่อนยกเลิก PM files พร้อมแสดงจำนวนไฟล์
