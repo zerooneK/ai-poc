@@ -14,22 +14,28 @@ echo "================================"
 # ─── 1. System dependencies (WeasyPrint + PDF rendering) ──────────────────────
 echo ""
 echo "📦 ติดตั้ง system libraries สำหรับ PDF export..."
-echo "   (WeasyPrint ต้องการ libpango, libharfbuzz, libffi, libjpeg, libopenjp2)"
+echo "   (WeasyPrint ต้องการ libpango, libcairo, libharfbuzz, libffi, libjpeg, libopenjp2)"
 
 if command -v apt-get &>/dev/null; then
     sudo apt-get update -qq
     sudo apt-get install -y -qq \
+        build-essential \
+        python3-dev \
         libpango-1.0-0 \
         libpangoft2-1.0-0 \
+        libpangocairo-1.0-0 \
+        libcairo2 \
         libharfbuzz0b \
         libffi-dev \
         libjpeg-dev \
         libopenjp2-7 \
+        libgdk-pixbuf2.0-0 \
+        shared-mime-info \
         fonts-thai-tlwg
     echo "✅ ติดตั้ง system libraries สำเร็จ"
 else
     echo "⚠️  ไม่พบ apt-get — ข้ามการติดตั้ง system libraries"
-    echo "   หากใช้ระบบอื่น ให้ติดตั้ง: libpango, libharfbuzz, libffi, libjpeg, libopenjp2 ด้วยตนเอง"
+    echo "   หากใช้ระบบอื่น ให้ติดตั้งด้วยตนเอง: libpango, libcairo2, libharfbuzz, libffi, libjpeg, libopenjp2"
 fi
 
 # ─── 2. Python version check ──────────────────────────────────────────────────
@@ -48,20 +54,24 @@ fi
 
 # ─── 4. Python dependencies ───────────────────────────────────────────────────
 source venv/bin/activate
-echo "📦 ติดตั้ง Python dependencies..."
-echo "   flask, openai, python-docx, openpyxl, weasyprint, markdown ..."
-pip install -q --upgrade pip
-pip install -q -r requirements.txt
+
+echo "📦 อัปเกรด pip..."
+pip install --upgrade pip
+
+echo "📦 ติดตั้ง Python dependencies (flask, openai, python-docx, openpyxl, weasyprint, markdown ...)..."
+pip install -r requirements.txt
 echo "✅ ติดตั้ง Python dependencies สำเร็จ"
 
 # ─── 5. Verify key libraries ──────────────────────────────────────────────────
 echo ""
 echo "🔍 ตรวจสอบ libraries ที่สำคัญ..."
 
+VENV_PYTHON="$PROJECT_DIR/venv/bin/python3"
+
 check_lib() {
-    python3 -c "import $1" 2>/dev/null \
+    "$VENV_PYTHON" -c "import $1" 2>/dev/null \
         && echo "   ✅ $1" \
-        || echo "   ❌ $1 — ติดตั้งไม่สำเร็จ ตรวจสอบ log ด้านบน"
+        || echo "   ❌ $1 — ติดตั้งไม่สำเร็จ ตรวจสอบ error ด้านบน"
 }
 
 check_lib flask
