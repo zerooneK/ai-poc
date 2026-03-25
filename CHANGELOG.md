@@ -1,5 +1,12 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.8.1] — 25 มีนาคม 2569 · fix
+- test_cases.py: เพิ่ม PM Agent test cases (#7, #8) — two-step flow: generate → confirm save
+- เพิ่ม routing validation, min_chars check, keyword check สำหรับ cases 1-6
+- เพิ่ม PM cases ใน backup/demo-inputs.txt
+
+---
+
 ## [v0.8.0] — 25 มีนาคม 2569 · feature
 - feature: Workspace Picker Modal — แทนที่ prompt() ด้วย modal แสดง workspace ทั้งหมดแบบคลิกเลือก
 - เพิ่ม ALLOWED_WORKSPACE_ROOTS env var — admin กำหนด roots ที่อนุญาต (comma-separated)

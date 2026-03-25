@@ -58,7 +58,7 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 - **ทุก commit ต้อง bump version** ใน index.html พร้อมกัน
 - **ทุก commit ต้องเพิ่ม entry ใน CHANGELOG.md** ระบุ version, วันที่, ประเภท, รายละเอียด
 - เมื่อ bump Minor ให้ reset Patch เป็น 0 เสมอ (v0.2.3 → v0.3.0)
-- Version ปัจจุบัน: **v0.8.0**
+- Version ปัจจุบัน: **v0.8.1**
 
 ประวัติ:
 - v0.1.0 — initial POC (HR + Accounting agents, SSE streaming)
@@ -108,6 +108,7 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 - v0.7.1 — fix: format popup แสดงสำหรับ single-agent doc ด้วย (HR/Accounting/Manager)
 - v0.7.2 — fix: ลบ format dropdown ออกจาก input area (popup เป็นตัวเลือก format หลักแทน)
 - v0.8.0 — feature: Workspace Picker Modal + ALLOWED_WORKSPACE_ROOTS env var + /api/workspaces + /api/workspace/new
+- v0.8.1 — fix: test_cases.py เพิ่ม PM Agent tests + routing/keyword validation สำหรับทุก cases
 
 ## Rules ที่ต้องทำตามเสมอ
 - ภาษาไทยใน UI และ system prompts ทั้งหมด
