@@ -1083,7 +1083,7 @@
         <span class="material-symbols-outlined" style="font-size:13px">folder_open</span>
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
-      <span class="version-tag">v0.14.0</span>
+      <span class="version-tag">v0.14.1</span>
     </div>
   </header>
 
@@ -1813,7 +1813,12 @@
             container.classList.remove('typing');
             outputText += data.content;
             totalChars += data.content.length;
-            currentOutputEl.textContent = outputText;
+            // Strip fake tool-call JSON in real-time — display only; outputText stays raw
+            // so text_replace + done/subtask_done can still clean it properly
+            currentOutputEl.textContent = outputText
+              .replace(/\{[^{}]*"(?:request|tool)"\s*:\s*"[^"]*"[^{}]*\}/g, '')
+              .replace(/\n{3,}/g, '\n\n')
+              .trimStart();
             _scrollToBottom();
 
           } else if (data.type === 'text_replace') {

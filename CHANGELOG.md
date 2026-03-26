@@ -1,5 +1,10 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.14.1] — 26 มีนาคม 2569 · fix
+- fix: fake tool-call JSON (`{"request": "web_search", ...}`) แสดงเป็น plain text ระหว่าง live streaming — เพิ่ม real-time strip ใน `text` event handler (display-only; `outputText` ยังคง raw สำหรับ `text_replace`/`done`/`subtask_done` pipeline)
+
+---
+
 ## [v0.14.0] — 26 มีนาคม 2569 · feat
 - feat: PM Agent subtask cards — กรอบสีแยกชัดเจนสำหรับแต่ละ sub-agent ที่ถูกเรียกผ่าน PM (HR=เขียว, Accounting=ม่วง, Manager=ชมพู)
 - feat: card header แสดง agent icon + ชื่อ + task description; card body คือ output ของ sub-agent
