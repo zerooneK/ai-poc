@@ -6,14 +6,14 @@
 - **รันเทส Use Cases:** `PYTHONUTF8=1 ./venv/bin/python3 test_cases.py`
 - **Setup ครั้งแรก:** `bash setup.sh`
 
-## 🏗 โครงสร้างโฟลเดอร์ (v0.12.0+)
+## 🏗 โครงสร้างโฟลเดอร์ (v0.12.2+)
 - `app.py`: Flask Routes
 - `core/`: Orchestrator, Factory, Shared State, Utils
 - `agents/`: โมดูล Agent แต่ละแผนก (HR, Accounting, Manager, PM, Chat)
 - `prompts/`: System Prompts (.md files)
 - `workspace/`: พื้นที่เก็บเอกสารจริงที่สร้างเสร็จแล้ว
 - `temp/`: พื้นที่เก็บ Draft เอกสารที่รอการยืนยัน
-- `.claude/agents/`: คู่มือสำหรับ AI Assistant (Context Files)
+- `.claude/agents/`: Subagent definitions — AI ใช้เรียกใช้ agent เฉพาะทาง
 
 ## 📜 กฎเหล็ก (Mandatory Rules)
 1.  **ภาษา:** AI Output + UI ต้องเป็นภาษาไทย 100%
@@ -35,8 +35,10 @@
 | 3 | `ui-ux-reviewer` | แก้ `index.html` หรือ `history.html` |
 | 4 | `security-checker` | ก่อน demo ทุกครั้ง หรือเมื่อแก้ `.env` / API config |
 | 5 | `db-checker` | แก้ `db.py` หรือ `converter.py` |
+| 6 | `thai-doc-checker` | **ทุกครั้ง** ที่แก้หรือสร้างไฟล์ภาษาไทยทุกประเภท — ครอบคลุม `docs/`, `CHANGELOG.md`, `PROJECT_SUMMARY.md`, `DEMO-READINESS-REPORT.md`, `GEMINI.md`, `prompts/`, และ output ที่ agents สร้าง |
 
 > **กฎ:** ห้าม commit ถ้า `backend-python-reviewer` ยังไม่ผ่าน เมื่อมีการแก้ backend
+> **กฎ:** ห้าม commit เอกสารภาษาไทยถ้า `thai-doc-checker` ยังไม่ผ่าน
 
 ## 📝 รูปแบบการ Commit (Message Format)
 `vX.X.X — [fix/feature/refactor/docs]: <คำอธิบายภาษาไทยหรืออังกฤษ>`
