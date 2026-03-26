@@ -41,9 +41,9 @@ Output: เอกสารภาษาไทยพร้อมใช้
 
 ## สรุปความคืบหน้า — 24 มีนาคม 2569
 
-**สถานะ: Prototype Phase — v0.10.1**
+**สถานะ: Prototype Phase — v0.11.0**
 
-### v0.10.1 — Web Search via DDGS (26 มีนาคม 2569)
+### v0.11.0 — Web Search via DDGS (26 มีนาคม 2569)
 - ✅ เพิ่ม web_search tool ให้ HR/Accounting/Manager agents
 - ✅ _web_search() ใช้ ddgs library (ไม่ต้อง API key)
 - ✅ status message แสดง "กำลังค้นหา: {query}..." ระหว่าง streaming
@@ -170,7 +170,7 @@ ai-poc/
 ├── db.py                    ← SQLite persistence layer (jobs, saved_files) — graceful degradation
 ├── mcp_server.py            ← MCP Filesystem Server (FastMCP) + 5 tools (Layer A/B)
 ├── converter.py             ← Multi-format export (.txt/.docx/.xlsx/.pdf)
-├── index.html               ← Web UI ไฟล์เดียว (v0.10.1 — workspace picker modal + format popup + conversation memory + web search)
+├── index.html               ← Web UI ไฟล์เดียว (v0.11.0 — workspace picker modal + format popup + conversation memory + web search)
 ├── history.html             ← Standalone job history viewer (/history route)
 ├── setup.sh                 ← auto-install: venv + pip + WeasyPrint libs + Thai fonts
 ├── start.sh                 ← run script: activate venv + flask run host=0.0.0.0

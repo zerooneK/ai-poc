@@ -1,5 +1,13 @@
 # Changelog — Internal AI Assistant POC
 
+n## [v0.11.0] — 26 มีนาคม 2569 · feat
+- feat: Chat Agent ใหม่ — Orchestrator route "chat" สำหรับการทักทายและสนทนาทั่วไป
+- feat: CHAT_PROMPT — ตอบอย่างเป็นธรรมชาติ แนะนำระบบ ไม่สร้างเอกสาร
+- feat: HR/Accounting/Manager agents acknowledge งานก่อน output เอกสาร
+- feat: soften tone ใน HR/Accounting/Manager prompts — เปลี่ยนจาก directive เป็น collaborative
+- feat: badge "💬 Assistant" สำหรับ chat route
+
+---
 ## [v0.10.1] — 26 มีนาคม 2569 · fix
 - fix: web_search infinite loop — เพิ่ม MAX_WEB_SEARCH_CALLS=3 guard ป้องกัน agent ค้นหาซ้ำไม่สิ้นสุด
 - fix: detect model ที่ไม่รองรับ structured tool calling และ output tool call JSON เป็น text — แสดง error ที่เข้าใจได้แทน

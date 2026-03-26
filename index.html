@@ -187,6 +187,7 @@
     .agent-badge.agent-accounting { background: var(--ac-bg); color: var(--ac-fg); box-shadow: inset 0 0 0 1px var(--ac-border); }
     .agent-badge.agent-manager { background: var(--mg-bg); color: var(--mg-fg); box-shadow: inset 0 0 0 1px var(--mg-border); }
     .agent-badge.agent-pm      { background: var(--pm-bg); color: var(--pm-fg); box-shadow: inset 0 0 0 1px var(--pm-border); }
+    .agent-badge.agent-chat    { background: var(--surface-hi); color: var(--on-surface); box-shadow: inset 0 0 0 1px var(--outline-var); }
 
     /* Nav chips */
     .nav-chips {
@@ -1008,7 +1009,7 @@
         <span class="material-symbols-outlined" style="font-size:13px">folder_open</span>
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
-      <span class="version-tag">v0.10.1</span>
+      <span class="version-tag">v0.11.0</span>
     </div>
   </header>
 
@@ -1553,7 +1554,8 @@
       hr:         { cls: 'agent-hr',         label: 'HR Agent',         icon: '👤' },
       accounting: { cls: 'agent-accounting',  label: 'Accounting Agent', icon: '📊' },
       manager:    { cls: 'agent-manager',     label: 'Manager Advisor',  icon: '🧭' },
-      pm:         { cls: 'agent-pm',          label: 'PM Agent',         icon: '🗂️' }
+      pm:         { cls: 'agent-pm',          label: 'PM Agent',         icon: '🗂️' },
+      chat:       { cls: 'agent-chat',        label: 'Assistant',        icon: '💬' }
     };
 
     const previousPendingState = {

@@ -10,7 +10,7 @@
 
 **เป้าหมายของ POC นี้:** Demo สดต่อหัวหน้าเพื่อขอ budget พัฒนาระบบ production จริง
 
-**สถานะ:** Prototype phase · version **v0.10.1** · พร้อม demo
+**สถานะ:** Prototype phase · version **v0.11.0** · พร้อม demo
 
 ---
 
@@ -207,6 +207,7 @@ set PYTHONUTF8=1 && .\venv\Scripts\python.exe quick-demo-check.py
 | v0.9.0 | 25 มี.ค. 2569 | feat | conversation memory — last 10 turns ส่งไปยัง Orchestrator + agents ทุก request |
 | v0.10.0 | 26 มี.ค. 2569 | feat | web search via DDGS — HR/Accounting/Manager agents ค้นหาข้อมูลอินเทอร์เน็ตได้ |
 | v0.10.1 | 26 มี.ค. 2569 | fix | web_search infinite loop guard + fake tool call JSON detection |
+| v0.11.0 | 26 มี.ค. 2569 | feat | Chat Agent + friendly conversation mode — acknowledge style, soften tone |
 
 **กฎ versioning:** Minor bump (0.X.0) = agent/feature ใหม่ · Patch bump (0.0.X) = fix/tweak
 **ทุก commit ต้อง bump version ใน `index.html` และเพิ่ม entry ใน `CHANGELOG.md`**
