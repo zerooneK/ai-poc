@@ -1009,7 +1009,7 @@
         <span class="material-symbols-outlined" style="font-size:13px">folder_open</span>
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
-      <span class="version-tag">v0.13.0</span>
+      <span class="version-tag">v0.13.1</span>
     </div>
   </header>
 
@@ -1680,6 +1680,13 @@
             container.classList.remove('typing');
             outputText += data.content;
             totalChars += data.content.length;
+            currentOutputEl.textContent = outputText;
+            _scrollToBottom();
+
+          } else if (data.type === 'text_replace') {
+            // Server stripped fake tool-call JSON from the stream.
+            // Replace the accumulated bubble content with the clean version.
+            outputText = data.content;
             currentOutputEl.textContent = outputText;
             _scrollToBottom();
 

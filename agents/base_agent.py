@@ -4,6 +4,21 @@ import re
 from core.shared import get_client, get_model
 from core.utils import execute_tool, format_sse
 
+# Detect fake tool-call JSON that some models output as plain text instead of
+# using the structured tool_calls channel, e.g.:
+#   {"request": "web_search", "query": "..."}
+#   {"tool": "list_files", ...}
+# NOTE: "function" is intentionally excluded — too broad, appears in business documents.
+_FAKE_TOOL_CALL_RE = re.compile(
+    r'\{[^{}]*"(?:request|tool)"\s*:\s*"[^"]*"[^{}]*\}'
+)
+
+def _strip_fake_tool_calls(text: str) -> str:
+    """Remove fake tool-call JSON patterns from streamed text."""
+    cleaned = _FAKE_TOOL_CALL_RE.sub('', text)
+    cleaned = re.sub(r'\n{3,}', '\n\n', cleaned)
+    return cleaned.strip()
+
 logger = logging.getLogger(__name__)
 
 class BaseAgent:
@@ -70,6 +85,17 @@ class BaseAgent:
                         if tc_delta.function:
                             if tc_delta.function.name: tool_calls_acc[idx]["name"] += tc_delta.function.name
                             if tc_delta.function.arguments: tool_calls_acc[idx]["arguments"] += tc_delta.function.arguments
+
+            # Detect and strip fake tool-call JSON leaked into text stream
+            if _FAKE_TOOL_CALL_RE.search(text_streamed):
+                matches = _FAKE_TOOL_CALL_RE.findall(text_streamed)
+                cleaned_text = _strip_fake_tool_calls(text_streamed)
+                logger.warning(
+                    "[%s] Stripped %d fake tool call pattern(s) from text stream: %s",
+                    self.name, len(matches), [m[:80] for m in matches]
+                )
+                yield {"type": "text_replace", "content": cleaned_text}
+                text_streamed = cleaned_text
 
             if not tool_calls_acc:
                 return

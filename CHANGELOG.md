@@ -1,5 +1,13 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.13.1] — 26 มีนาคม 2569 · fix
+- fix: HR/Accounting/Manager agents ไม่แสดง `{"request": "web_search", ...}` JSON เป็น plain text ในกล่องแชทอีกต่อไป
+- fix: เพิ่ม `_FAKE_TOOL_CALL_RE` regex filter ใน `base_agent.run_with_tools` — detect และ strip fake tool call JSON หลังจบ streaming loop; ส่ง `text_replace` SSE event เพื่อ overwrite bubble content
+- fix: `index.html` handle `text_replace` SSE event — replace `outputText` และ re-render bubble ทันที
+- fix: เพิ่ม "กฎการเรียกใช้ tools" ใน prompts ของ HR/Accounting/Manager — ห้ามเขียน JSON tool call เป็น plain text
+
+---
+
 ## [v0.13.0] — 26 มีนาคม 2569 · fix
 - fix (C1): AgentFactory.get_agent ใช้ threading.Lock + double-checked locking — ป้องกัน race condition ใน threaded Flask
 - fix (C2): ลบ dead function `stream_agent` ออกจาก app.py — refactor `handle_revise` ให้ใช้ `agent_instance.stream_response()` แทน; caller ใน `generate()` ใช้ dict แทน pre-formatted SSE strings
