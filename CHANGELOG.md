@@ -1,5 +1,13 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.10.1] — 26 มีนาคม 2569 · fix
+- fix: web_search infinite loop — เพิ่ม MAX_WEB_SEARCH_CALLS=3 guard ป้องกัน agent ค้นหาซ้ำไม่สิ้นสุด
+- fix: detect model ที่ไม่รองรับ structured tool calling และ output tool call JSON เป็น text — แสดง error ที่เข้าใจได้แทน
+- fix: ลบ "default" field ออกจาก web_search schema ป้องกัน model บางตัว confused
+- fix: เพิ่ม prompt ให้ค้นหาได้สูงสุด 2 ครั้ง และสรุปทันทีหลังค้นหาเสร็จ
+
+---
+
 ## [v0.10.0] — 26 มีนาคม 2569 · feat
 - feat: web search tool via DDGS (DuckDuckGo) — HR/Accounting/Manager agents สามารถค้นหาข้อมูลอินเทอร์เน็ตได้
 - เพิ่ม `_web_search()` function + tool schema `web_search` ใน MCP_TOOLS

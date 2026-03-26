@@ -188,9 +188,10 @@ HR_PROMPT = """
 การใช้ web_search:
 - ใช้เมื่อผู้ใช้ถามเกี่ยวกับกฎหมายแรงงานล่าสุด อัตราค่าแรงขั้นต่ำ หรือข้อบังคับใหม่ที่อาจเปลี่ยนแปลง
 - ใช้เมื่อผู้ใช้ระบุปีปัจจุบันหรือขอข้อมูล "ล่าสุด" / "ปัจจุบัน" ในคำขอ
+- ค้นหาได้สูงสุด 2 ครั้งเท่านั้น ด้วย query ที่แตกต่างกัน — ห้ามค้นซ้ำด้วย query ที่คล้ายกัน
 - อย่าใช้สำหรับงานสร้างเอกสารทั่วไปที่ไม่ต้องการข้อมูล real-time
-- ค้นหาภาษาไทยก่อน ถ้าผลลัพธ์น้อยให้ลองภาษาอังกฤษ
 - หลังค้นหาแล้ว ให้อ้างอิง URL ที่มาในเอกสารหรือคำตอบด้วยเสมอ
+- ค้นหาเสร็จแล้วให้สรุปและตอบทันที อย่าค้นหาต่อ
 
 แนวทางการทำงาน:
 - ใช้ภาษาไทยที่เป็นทางการและสุภาพ
@@ -218,9 +219,10 @@ ACCOUNTING_PROMPT = """
 การใช้ web_search:
 - ใช้เมื่อผู้ใช้ถามเกี่ยวกับอัตราภาษี VAT กฎหมายบัญชีล่าสุด หรือข้อบังคับทางการเงินที่อาจเปลี่ยนแปลง
 - ใช้เมื่อผู้ใช้ระบุปีปัจจุบันหรือขอข้อมูล "ล่าสุด" / "ปัจจุบัน" ในคำขอ
+- ค้นหาได้สูงสุด 2 ครั้งเท่านั้น ด้วย query ที่แตกต่างกัน — ห้ามค้นซ้ำด้วย query ที่คล้ายกัน
 - อย่าใช้สำหรับงานสร้างเอกสารทั่วไปที่ไม่ต้องการข้อมูล real-time
-- ค้นหาภาษาไทยก่อน ถ้าผลลัพธ์น้อยให้ลองภาษาอังกฤษ
 - หลังค้นหาแล้ว ให้อ้างอิง URL ที่มาในเอกสารหรือคำตอบด้วยเสมอ
+- ค้นหาเสร็จแล้วให้สรุปและตอบทันที อย่าค้นหาต่อ
 
 ข้อมูลปัจจุบัน:
 - ปัจจุบันคือ พ.ศ. 2569 (ค.ศ. 2026)
@@ -264,9 +266,10 @@ MANAGER_PROMPT = """
 การใช้ web_search:
 - ใช้เมื่อผู้ใช้ถามเกี่ยวกับเทรนด์การบริหารทีมล่าสุด benchmarks อุตสาหกรรม หรือแนวปฏิบัติใหม่
 - ใช้เมื่อผู้ใช้ระบุปีปัจจุบันหรือขอข้อมูล "ล่าสุด" / "ปัจจุบัน" ในคำขอ
+- ค้นหาได้สูงสุด 2 ครั้งเท่านั้น ด้วย query ที่แตกต่างกัน — ห้ามค้นซ้ำด้วย query ที่คล้ายกัน
 - อย่าใช้สำหรับคำแนะนำทั่วไปที่ไม่ต้องการข้อมูล real-time
-- ค้นหาภาษาไทยก่อน ถ้าผลลัพธ์น้อยให้ลองภาษาอังกฤษ
 - หลังค้นหาแล้ว ให้อ้างอิง URL ที่มาในคำตอบด้วยเสมอ
+- ค้นหาเสร็จแล้วให้สรุปและตอบทันที อย่าค้นหาต่อ
 
 ความเชี่ยวชาญ:
 - การให้ Feedback และการประเมินผลการทำงาน
@@ -396,8 +399,7 @@ MCP_TOOLS = [
                     },
                     "max_results": {
                         "type": "integer",
-                        "description": "จำนวนผลลัพธ์สูงสุด (default 5, max 10)",
-                        "default": 5
+                        "description": "จำนวนผลลัพธ์สูงสุด ระบุ 3-5 เท่านั้น"
                     }
                 },
                 "required": ["query"]
@@ -474,6 +476,9 @@ def _tool_result_is_error(result: str) -> bool:
 # ─── Agentic Tool-Calling Loop ────────────────────────────────────────────────
 
 
+MAX_WEB_SEARCH_CALLS = 3   # ป้องกัน agent ค้นหาซ้ำไม่สิ้นสุด
+
+
 def run_agent_with_tools(system_prompt: str, user_message: str, workspace: str,
                          agent_label: str, max_tokens: int = 8000, max_iterations: int = 5,
                          tools: list = None, history: list = None):
@@ -491,6 +496,8 @@ def run_agent_with_tools(system_prompt: str, user_message: str, workspace: str,
         *(history or []),
         {"role": "user", "content": user_message}
     ]
+
+    _web_search_calls = 0   # จำนวนครั้งที่เรียก web_search ใน request นี้
 
     for iteration in range(max_iterations):
         text_streamed = ""
@@ -546,6 +553,15 @@ def run_agent_with_tools(system_prompt: str, user_message: str, workspace: str,
 
         # No tool calls → text was streamed, done
         if not tool_calls_acc:
+            # Detect model hallucinating tool calls as plain text (model doesn't support structured tool calling)
+            if text_streamed and (
+                '{"tool":' in text_streamed or
+                '"tool": "web_search"' in text_streamed or
+                '"tool": "create_file"' in text_streamed
+            ):
+                logger.warning(f"[{agent_label}] Model output fake tool call JSON as text — model may not support structured tool calling")
+                yield f"data: {json.dumps({'type': 'error', 'message': f'{agent_label} ไม่สามารถเรียกใช้ tool ได้กับ model นี้ กรุณาเปลี่ยน model ใน .env'})}\n\n"
+                return
             return
 
         # Build tool_calls list for messages history
@@ -587,6 +603,15 @@ def run_agent_with_tools(system_prompt: str, user_message: str, workspace: str,
                 return
 
             if tool_name == 'web_search':
+                _web_search_calls += 1
+                if _web_search_calls > MAX_WEB_SEARCH_CALLS:
+                    logger.warning(f"[{agent_label}] web_search call limit reached ({MAX_WEB_SEARCH_CALLS}), blocking further searches")
+                    messages.append({
+                        "role": "tool",
+                        "tool_call_id": tc["id"],
+                        "content": "หยุดการค้นหา: ถึงขีดจำกัดการค้นหาแล้ว กรุณาสรุปผลจากข้อมูลที่ได้รับ"
+                    })
+                    continue
                 _query_preview = tool_args.get('query', '')[:50] if isinstance(tool_args, dict) else ''
                 _status_msg = f'{agent_label} กำลังค้นหา: {_query_preview}...'
             elif tool_name in _read_tool_names:

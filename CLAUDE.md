@@ -58,7 +58,7 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 - **ทุก commit ต้อง bump version** ใน index.html พร้อมกัน
 - **ทุก commit ต้องเพิ่ม entry ใน CHANGELOG.md** ระบุ version, วันที่, ประเภท, รายละเอียด
 - เมื่อ bump Minor ให้ reset Patch เป็น 0 เสมอ (v0.2.3 → v0.3.0)
-- Version ปัจจุบัน: **v0.10.0**
+- Version ปัจจุบัน: **v0.10.1**
 
 ประวัติ:
 - v0.1.0 — initial POC (HR + Accounting agents, SSE streaming)
@@ -115,6 +115,7 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 - v0.8.5 — fix: agents read wrong workspace file as context + PM pending edit-intent now blocks instead of silently discarding
 - v0.9.0 — feat: conversation memory — last 10 turns sent to Orchestrator + all agents for full context awareness
 - v0.10.0 — feat: web search via DDGS — HR/Accounting/Manager agents ค้นหาข้อมูลอินเทอร์เน็ตได้
+- v0.10.1 — fix: web_search infinite loop guard (MAX 3 calls) + fake tool call JSON detection
 
 ## Rules ที่ต้องทำตามเสมอ
 - ภาษาไทยใน UI และ system prompts ทั้งหมด

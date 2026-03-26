@@ -1,6 +1,6 @@
 # DEMO READINESS REPORT
 **Project:** Internal AI Assistant POC
-**Version:** v0.10.0
+**Version:** v0.10.1
 **Date:** 26 มีนาคม 2569
 **Assessor:** Claude Code
 
@@ -26,7 +26,7 @@
 
 - Flask Server: Running on port 5000
 - Health Endpoint: /api/health returns 200 with model name
-- UI Frontend: http://localhost:5000 loads (v0.10.0)
+- UI Frontend: http://localhost:5000 loads (v0.10.1)
 - Dependencies: All installed (flask, flask-cors, openai, python-dotenv, mcp, watchdog, ddgs)
 - API Key: Configured in .env
 - Model: configurable via OPENROUTER_MODEL env var
@@ -99,9 +99,9 @@
 
 ---
 
-## UI FEATURES (v0.10.0)
+## UI FEATURES (v0.10.1)
 
-- ✅ Navbar: Fixed, frosted glass, version tag แสดง v0.10.0
+- ✅ Navbar: Fixed, frosted glass, version tag แสดง v0.10.1
 - ✅ Sidebar:
   - Workspace selector (dropdown + เลือก folder)
   - Agent badge (reserved space + idle state + overflow ellipsis)
@@ -141,7 +141,7 @@
 - ✅ Workspace Picker Modal (v0.8.0): เลือก/สร้าง workspace ได้จาก UI
 - ✅ Workspace file read context (v0.8.4): HR/Accounting/Manager อ่านไฟล์ workspace ก่อนเขียนเมื่อ user ระบุชื่อไฟล์
 - ✅ Conversation memory (v0.9.0): last 10 turns ส่งไปยัง Orchestrator + agents ทุก request
-- ✅ Web search via DDGS (v0.10.0): HR/Accounting/Manager agents ค้นหาข้อมูลอินเทอร์เน็ตได้ ไม่ต้อง API key
+- ✅ Web search via DDGS (v0.10.1): HR/Accounting/Manager agents ค้นหาข้อมูลอินเทอร์เน็ตได้ ไม่ต้อง API key
 
 ---
 
@@ -150,7 +150,7 @@
 **30 Minutes Before Demo:**
 - [ ] Server running (`python app.py`)
 - [ ] Browser ready at http://localhost:5000
-- [ ] Version tag แสดง v0.10.0 ใน navbar (ขวาบน) ✅
+- [ ] Version tag แสดง v0.10.1 ใน navbar (ขวาบน) ✅
 - [ ] Model name แสดงใน sidebar footer
 - [ ] Workspace path configured in .env (WORKSPACE_PATH)
 - [ ] workspace/ and temp/ directories exist
@@ -212,5 +212,5 @@
 
 ---
 
-**Report Updated:** 26 มีนาคม 2569 (v0.10.0)
+**Report Updated:** 26 มีนาคม 2569 (v0.10.1)
 **For details, see:** PRE-DEMO-CHECKLIST.md
