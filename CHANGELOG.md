@@ -1,5 +1,11 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.13.2] — 26 มีนาคม 2569 · fix
+- fix: เพิ่ม client-side regex strip ใน `done` และ `subtask_done` handlers — ลบ fake tool call JSON ออกจาก `outputText` ก่อน markdown render เสมอ (ป้องกัน JSON โชว์ใน bubble แม้ `text_replace` server event ไม่ถึง)
+- fix: `pendingDoc` และ `conversationHistory` รับ clean text เพราะ `outputText` ถูก strip ก่อน `done` handler ตั้งค่า `pendingDoc`
+
+---
+
 ## [v0.13.1] — 26 มีนาคม 2569 · fix
 - fix: HR/Accounting/Manager agents ไม่แสดง `{"request": "web_search", ...}` JSON เป็น plain text ในกล่องแชทอีกต่อไป
 - fix: เพิ่ม `_FAKE_TOOL_CALL_RE` regex filter ใน `base_agent.run_with_tools` — detect และ strip fake tool call JSON หลังจบ streaming loop; ส่ง `text_replace` SSE event เพื่อ overwrite bubble content

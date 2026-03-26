@@ -1009,7 +1009,7 @@
         <span class="material-symbols-outlined" style="font-size:13px">folder_open</span>
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
-      <span class="version-tag">v0.13.1</span>
+      <span class="version-tag">v0.13.2</span>
     </div>
   </header>
 
@@ -1691,7 +1691,11 @@
             _scrollToBottom();
 
           } else if (data.type === 'subtask_done') {
-            // Render current subtask output as markdown
+            // Strip fake tool-call JSON before rendering subtask markdown
+            outputText = outputText
+              .replace(/\{[^{}]*"(?:request|tool)"\s*:\s*"[^"]*"[^{}]*\}/g, '')
+              .replace(/\n{3,}/g, '\n\n')
+              .trim();
             if (outputText) {
               _renderMarkdown(currentOutputEl, outputText);
             }
@@ -1715,6 +1719,12 @@
               _scrollToBottom();
               continue;
             }
+            // Strip any fake tool-call JSON that leaked into the stream.
+            // This is a client-side safety net — runs on every done event.
+            outputText = outputText
+              .replace(/\{[^{}]*"(?:request|tool)"\s*:\s*"[^"]*"[^{}]*\}/g, '')
+              .replace(/\n{3,}/g, '\n\n')
+              .trim();
             if (outputText) {
               _renderMarkdown(currentOutputEl, outputText);
             }
