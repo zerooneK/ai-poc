@@ -1,5 +1,15 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.10.0] — 26 มีนาคม 2569 · feat
+- feat: web search tool via DDGS (DuckDuckGo) — HR/Accounting/Manager agents สามารถค้นหาข้อมูลอินเทอร์เน็ตได้
+- เพิ่ม `_web_search()` function + tool schema `web_search` ใน MCP_TOOLS
+- `web_search` อยู่ใน READ_ONLY_TOOLS (ไม่เขียนไฟล์)
+- status message แสดง "กำลังค้นหา: {query}..." ระหว่าง streaming
+- system prompts ทั้ง 3 agents อัปเดตให้ใช้ web_search เฉพาะข้อมูล real-time เท่านั้น
+- เพิ่ม `ddgs` ใน requirements.txt
+
+---
+
 ## [v0.9.0] — 25 มีนาคม 2569 · feat
 - feat: conversation memory — ส่ง last 10 turns (20 messages) ไปยัง Orchestrator, PM Agent, และ single agents ทุกครั้ง
 - Orchestrator ใช้ context ประวัติเพื่อ routing ที่แม่นยำขึ้น (เช่น "เพิ่มงบ" หลัง AI team plan = แก้ไข ไม่ใช่งานใหม่)

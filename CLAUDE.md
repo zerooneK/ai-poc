@@ -58,7 +58,7 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 - **ทุก commit ต้อง bump version** ใน index.html พร้อมกัน
 - **ทุก commit ต้องเพิ่ม entry ใน CHANGELOG.md** ระบุ version, วันที่, ประเภท, รายละเอียด
 - เมื่อ bump Minor ให้ reset Patch เป็น 0 เสมอ (v0.2.3 → v0.3.0)
-- Version ปัจจุบัน: **v0.9.0**
+- Version ปัจจุบัน: **v0.10.0**
 
 ประวัติ:
 - v0.1.0 — initial POC (HR + Accounting agents, SSE streaming)
@@ -114,6 +114,7 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 - v0.8.4 — feat: HR/Accounting/Manager agents read workspace files before writing (READ_ONLY_TOOLS + tool allow-list enforcement)
 - v0.8.5 — fix: agents read wrong workspace file as context + PM pending edit-intent now blocks instead of silently discarding
 - v0.9.0 — feat: conversation memory — last 10 turns sent to Orchestrator + all agents for full context awareness
+- v0.10.0 — feat: web search via DDGS — HR/Accounting/Manager agents ค้นหาข้อมูลอินเทอร์เน็ตได้
 
 ## Rules ที่ต้องทำตามเสมอ
 - ภาษาไทยใน UI และ system prompts ทั้งหมด
@@ -172,42 +173,73 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 
 ---
 
+## Subagents Available — อ่านก่อนทุกงาน
+
+ไฟล์อยู่ใน `.claude/agents/` — เลือกใช้ตาม trigger ด้านล่างเสมอ อย่าทำงานเองถ้ามี subagent รองรับ
+
+| Subagent | Trigger — เรียกเมื่อ |
+|---|---|
+| `python-reviewer` | หลังแก้ .py ไฟล์ใดๆ (app.py, db.py, converter.py, mcp_server.py, test scripts) |
+| `debug-assistant` | ทันทีที่มี error / traceback / unexpected output — รันก่อน fix เสมอ ห้าม fix เองโดยไม่ผ่าน agent นี้ |
+| `security-checker` | ก่อน demo ทุกครั้ง, ก่อน git commit, เมื่อแก้ .env หรือ API key config |
+| `thai-doc-checker` | หลัง agent สร้าง output ภาษาไทยทุกชิ้น (HR / Accounting / Manager / PM) |
+| `ui-ux-reviewer` | หลังแก้ index.html หรือ history.html — ต้องผ่านก่อนถือว่า UI done |
+| `frontend-developer` | ระหว่างพัฒนาหรือแก้ UI — ใช้คู่กับ ui-ux-reviewer |
+| `db-checker` | หลังแก้ db.py หรือ converter.py, ก่อน demo เพื่อตรวจ DB health |
+| `prompt-engineer` | เมื่อ agent output ผิด, routing ผิด agent, หรือเริ่มเขียน/แก้ system prompt |
+| `demo-preparer` | เมื่อเตรียม demo, dry-run, หรือถามว่า "พร้อม demo ไหม" |
+| `project-documenter` | ท้าย work session ทุกครั้ง |
+
+---
+
 ## Agent Workflow Rules — Follow Automatically
 
-These rules apply without needing to be asked:
+These rules apply without needing to be asked. Non-negotiable.
 
-### After writing or editing any .py file
-→ ALWAYS run python-reviewer before considering done
+### After writing or editing ANY .py file
+→ ALWAYS run `python-reviewer` before considering done
+→ Covers: app.py, db.py, converter.py, mcp_server.py, any test script
 
-### After any error or exception appears
-→ ALWAYS run debug-assistant immediately
+### After any error, exception, or unexpected output
+→ ALWAYS run `debug-assistant` IMMEDIATELY — before attempting any fix
+→ Do NOT try to fix the error yourself first
 
 ### After generating any Thai document output
-→ ALWAYS run thai-doc-checker
+→ ALWAYS run `thai-doc-checker`
+→ Applies to all agents: HR, Accounting, Manager Advisor, PM Agent
 
-### After writing or editing index.html
-→ Run frontend-developer to verify
-→ Then run ui-ux-reviewer to validate UX
+### After writing or editing index.html or history.html
+→ Run `frontend-developer` to verify SSE handling and UI states
+→ Then run `ui-ux-reviewer` to validate from manager's perspective
+→ Both must pass before UI work is considered done
 
-### Before demo or dry-run
-→ Run security-checker first
-→ Then run demo-preparer for full checklist
+### After editing db.py or converter.py
+→ Run `db-checker` to verify integrity, graceful degradation, and export flow
+
+### Before demo or dry-run — MANDATORY SEQUENCE
+→ Step 1: Run `security-checker` first
+→ Step 2: Run `db-checker` to verify DB health
+→ Step 3: Run `demo-preparer` for full checklist
+→ Do NOT skip any step even if "nothing changed"
+
+### When agent output is wrong or routing misbehaves
+→ Run `prompt-engineer` before manually editing any system prompt
 
 ### After any code change affecting documentation
-→ Update related docs immediately (see table in "Rules ที่ต้องทำตามเสมอ")
-→ Do NOT wait until end of session — update inline as part of the same change
+→ Update related docs immediately — see table in "เอกสารที่ต้องอัปเดตเมื่อโค้ดเปลี่ยน"
+→ Do NOT wait until end of session
 
 ### At end of each work session
-→ Run project-documenter to update docs/poc-plan.md
+→ Run `project-documenter` to update docs/poc-plan.md
 
 ### After finishing ALL tasks in a session — MANDATORY
 → Update ALL related documents listed in "เอกสารที่ต้องอัปเดตเมื่อโค้ดเปลี่ยน" before considering done
-→ Verify: CLAUDE.md file structure, CHANGELOG.md, PROJECT_SUMMARY.md, DEMO-READINESS-REPORT.md are in sync with current version
+→ Verify: CLAUDE.md, CHANGELOG.md, PROJECT_SUMMARY.md, DEMO-READINESS-REPORT.md are in sync with current version
 → Do NOT mark work as complete if any doc still shows an older version number
 → **This is non-negotiable: no task is "done" until all related files are updated**
 
 ### After every version bump — MANDATORY git commit
 → Every time version is bumped in index.html, a git commit MUST be created immediately
 → Commit message format: `vX.X.X — [fix/feature/docs]: <brief description>`
-→ Do NOT leave version bumps uncommitted — they must be committed in the same step as the change
+→ Do NOT leave version bumps uncommitted
 → **Forgetting to commit after a version bump is an error, not a skip**

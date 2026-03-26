@@ -185,6 +185,13 @@ HR_PROMPT = """
 - ถ้าผู้ใช้ขอสร้างเอกสารใหม่ หรือไม่ได้อ้างถึงไฟล์ที่มีอยู่ ให้สร้างจากข้อมูลในคำขอทันที อย่าเรียก list_files หรือ read_file
 - อย่าอ่านไฟล์ที่ดู "น่าจะเกี่ยวข้อง" แต่ผู้ใช้ไม่ได้อ้างถึง — ทำให้เกิดการสร้างเอกสารผิดบริบท
 
+การใช้ web_search:
+- ใช้เมื่อผู้ใช้ถามเกี่ยวกับกฎหมายแรงงานล่าสุด อัตราค่าแรงขั้นต่ำ หรือข้อบังคับใหม่ที่อาจเปลี่ยนแปลง
+- ใช้เมื่อผู้ใช้ระบุปีปัจจุบันหรือขอข้อมูล "ล่าสุด" / "ปัจจุบัน" ในคำขอ
+- อย่าใช้สำหรับงานสร้างเอกสารทั่วไปที่ไม่ต้องการข้อมูล real-time
+- ค้นหาภาษาไทยก่อน ถ้าผลลัพธ์น้อยให้ลองภาษาอังกฤษ
+- หลังค้นหาแล้ว ให้อ้างอิง URL ที่มาในเอกสารหรือคำตอบด้วยเสมอ
+
 แนวทางการทำงาน:
 - ใช้ภาษาไทยที่เป็นทางการและสุภาพ
 - ระบุวันที่เป็น พ.ศ.
@@ -207,6 +214,13 @@ ACCOUNTING_PROMPT = """
 - ใช้เฉพาะเมื่อผู้ใช้ระบุชื่อไฟล์ชัดเจนในคำขอ
 - ถ้าผู้ใช้ขอสร้างเอกสารใหม่ หรือไม่ได้อ้างถึงไฟล์ที่มีอยู่ ให้สร้างจากข้อมูลในคำขอทันที อย่าเรียก list_files หรือ read_file
 - อย่าอ่านไฟล์ที่ดู "น่าจะเกี่ยวข้อง" แต่ผู้ใช้ไม่ได้อ้างถึง — ทำให้เกิดการสร้างเอกสารผิดบริบท
+
+การใช้ web_search:
+- ใช้เมื่อผู้ใช้ถามเกี่ยวกับอัตราภาษี VAT กฎหมายบัญชีล่าสุด หรือข้อบังคับทางการเงินที่อาจเปลี่ยนแปลง
+- ใช้เมื่อผู้ใช้ระบุปีปัจจุบันหรือขอข้อมูล "ล่าสุด" / "ปัจจุบัน" ในคำขอ
+- อย่าใช้สำหรับงานสร้างเอกสารทั่วไปที่ไม่ต้องการข้อมูล real-time
+- ค้นหาภาษาไทยก่อน ถ้าผลลัพธ์น้อยให้ลองภาษาอังกฤษ
+- หลังค้นหาแล้ว ให้อ้างอิง URL ที่มาในเอกสารหรือคำตอบด้วยเสมอ
 
 ข้อมูลปัจจุบัน:
 - ปัจจุบันคือ พ.ศ. 2569 (ค.ศ. 2026)
@@ -246,6 +260,13 @@ MANAGER_PROMPT = """
 - ใช้เฉพาะเมื่อผู้ใช้ระบุชื่อไฟล์ชัดเจนในคำขอ
 - ถ้าผู้ใช้ขอคำแนะนำหรือสร้างเอกสารใหม่ ให้ตอบจากข้อมูลในคำขอทันที อย่าเรียก list_files หรือ read_file
 - อย่าอ่านไฟล์ที่ดู "น่าจะเกี่ยวข้อง" แต่ผู้ใช้ไม่ได้อ้างถึง — ทำให้เกิดการตอบผิดบริบท
+
+การใช้ web_search:
+- ใช้เมื่อผู้ใช้ถามเกี่ยวกับเทรนด์การบริหารทีมล่าสุด benchmarks อุตสาหกรรม หรือแนวปฏิบัติใหม่
+- ใช้เมื่อผู้ใช้ระบุปีปัจจุบันหรือขอข้อมูล "ล่าสุด" / "ปัจจุบัน" ในคำขอ
+- อย่าใช้สำหรับคำแนะนำทั่วไปที่ไม่ต้องการข้อมูล real-time
+- ค้นหาภาษาไทยก่อน ถ้าผลลัพธ์น้อยให้ลองภาษาอังกฤษ
+- หลังค้นหาแล้ว ให้อ้างอิง URL ที่มาในคำตอบด้วยเสมอ
 
 ความเชี่ยวชาญ:
 - การให้ Feedback และการประเมินผลการทำงาน
@@ -357,12 +378,58 @@ MCP_TOOLS = [
                 "required": []
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "web_search",
+            "description": (
+                "ค้นหาข้อมูลจากอินเทอร์เน็ต ใช้เมื่อผู้ใช้ถามเกี่ยวกับข้อมูลปัจจุบัน "
+                "เช่น กฎหมายล่าสุด อัตราภาษี แนวโน้มตลาด ข่าวสาร หรือข้อมูลที่อาจเปลี่ยนแปลงบ่อย"
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "คำค้นหาภาษาไทยหรือภาษาอังกฤษ"
+                    },
+                    "max_results": {
+                        "type": "integer",
+                        "description": "จำนวนผลลัพธ์สูงสุด (default 5, max 10)",
+                        "default": 5
+                    }
+                },
+                "required": ["query"]
+            }
+        }
     }
 ]
 
 # Read-only subset — given to HR/Accounting/Manager so they can understand the
 # workspace before writing, but cannot write/delete files directly.
-READ_ONLY_TOOLS = [t for t in MCP_TOOLS if t['function']['name'] in ('list_files', 'read_file')]
+READ_ONLY_TOOLS = [t for t in MCP_TOOLS if t['function']['name'] in ('list_files', 'read_file', 'web_search')]
+
+# ─── Web Search ───────────────────────────────────────────────────────────────
+
+
+def _web_search(query: str, max_results: int = 5) -> str:
+    """ค้นหาข้อมูลจากอินเทอร์เน็ตด้วย DuckDuckGo"""
+    try:
+        from ddgs import DDGS
+        results = []
+        with DDGS() as ddgs:
+            for r in ddgs.text(query, max_results=max_results):
+                results.append(
+                    f"**{r['title']}**\n{r['body']}\nที่มา: {r['href']}"
+                )
+        if not results:
+            return "ไม่พบผลลัพธ์การค้นหา"
+        return "\n\n---\n\n".join(results)
+    except Exception as e:
+        logger.warning(f"[web_search] error: {e}")
+        return f"ไม่สามารถค้นหาข้อมูลได้: {str(e)}"
+
 
 # ─── MCP Tool Executor ────────────────────────────────────────────────────────
 
@@ -386,6 +453,10 @@ def _execute_tool(workspace: str, tool_name: str, tool_args: dict) -> str:
                 f"- {f['name']} ({f['size']} bytes, แก้ไขล่าสุด: {f['modified']})"
                 for f in files
             )
+        elif tool_name == 'web_search':
+            query = tool_args.get('query', '')
+            max_results = min(int(tool_args.get('max_results', 5)), 10)
+            return _web_search(query, max_results)
         else:
             return f"❌ ไม่รู้จัก tool: {tool_name}"
     except (ValueError, FileNotFoundError, FileExistsError) as e:
@@ -515,7 +586,13 @@ def run_agent_with_tools(system_prompt: str, user_message: str, workspace: str,
                 yield f"data: {json.dumps({'type': 'error', 'message': f'{agent_label} ส่ง tool arguments ผิดรูปแบบ'})}\n\n"
                 return
 
-            _status_msg = f'{agent_label} กำลังอ่านข้อมูล...' if tool_name in _read_tool_names else f'{agent_label} กำลังบันทึก: {tool_name}...'
+            if tool_name == 'web_search':
+                _query_preview = tool_args.get('query', '')[:50] if isinstance(tool_args, dict) else ''
+                _status_msg = f'{agent_label} กำลังค้นหา: {_query_preview}...'
+            elif tool_name in _read_tool_names:
+                _status_msg = f'{agent_label} กำลังอ่านข้อมูล...'
+            else:
+                _status_msg = f'{agent_label} กำลังบันทึก: {tool_name}...'
             yield f"data: {json.dumps({'type': 'status', 'message': _status_msg})}\n\n"
             logger.info(f"[{agent_label}] tool_call: {tool_name}({list(tool_args.keys())})")
 

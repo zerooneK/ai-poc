@@ -41,7 +41,15 @@ Output: เอกสารภาษาไทยพร้อมใช้
 
 ## สรุปความคืบหน้า — 24 มีนาคม 2569
 
-**สถานะ: Prototype Phase — v0.9.0**
+**สถานะ: Prototype Phase — v0.10.0**
+
+### v0.10.0 — Web Search via DDGS (26 มีนาคม 2569)
+- ✅ เพิ่ม web_search tool ให้ HR/Accounting/Manager agents
+- ✅ _web_search() ใช้ ddgs library (ไม่ต้อง API key)
+- ✅ status message แสดง "กำลังค้นหา: {query}..." ระหว่าง streaming
+- ✅ READ_ONLY_TOOLS รวม web_search แล้ว
+- ✅ system prompts อัปเดต: ค้นเฉพาะข้อมูล real-time
+
 
 ### v0.9.0 — Conversation Memory (25 มีนาคม 2569)
 - ✅ ส่ง last 10 turns ไปยัง Orchestrator + PM Agent + single agents ทุก request
@@ -162,7 +170,7 @@ ai-poc/
 ├── db.py                    ← SQLite persistence layer (jobs, saved_files) — graceful degradation
 ├── mcp_server.py            ← MCP Filesystem Server (FastMCP) + 5 tools (Layer A/B)
 ├── converter.py             ← Multi-format export (.txt/.docx/.xlsx/.pdf)
-├── index.html               ← Web UI ไฟล์เดียว (v0.9.0 — workspace picker modal + format popup + conversation memory)
+├── index.html               ← Web UI ไฟล์เดียว (v0.10.0 — workspace picker modal + format popup + conversation memory + web search)
 ├── history.html             ← Standalone job history viewer (/history route)
 ├── setup.sh                 ← auto-install: venv + pip + WeasyPrint libs + Thai fonts
 ├── start.sh                 ← run script: activate venv + flask run host=0.0.0.0
