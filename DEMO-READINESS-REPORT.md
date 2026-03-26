@@ -1,7 +1,7 @@
 # DEMO READINESS REPORT
 **Project:** Internal AI Assistant POC
-**Version:** v0.8.0
-**Date:** 24 มีนาคม 2569
+**Version:** v0.10.0
+**Date:** 26 มีนาคม 2569
 **Assessor:** Claude Code
 
 ---
@@ -26,8 +26,8 @@
 
 - Flask Server: Running on port 5000
 - Health Endpoint: /api/health returns 200 with model name
-- UI Frontend: http://localhost:5000 loads (v0.8.0)
-- Dependencies: All installed (flask, flask-cors, openai, python-dotenv, mcp, watchdog)
+- UI Frontend: http://localhost:5000 loads (v0.10.0)
+- Dependencies: All installed (flask, flask-cors, openai, python-dotenv, mcp, watchdog, ddgs)
 - API Key: Configured in .env
 - Model: configurable via OPENROUTER_MODEL env var
 - MCP Server: mcp_server.py implements 5 filesystem tools
@@ -90,12 +90,12 @@
 
 ## AGENT ROUTING STATUS
 
-| Agent | Route Key | Badge Color | max_tokens |
-|---|---|---|---|
-| HR Agent | `"hr"` | เขียว | 7,500 |
-| Accounting Agent | `"accounting"` | น้ำเงิน/ม่วง | 6,000 |
-| Manager Advisor | `"manager"` | ม่วง | 8,000 |
-| PM Agent | `"pm"` | ส้ม | 8,000 (with MCP tools) |
+| Agent | Route Key | Badge Color | max_tokens | Tools |
+|---|---|---|---|---|
+| HR Agent | `"hr"` | เขียว | 7,500 | list_files, read_file, web_search |
+| Accounting Agent | `"accounting"` | น้ำเงิน/ม่วง | 6,000 | list_files, read_file, web_search |
+| Manager Advisor | `"manager"` | ม่วง | 8,000 | list_files, read_file, web_search |
+| PM Agent | `"pm"` | ส้ม | 8,000 | create_file, update_file, delete_file, list_files, read_file |
 
 ---
 
@@ -138,6 +138,10 @@
 - ✅ Per-file format modal (v0.7.0): popup เลือก format แยกต่อไฟล์ก่อน PM save
 - ✅ Single-agent format popup (v0.7.1): popup แสดงสำหรับ HR/Accounting/Manager doc ด้วย
 - ✅ Format dropdown removed (v0.7.2): popup เป็นตัวเลือก format หลัก — ไม่มี dropdown ซ้ำซ้อน
+- ✅ Workspace Picker Modal (v0.8.0): เลือก/สร้าง workspace ได้จาก UI
+- ✅ Workspace file read context (v0.8.4): HR/Accounting/Manager อ่านไฟล์ workspace ก่อนเขียนเมื่อ user ระบุชื่อไฟล์
+- ✅ Conversation memory (v0.9.0): last 10 turns ส่งไปยัง Orchestrator + agents ทุก request
+- ✅ Web search via DDGS (v0.10.0): HR/Accounting/Manager agents ค้นหาข้อมูลอินเทอร์เน็ตได้ ไม่ต้อง API key
 
 ---
 
@@ -199,7 +203,7 @@
 
 ## CONCLUSION
 
-**System Quality:** Production-ready POC — 4 agents + PM Agent with MCP, chat bubbles, confirmation flow, real-time file panel
+**System Quality:** Production-ready POC — 4 agents + PM Agent with MCP, chat bubbles, confirmation flow, real-time file panel, conversation memory, web search
 **Documentation:** Comprehensive (CHANGELOG, PROJECT_SUMMARY, demo script, demo inputs)
 **Risk Level:** Medium (missing screenshots)
 **Success Probability:** 90% with proper prep
@@ -208,5 +212,5 @@
 
 ---
 
-**Report Updated:** 25 มีนาคม 2569 (v0.10.0)
+**Report Updated:** 26 มีนาคม 2569 (v0.10.0)
 **For details, see:** PRE-DEMO-CHECKLIST.md

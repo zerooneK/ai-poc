@@ -1,7 +1,7 @@
 # PRE-DEMO CHECKLIST — Internal AI Assistant POC
 **Demo Date:** 2026-03-23 (หรือตามกำหนด)
 **Duration:** 7 นาที
-**Version:** v0.3.6
+**Version:** v0.10.0
 **Status:** 🟡 NEEDS ATTENTION (อ่านด้านล่าง)
 
 ---
@@ -47,15 +47,15 @@
 ### ✅ PASSED CHECKS
 
 #### Environment
-- ✅ Flask server สามารถรันได้ (`python app.py`)
-- ✅ Dependencies ครบ (flask, flask-cors, openai, python-dotenv)
+- ✅ Flask server สามารถรันได้ (`bash start.sh` หรือ `source venv/bin/activate && flask run --host=0.0.0.0`)
+- ✅ Dependencies ครบ (flask, flask-cors, openai, python-dotenv, mcp, watchdog, ddgs)
 - ✅ .env file มี API key configured
 - ✅ Health endpoint ตอบกลับ: http://localhost:5000/api/health
 - ✅ UI accessible ที่ http://localhost:5000 (HTTP 200)
 
 #### Application Structure
-- ✅ app.py — Backend with Orchestrator + HR / Accounting / Manager Advisor agents
-- ✅ index.html — Frontend v0.3.6 (The Silent Concierge UI + typing indicator + Markdown rendering)
+- ✅ app.py — Backend with Orchestrator + HR / Accounting / Manager Advisor + PM Agent + conversation memory + web search
+- ✅ index.html — Frontend v0.10.0 (chat bubbles, dark/light toggle, workspace picker, format modal, SSE streaming)
 - ✅ test_cases.py — Automated test suite (6 use cases)
 - ✅ quick-demo-check.py — Full validation (7 checks: 6 cases + health)
 - ✅ backup/demo-inputs.txt — Demo scripts ready (ครบ 6 cases)
@@ -83,14 +83,14 @@
 
 ### Step 1: Environment Setup (5 min)
 ```bash
-cd D:/ai-poc
+cd /home/zeroone/ai-poc-wsl
 
-# Start server
-python app.py
+# Start server (WSL)
+bash start.sh
 
 # Verify health
 curl http://localhost:5000/api/health
-# Should return: {"status": "ok", "api_key_configured": true}
+# Should return: {"status": "ok", "api_key_configured": true, "model": "..."}
 
 # Test internet
 curl -I https://openrouter.ai
@@ -295,12 +295,13 @@ Expected:
 
 1. **รัน automated tests:**
    ```bash
-   cd D:/ai-poc
+   cd /home/zeroone/ai-poc-wsl
+   source venv/bin/activate
    PYTHONUTF8=1 python quick-demo-check.py
    ```
 
 2. **สร้าง screenshots:**
-   - รัน server: `python app.py`
+   - รัน server: `bash start.sh`
    - เปิด http://localhost:5000
    - Test ทุก case (6 cases) และ capture screenshot
    - Save ลง backup/screenshots/
@@ -313,5 +314,5 @@ Expected:
 ---
 
 **Prepared by:** Claude Code
-**Last Updated:** 2026-03-23 (v0.3.6)
+**Last Updated:** 2026-03-26 (v0.10.0)
 **Contact:** [Your email/Slack]

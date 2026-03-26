@@ -60,13 +60,13 @@ SSE stream → Frontend แสดงผล real-time
 
 ## Agents
 
-| Agent | หน้าที่ | max_tokens |
-|---|---|---|
-| **Orchestrator** | วิเคราะห์งานและ route ไปหา agent ที่ถูกต้อง ตอบ JSON เท่านั้น | 1024 |
-| **HR Agent** | สัญญาจ้าง, Job Description, นโยบาย, อีเมล HR | 7500 |
-| **Accounting Agent** | Invoice (พร้อม VAT 7%), Expense Report (ไม่มี VAT), งบประมาณ | 6000 |
-| **Manager Advisor** | Feedback พนักงาน (พร้อม script คำพูด), budget, ลำดับความสำคัญ, headcount | 8000 |
-| **PM Agent** | งานที่ต้องการหลายแผนก → แยกเป็น subtasks → route ไป HR/Accounting/Manager → รวมผลและสร้างไฟล์ | 8000 |
+| Agent | หน้าที่ | max_tokens | Tools |
+|---|---|---|---|
+| **Orchestrator** | วิเคราะห์งานและ route ไปหา agent ที่ถูกต้อง ตอบ JSON เท่านั้น | 1024 | — |
+| **HR Agent** | สัญญาจ้าง, Job Description, นโยบาย, อีเมล HR | 7500 | list_files, read_file, web_search |
+| **Accounting Agent** | Invoice (พร้อม VAT 7%), Expense Report (ไม่มี VAT), งบประมาณ | 6000 | list_files, read_file, web_search |
+| **Manager Advisor** | Feedback พนักงาน (พร้อม script คำพูด), budget, ลำดับความสำคัญ, headcount | 8000 | list_files, read_file, web_search |
+| **PM Agent** | งานที่ต้องการหลายแผนก → แยกเป็น subtasks → route ไป HR/Accounting/Manager → รวมผลและสร้างไฟล์ | 8000 | create_file, update_file, delete_file, list_files, read_file |
 
 **กฎสำคัญของ Agents:**
 - ทุก output ต้องมี disclaimer: `"⚠️ เอกสารฉบับร่างนี้จัดทำโดย AI — กรุณาตรวจสอบความถูกต้องก่อนนำไปใช้งานจริง"`
