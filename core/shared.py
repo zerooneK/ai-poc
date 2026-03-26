@@ -32,9 +32,16 @@ _ws_change_queues = {} # workspace_path -> [queue.Queue]
 _ws_change_lock = threading.Lock()
 
 # OpenAI Client
+import logging as _logging
+try:
+    _TIMEOUT = float(os.getenv('OPENROUTER_TIMEOUT', '60'))
+except ValueError:
+    _logging.getLogger(__name__).warning("[shared] Invalid OPENROUTER_TIMEOUT value, defaulting to 60.0")
+    _TIMEOUT = 60.0
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=OPENROUTER_API_KEY,
+    timeout=_TIMEOUT,
 )
 
 # Temp directory

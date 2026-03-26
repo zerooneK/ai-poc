@@ -242,24 +242,6 @@ def _cleanup_old_temp():
     except OSError as e:
         logger.warning(f"[cleanup_old_temp] could not clean temp dir: {e}")
 
-def stream_agent(system_prompt: str, message: str, agent_label: str, max_tokens: int = 8000):
-    try:
-        stream = client.chat.completions.create(
-            model=MODEL,
-            max_tokens=max_tokens,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": message}
-            ],
-            stream=True
-        )
-        for chunk in stream:
-            if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
-                yield format_sse({'type': 'text', 'content': chunk.choices[0].delta.content})
-    except Exception as e:
-        logger.error(f"[stream_agent] error: {e}", exc_info=True)
-        yield format_sse({'type': 'error', 'message': 'เกิดข้อผิดพลาดระหว่างประมวลผล กรุณาลองใหม่อีกครั้ง'})
-
 def handle_save(pending_doc: str, pending_agent: str, workspace: str, job_id=None, output_format: str = 'md'):
     try:
         filename = _suggest_filename(pending_agent, pending_doc, output_format)
@@ -282,19 +264,27 @@ def handle_save(pending_doc: str, pending_agent: str, workspace: str, job_id=Non
         logger.error(f"[handle_save] error: {e}", exc_info=True)
         yield format_sse({'type': 'save_failed', 'message': 'ไม่สามารถบันทึกไฟล์ได้ กรุณาลองใหม่อีกครั้ง'})
 
-def handle_revise(pending_doc: str, pending_agent: str, instruction: str, workspace: str):
+def handle_revise(pending_doc: str, pending_agent: str, instruction: str, history=None):
     agent_instance = AgentFactory.get_agent(pending_agent)
-    yield format_sse({'type': 'agent', 'agent': pending_agent, 'reason': 'แก้ไขเอกสาร'})
-    yield format_sse({'type': 'status', 'message': f'{agent_instance.name} กำลังแก้ไขเอกสาร...'})
-    revise_message = f"แก้ไขเอกสารต่อไปนี้ตามคำสั่งที่ได้รับ\n\nคำสั่งแก้ไข: {instruction}\n\nเอกสารเดิม:\n{pending_doc}"
-    for sse in stream_agent(agent_instance.system_prompt, revise_message, agent_instance.name, 10000):
-        yield sse
+    yield {'type': 'agent', 'agent': pending_agent, 'reason': 'แก้ไขเอกสาร'}
+    yield {'type': 'status', 'message': f'{agent_instance.name} กำลังแก้ไขเอกสาร...'}
+    revise_message = (
+        f"แก้ไขเอกสารต่อไปนี้ตามคำสั่งที่ได้รับ\n\n"
+        f"คำสั่งแก้ไข: {instruction}\n\nเอกสารเดิม:\n{pending_doc}"
+    )
+    try:
+        for chunk in agent_instance.stream_response(revise_message, history=history, max_tokens=10000):
+            yield {'type': 'text', 'content': chunk}
+    except Exception as e:
+        logger.error(f"[handle_revise] stream_response error: {e}", exc_info=True)
+        yield {'type': 'error', 'message': 'ไม่สามารถแก้ไขเอกสารได้ กรุณาลองใหม่อีกครั้ง'}
 
 def _is_safe_temp_path(path: str) -> bool:
     try:
         resolved = os.path.realpath(os.path.abspath(path))
         return os.path.commonpath([resolved, TEMP_DIR]) == TEMP_DIR
-    except: return False
+    except (ValueError, TypeError):
+        return False
 
 def handle_pm_save(temp_paths: list, workspace: str, job_id=None, output_format: str = 'md', output_formats: list = None):
     saved = []
@@ -403,13 +393,10 @@ def chat():
                 yield format_sse({'type': 'status', 'message': '🗑️ ยกเลิกเอกสารเดิมแล้ว กำลังดำเนินการคำสั่งใหม่...'})
             elif _is_edit_intent(user_input):
                 text_chunks = []
-                for sse in handle_revise(pending_doc, pending_agent, user_input, workspace):
-                    yield sse
-                    if sse.startswith('data: '):
-                        try:
-                            d = json.loads(sse[6:])
-                            if d.get('type') == 'text': text_chunks.append(d.get('content', ''))
-                        except: pass
+                for event in handle_revise(pending_doc, pending_agent, user_input, history=conversation_history):
+                    yield format_sse(event)
+                    if event.get('type') == 'text':
+                        text_chunks.append(event.get('content', ''))
                 db.complete_job(job_id, ''.join(text_chunks))
                 yield format_sse({'type': 'done'})
                 return
@@ -530,7 +517,7 @@ def files_stream():
             def on_any_event(self, event):
                 if not event.is_directory:
                     try: event_queue.put_nowait('changed')
-                    except: pass
+                    except queue.Full: pass
         observer = Observer()
         observer.schedule(Handler(), wp, recursive=False)
         observer.start()

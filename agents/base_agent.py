@@ -97,7 +97,7 @@ class BaseAgent:
                 
                 try:
                     args = json.loads(tc["function"]["arguments"])
-                except:
+                except (json.JSONDecodeError, ValueError):
                     yield {"type": "error", "message": "Invalid tool arguments"}
                     return
 

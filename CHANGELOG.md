@@ -1,5 +1,19 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.13.0] — 26 มีนาคม 2569 · fix
+- fix (C1): AgentFactory.get_agent ใช้ threading.Lock + double-checked locking — ป้องกัน race condition ใน threaded Flask
+- fix (C2): ลบ dead function `stream_agent` ออกจาก app.py — refactor `handle_revise` ให้ใช้ `agent_instance.stream_response()` แทน; caller ใน `generate()` ใช้ dict แทน pre-formatted SSE strings
+- fix (C3): เพิ่ม `timeout=60.0` ใน OpenAI client (configurable ผ่าน `OPENROUTER_TIMEOUT` env var) — ป้องกัน request ค้างไม่จบ
+- fix (bonus): `handle_revise` forward `conversation_history` ไปยัง `stream_response` — agent มี session context ระหว่างแก้ไขเอกสาร
+- fix (bonus): `handle_revise` มี exception handler แยก — API error ระหว่าง revision แสดง Thai error message แทนการ propagate ไป outer handler
+- fix (bonus): แก้ bare `except:` ใน `_is_safe_temp_path` → `except (ValueError, TypeError):`
+- fix (bonus): แก้ bare `except:` ใน `files_stream` watchdog handler → `except queue.Full:`
+- fix (bonus): AgentFactory fallback ไปยัง ChatAgent ใส่ `logger.warning` แล้ว — visible ใน production logs
+- fix (bonus): safe parse `OPENROUTER_TIMEOUT` env var ด้วย try/except — ไม่ crash ถ้า value ไม่ใช่ตัวเลข
+- fix (bonus): แก้ bare `except:` ใน `base_agent.py` JSON parse → `except (json.JSONDecodeError, ValueError):`
+
+---
+
 ## [v0.12.2] — 26 มีนาคม 2569 · fix
 - fix (B1): wrap both SSE Response generators with `stream_with_context` — prevents silent crash under Gunicorn/production WSGI
 - fix (B2): replace all `str(e)` in SSE error events with user-friendly Thai messages; log full traceback server-side with `exc_info=True`
