@@ -1,85 +1,102 @@
 # Internal AI Assistant POC (GEMINI.md)
 
-This project is a Proof of Concept (POC) for an **Internal AI Assistant Platform** designed for Thai employees. It uses a multi-agent architecture to generate various corporate documents (HR, Accounting, Management, PM) in Thai.
+This project is a Proof of Concept (POC) for an **Internal AI Assistant Platform** designed specifically for Thai employees. It uses a multi-agent architecture to generate various corporate documents (HR, Accounting, Management, PM) and handle general conversation in Thai.
 
-## Project Overview
+---
 
-- **Purpose**: Automate the creation of Thai documents like employment contracts, invoices, job descriptions, and management scripts using AI.
-- **Architecture**: 
-    - **Backend**: Flask (Python 3.11) with SSE (Server-Sent Events) for real-time streaming.
-    - **AI Engine**: OpenRouter API (Claude 3.5 Sonnet / 4.5) via OpenAI SDK.
-    - **Orchestration**: A central Orchestrator routes requests to specialized agents (HR, Accounting, Manager, PM).
-    - **Frontend**: Single-file Vanilla HTML/JS/CSS ("The Silent Concierge" design) with `marked.js` for Markdown rendering.
-    - **Persistence**: SQLite (`db.py`) for job history and session management.
-    - **Tools**: MCP (Model Context Protocol) Server for filesystem operations in the `workspace/` directory.
-    - **Export**: Multi-format support (.txt, .docx, .xlsx, .pdf) using `weasyprint`, `python-docx`, and `openpyxl`.
+## 🚀 Project Overview
 
-## Getting Started
+- **Purpose**: Automate the creation of Thai corporate documents and provide general AI assistance.
+- **Goal**: Demonstrate AI capability to senior management to secure budget for full production development.
+- **Current Version**: v0.11.1 (Updated: March 26, 2026)
 
-### Prerequisites
-- Python 3.10+ (Tested on 3.11)
-- WSL (Windows Subsystem for Linux) recommended for Linux-based setup scripts.
-- OpenRouter API Key.
+### **Architecture**
+- **Orchestration**: A central Orchestrator analyzes user input and routes it to specialized agents or the general chat agent.
+- **Multi-Agent System**:
+    - **Chat Agent (New)**: Handles general greetings, system inquiries, and casual conversation without document generation.
+    - **HR Agent**: Handles employment contracts, JDs, and internal policies.
+    - **Accounting Agent**: Handles Invoices (with VAT) and Expense Reports (without VAT).
+    - **Manager Advisor**: Provides management scripts, feedback, and action plans.
+    - **PM Agent**: Orchestrates multi-departmental tasks using an agentic loop with MCP tools.
+- **Advanced Capabilities**:
+    - **Web Search**: Agents can perform internet searches via DuckDuckGo (DDGS) for real-time information.
+    - **Conversation Memory**: Remembers the last 10 turns (20 messages) for contextual awareness in routing and generation.
+- **Persistence**: SQLite (`db.py`) for job history and session management with graceful degradation.
+- **Filesystem Tools**: MCP (Model Context Protocol) via `mcp_server.py` for workspace operations.
+- **Export Engine**: `converter.py` for multi-format export (.txt, .docx, .xlsx, .pdf) with full Thai font support.
 
-### Setup & Installation
-The easiest way to set up the project is using the provided script:
+---
+
+## 🛠️ Tech Stack
+
+- **Backend**: Python 3.11 + Flask + flask-cors
+- **AI Provider**: OpenRouter API (OpenAI SDK) using `anthropic/claude-sonnet-4-5` (default).
+- **Streaming**: Server-Sent Events (SSE) for real-time typewriter-style responses.
+- **Frontend**: Single-file Vanilla HTML/JS/CSS ("The Silent Concierge" design system).
+- **Libraries**: `openai`, `python-dotenv`, `mcp`, `watchdog`, `python-docx`, `openpyxl`, `weasyprint`, `markdown`.
+
+---
+
+## 📜 Mandatory Development Rules
+
+### **1. Language & Locale**
+- **All AI outputs and UI text MUST be in Thai.**
+- **Dates**: Always use Buddhist Era (พ.ศ.) (Current year is 2569).
+- **Disclaimer**: Every AI-generated document MUST include: `⚠️ เอกสารฉบับร่างนี้จัดทำโดย AI — กรุณาตรวจสอบความถูกต้องก่อนนำไปใช้งานจริง`.
+
+### **2. File Management**
+- **Filenames**: All files created in `workspace/` MUST use **English snake_case** (e.g., `employment_contract_somchai.docx`). **NO Thai characters in filenames.**
+- **Paths**: Agents operate strictly within the `workspace/` directory.
+
+### **3. Versioning & Documentation**
+- **Every code change MUST bump the version** in `index.html` (line 1238 approx.) and add a entry in `CHANGELOG.md`.
+- Follow semantic versioning (v0.MINOR.PATCH).
+- Update `PROJECT_SUMMARY.md` and `DEMO-READINESS-REPORT.md` if features or architecture change.
+
+### **4. Workflow & Process Rules**
+1. **Clear Understanding**: Thoroughly understand the goals and requirements of any instruction before starting work.
+2. **Detailed Planning**: Create a detailed plan before making any modifications to code or related documentation.
+3. **Documentation Sync**: After completing improvements, plan and execute updates to all related documents to ensure they are current and consistent.
+4. **Git Commits**: Commit to Git immediately after every version bump.
+5. **No .env Access**: NEVER modify or directly read `.env` files. If a configuration change or check is required, provide a detailed step-by-step instruction and clear examples for the user to perform the action manually.
+
+---
+
+## ⚙️ Building, Running & Testing
+
+### **Setup**
 ```bash
 bash setup.sh
 ```
-This script will:
-1. Install system dependencies (WeasyPrint requirements + Thai fonts).
-2. Create a virtual environment (`venv`).
-3. Install Python dependencies from `requirements.txt`.
-4. Create necessary directories (`workspace/`, `temp/`, `data/`).
-5. Create a `.env` file from `.env.example`.
+Installs system dependencies (WeasyPrint, Thai fonts), creates `venv`, installs `pip` packages, and prepares directories.
 
-**Manual Configuration:**
-Edit the `.env` file and provide your `OPENROUTER_API_KEY`.
-```env
-OPENROUTER_API_KEY=your_key_here
-OPENROUTER_MODEL=anthropic/claude-sonnet-4-5
-WORKSPACE_PATH=/path/to/your/workspace
-```
-
-### Running the Application
-Use the start script to launch the Flask server:
+### **Running**
 ```bash
 ./start.sh
 ```
-The server will run at `http://localhost:5000`.
-- **Main Interface**: `http://localhost:5000`
-- **Job History**: `http://localhost:5000/history`
+Activates `venv` and runs Flask on `http://localhost:5000` (host=0.0.0.0 for WSL compatibility).
 
-### Testing
-Several test scripts are available for validation:
-- **Automated Use Cases**: `PYTHONUTF8=1 python test_cases.py` (Tests 5 core use cases).
-- **Smoke Test**: `python smoke_test_phase0.py` (Basic health and SSE check).
-- **Full Demo Check**: `python quick-demo-check.py` (Comprehensive readiness check).
+### **Testing & Validation**
+- **Full Test Suite**: `PYTHONUTF8=1 python test_cases.py` (Tests all agents and PM flows).
+- **Smoke Test**: `python smoke_test_phase0.py` (Validates health and SSE).
+- **Quick Demo Check**: `python quick-demo-check.py` (Final readiness validation).
 
-## Development Conventions
+---
 
-### General Rules
-- **Language**: All UI elements and AI outputs must be in **Thai**.
-- **Disclaimers**: Every AI-generated document must include the standard AI disclaimer.
-- **Filenames**: All files created by agents in the `workspace/` must use **English snake_case** (e.g., `employment_contract_somchai.docx`).
-- **Versioning**: Follow semantic versioning (v0.X.X). Update `index.html` and `CHANGELOG.md` with every commit.
+## 🏗️ Imminent Refactoring Plan (Active Direction)
 
-### Code Style
-- **Backend**: Standard Python (PEP 8) with logging. Use `db.py` for all persistence.
-- **Frontend**: Vanilla JS preferred. No heavy frameworks. Use CSS variables for the "Silent Concierge" design tokens.
-- **Errors**: Return user-friendly Thai error messages via SSE.
+The project is currently transitioning from a monolithic `app.py` to a modular structure:
+1.  **Prompt Separation**: Extracting hardcoded `SYSTEM_PROMPTS` into `prompts/*.md` files.
+2.  **Agent Modularization**: Moving agent-specific logic from `app.py` to `agents/*.py` classes.
+3.  **Core Extraction**: Moving orchestrator and utility functions to `core/`.
 
-### Specialized Subagents
-The project uses specialized instructions for different tasks, located in `.claude/agents/`:
-- `debug-assistant.md`: For troubleshooting.
-- `frontend-developer.md` & `ui-ux-reviewer.md`: For UI changes.
-- `python-reviewer.md`: For backend code quality.
-- `thai-doc-checker.md`: For validating Thai document quality.
-- `demo-preparer.md`: For final demo readiness.
+---
 
-### Maintenance
-After making changes, you MUST update the following documentation to keep it in sync:
-- `PROJECT_SUMMARY.md`: High-level overview and architecture.
-- `CLAUDE.md`: Operational rules and version history.
-- `CHANGELOG.md`: Detailed list of changes.
-- `DEMO-READINESS-REPORT.md`: Status of demo features.
+## 🤖 Specialized Sub-Agents
+
+Instructional context for specific tasks can be found in `.claude/agents/`:
+- `python-reviewer.md`: Reviewing `.py` files.
+- `frontend-developer.md` & `ui-ux-reviewer.md`: UI/UX updates.
+- `thai-doc-checker.md`: Validating Thai document quality.
+- `debug-assistant.md`: Troubleshooting errors.
+- `project-documenter.md`: Updating `poc-plan.md` at end of sessions.

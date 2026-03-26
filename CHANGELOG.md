@@ -1,5 +1,13 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.12.0] — 26 มีนาคม 2569 · refactor
+- **Major Refactoring**: แยกโครงสร้างโปรเจกต์เป็น Modular Architecture
+- **Prompt Separation**: ย้าย System Prompts ทั้งหมดจาก `app.py` ไปเป็นไฟล์ `.md` ในโฟลเดอร์ `prompts/`
+- **Agent Modularization**: แยก Logic ของแต่ละ Agent (HR, Accounting, Manager, PM, Chat) ออกเป็นโมดูลอิสระในโฟลเดอร์ `agents/`
+- **Core Logic Extraction**: ย้ายฟังก์ชันส่วนกลาง, การจัดการ Workspace และ Shared Resources ไปยังโฟลเดอร์ `core/`
+- **Robustness**: แก้ไขปัญหา SyntaxError ของ f-string ใน Python 3.10 โดยการเพิ่ม `format_sse` helper
+- **Reliability**: ปรับปรุงระบบตรวจสอบความปลอดภัยของ Workspace Path ให้เข้มงวดและถูกต้องตามหลัก Path Traversal Protection
+
 ## [v0.11.1] — 26 มีนาคม 2569 · fix
 - fix: chat agent responses no longer trigger save-to-file confirmation flow — skip pendingDoc when lastAgent === 'chat'
 - fix: max_tokens ทุก agent (HR/Accounting/Manager/Chat) เพิ่มเป็น 10,000 — ป้องกัน context truncation สำหรับเอกสารยาว
