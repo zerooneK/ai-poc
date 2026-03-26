@@ -24,6 +24,20 @@
 6.  **Versioning:** ทุก commit ต้อง bump version ใน `index.html` + `CHANGELOG.md`
 7.  **Documentation:** หลังงานเสร็จ ต้องอัปเดตเอกสาร (PROJECT_SUMMARY, CLAUDE.md, GEMINI.md) ให้ sync กัน
 
+## 🔍 ลำดับการ Review ก่อน Commit (Mandatory Review Order)
+
+ทุกครั้งที่มีการแก้ไขโค้ด ให้รัน subagent ตามลำดับนี้ก่อน commit เสมอ:
+
+| ลำดับ | Subagent | Trigger |
+|---|---|---|
+| 1 | `backend-python-reviewer` | **ทุกครั้ง** ที่แก้ `app.py`, `core/`, `agents/`, `db.py`, `converter.py`, `mcp_server.py` |
+| 2 | `python-reviewer` | แก้ไฟล์ `.py` ใดๆ นอกจากข้อ 1 (เช่น test scripts) |
+| 3 | `ui-ux-reviewer` | แก้ `index.html` หรือ `history.html` |
+| 4 | `security-checker` | ก่อน demo ทุกครั้ง หรือเมื่อแก้ `.env` / API config |
+| 5 | `db-checker` | แก้ `db.py` หรือ `converter.py` |
+
+> **กฎ:** ห้าม commit ถ้า `backend-python-reviewer` ยังไม่ผ่าน เมื่อมีการแก้ backend
+
 ## 📝 รูปแบบการ Commit (Message Format)
 `vX.X.X — [fix/feature/refactor/docs]: <คำอธิบายภาษาไทยหรืออังกฤษ>`
 *(ห้ามลืม bump version และ commit ในขั้นตอนเดียวกัน)*
