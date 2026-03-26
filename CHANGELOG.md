@@ -1,5 +1,14 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.14.0] — 26 มีนาคม 2569 · feat
+- feat: PM Agent subtask cards — กรอบสีแยกชัดเจนสำหรับแต่ละ sub-agent ที่ถูกเรียกผ่าน PM (HR=เขียว, Accounting=ม่วง, Manager=ชมพู)
+- feat: card header แสดง agent icon + ชื่อ + task description; card body คือ output ของ sub-agent
+- feat: `web_search_sources` chips และ `tool_result` lines แทรกใน card แทน aiBody โดยตรง (`currentOutputEl.before()`)
+- fix: ลบ `<hr>` separator ระหว่าง subtasks — ถูกแทนที่ด้วย card borders
+- fix: `aiBody.insertBefore(x, currentOutputEl)` → `currentOutputEl.before(x)` ใน web_search_sources + tool_result — ทำงานถูกต้องแม้ currentOutputEl อยู่ใน nested card
+
+---
+
 ## [v0.13.3] — 26 มีนาคม 2569 · feat
 - feat: แสดงแหล่งที่มา web search เป็น pill chips ก่อนคำตอบ — SSE event `web_search_sources` ใหม่พร้อม query + domain pills ที่คลิกได้
 - feat: `extract_web_sources()` ใน `core/utils.py` parse `ที่มา:` lines จาก search result

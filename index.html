@@ -780,6 +780,43 @@
       opacity: 1;
     }
 
+    /* ─── PM Agent Sub-task Cards ───────────────────────────────────────── */
+    .pm-agent-card {
+      border: 1px solid var(--surface-hi);
+      border-radius: 10px;
+      margin: 10px 0;
+      overflow: hidden;
+    }
+    .pm-agent-card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      border-bottom: 1px solid var(--surface-hi);
+    }
+    .pm-agent-card-label { white-space: nowrap; }
+    .pm-agent-card-task {
+      font-size: 11px;
+      font-weight: 400;
+      opacity: 0.65;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+    }
+    .pm-agent-card-body { padding: 12px 14px 6px; }
+
+    .card-hr  { border-color: var(--hr-border); }
+    .card-hr .pm-agent-card-header  { background: var(--hr-bg); color: var(--hr-fg); border-bottom-color: var(--hr-border); }
+    .card-accounting { border-color: var(--ac-border); }
+    .card-accounting .pm-agent-card-header { background: var(--ac-bg); color: var(--ac-fg); border-bottom-color: var(--ac-border); }
+    .card-manager { border-color: var(--mg-border); }
+    .card-manager .pm-agent-card-header { background: var(--mg-bg); color: var(--mg-fg); border-bottom-color: var(--mg-border); }
+    .card-pm { border-color: var(--pm-border); }
+    .card-pm .pm-agent-card-header { background: var(--pm-bg); color: var(--pm-fg); border-bottom-color: var(--pm-border); }
+
     /* ── Pending Doc Confirmation Modal ─────────────────────────────────── */
     .modal-overlay {
       position: fixed;
@@ -1046,7 +1083,7 @@
         <span class="material-symbols-outlined" style="font-size:13px">folder_open</span>
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
-      <span class="version-tag">v0.13.3</span>
+      <span class="version-tag">v0.14.0</span>
     </div>
   </header>
 
@@ -1326,6 +1363,7 @@
   let pendingTempPaths = [];   // PM task: staged temp file paths waiting for confirm
   let isPendingConfirmation = false;
   let wasPMTask = false;
+  let currentPmCard = null;
   let lastAgent = '';
 
   // Queued task after "save first" modal choice
@@ -1681,9 +1719,34 @@
             container.classList.add('streaming');
             typingIndicator.style.display = 'flex';
             container.classList.add('typing');
+            // PM mode: wrap each sub-agent's output in a coloured card
+            if (wasPMTask) {
+              const card = document.createElement('div');
+              card.className = `pm-agent-card card-${data.agent}`;
+              const hdr = document.createElement('div');
+              hdr.className = 'pm-agent-card-header';
+              const lbl = document.createElement('span');
+              lbl.className = 'pm-agent-card-label';
+              lbl.textContent = `${info.icon} ${info.label}`;
+              hdr.appendChild(lbl);
+              if (data.task) {
+                const tsk = document.createElement('span');
+                tsk.className = 'pm-agent-card-task';
+                tsk.textContent = data.task;
+                hdr.appendChild(tsk);
+              }
+              card.appendChild(hdr);
+              const body = document.createElement('div');
+              body.className = 'pm-agent-card-body output-area';
+              card.appendChild(body);
+              currentOutputEl.replaceWith(card);
+              currentPmCard = card;
+              currentOutputEl = body;
+            }
 
           } else if (data.type === 'pm_plan') {
             wasPMTask = true;
+            currentPmCard = null;
             // PM plan: show subtask breakdown before agent output
             const planDiv = document.createElement('div');
             planDiv.className = 'pm-plan-step';
@@ -1724,7 +1787,7 @@
                 srcDiv.appendChild(pill);
               });
             }
-            aiBody.insertBefore(srcDiv, currentOutputEl);
+            currentOutputEl.before(srcDiv);
             _scrollToBottom();
 
           } else if (data.type === 'tool_result') {
@@ -1732,7 +1795,7 @@
             const resultLine = document.createElement('div');
             resultLine.className = 'tool-result-line';
             _renderToolResult(resultLine, data.tool, data.result);
-            aiBody.insertBefore(resultLine, currentOutputEl);
+            currentOutputEl.before(resultLine);
 
           } else if (data.type === 'save_failed') {
             saveFailed = true;
@@ -1770,11 +1833,8 @@
               _renderMarkdown(currentOutputEl, outputText);
             }
             outputText = '';
-            // Separator between subtasks
-            const sep = document.createElement('hr');
-            sep.style.cssText = 'border:none;border-top:1px solid var(--surface-hi);margin:16px 0;opacity:0.5';
-            aiBody.appendChild(sep);
-            // New output area for next subtask
+            currentPmCard = null;
+            // Placeholder for next card — will be replaced when next agent event fires
             const nextOutput = document.createElement('div');
             nextOutput.className = 'output-area';
             aiBody.appendChild(nextOutput);
