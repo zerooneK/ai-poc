@@ -30,8 +30,8 @@ def _web_search(query: str, max_results: int = 5) -> str:
             return "ไม่พบผลลัพธ์การค้นหา"
         return "\n\n---\n\n".join(results)
     except Exception as e:
-        logger.warning(f"[web_search] error: {e}")
-        return f"ไม่สามารถค้นหาข้อมูลได้: {str(e)}"
+        logger.warning(f"[web_search] error: {e}", exc_info=True)
+        return "ไม่สามารถค้นหาข้อมูลได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง"
 
 def execute_tool(workspace: str, tool_name: str, tool_args: dict) -> str:
     """Execute a named MCP filesystem tool and return result string."""
@@ -61,8 +61,8 @@ def execute_tool(workspace: str, tool_name: str, tool_args: dict) -> str:
     except (ValueError, FileNotFoundError, FileExistsError) as e:
         return f"❌ {str(e)}"
     except Exception as e:
-        logger.error(f"Tool execution error ({tool_name}): {e}")
-        return f"❌ เกิดข้อผิดพลาด: {str(e)}"
+        logger.error(f"Tool execution error ({tool_name}): {e}", exc_info=True)
+        return f"❌ เกิดข้อผิดพลาดในการใช้ tool กรุณาลองใหม่"
 
 def format_sse(data: dict) -> str:
     """Format a dictionary as an SSE data string."""

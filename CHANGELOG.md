@@ -1,5 +1,12 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.12.2] — 26 มีนาคม 2569 · fix
+- fix (B1): wrap both SSE Response generators with `stream_with_context` — prevents silent crash under Gunicorn/production WSGI
+- fix (B2): replace all `str(e)` in SSE error events with user-friendly Thai messages; log full traceback server-side with `exc_info=True`
+- fix (B3): replace `except: pass` in `_cleanup_old_temp` with `except OSError as e: logger.warning(...)` — stops swallowing shutdown signals
+- fix (bonus): fix `except: pass` in `list_workspaces()` → `except OSError`; fix `str(e)` leaks in `core/utils.py` (_web_search, execute_tool)
+
+---
 ## [v0.12.1] — 26 มีนาคม 2569 · fix
 - fix (A1): PM Agent ไม่สั่งให้ sub-agents บันทึกไฟล์แล้ว — แก้ `prompts/pm_agent.md` กฎข้อ 3 ป้องกัน sub-agents hallucinate write_file tool call
 - fix (A2): HR/Accounting/Manager agents ไม่แสดง footer "พิมพ์ บันทึก" เมื่อรันเป็น PM subtask — ใช้ `[PM_SUBTASK]` marker ใน task description และ conditional footer ใน prompts

@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, Response, send_file
+from flask import Flask, request, jsonify, Response, send_file, stream_with_context
 from flask_cors import CORS
 from openai import OpenAI, RateLimitError, APITimeoutError, APIError
 from dotenv import load_dotenv
@@ -239,7 +239,8 @@ def _cleanup_old_temp():
             fpath = os.path.join(TEMP_DIR, fname)
             if os.path.isfile(fpath) and os.path.getmtime(fpath) < cutoff:
                 os.remove(fpath)
-    except: pass
+    except OSError as e:
+        logger.warning(f"[cleanup_old_temp] could not clean temp dir: {e}")
 
 def stream_agent(system_prompt: str, message: str, agent_label: str, max_tokens: int = 8000):
     try:
@@ -256,7 +257,8 @@ def stream_agent(system_prompt: str, message: str, agent_label: str, max_tokens:
             if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
                 yield format_sse({'type': 'text', 'content': chunk.choices[0].delta.content})
     except Exception as e:
-        yield format_sse({'type': 'error', 'message': str(e)})
+        logger.error(f"[stream_agent] error: {e}", exc_info=True)
+        yield format_sse({'type': 'error', 'message': 'เกิดข้อผิดพลาดระหว่างประมวลผล กรุณาลองใหม่อีกครั้ง'})
 
 def handle_save(pending_doc: str, pending_agent: str, workspace: str, job_id=None, output_format: str = 'md'):
     try:
@@ -277,7 +279,8 @@ def handle_save(pending_doc: str, pending_agent: str, workspace: str, job_id=Non
         yield format_sse({'type': 'text', 'content': f'✅ {result}'})
         yield format_sse({'type': 'tool_result', 'tool': 'create_file', 'result': result})
     except Exception as e:
-        yield format_sse({'type': 'save_failed', 'message': str(e)})
+        logger.error(f"[handle_save] error: {e}", exc_info=True)
+        yield format_sse({'type': 'save_failed', 'message': 'ไม่สามารถบันทึกไฟล์ได้ กรุณาลองใหม่อีกครั้ง'})
 
 def handle_revise(pending_doc: str, pending_agent: str, instruction: str, workspace: str):
     agent_instance = AgentFactory.get_agent(pending_agent)
@@ -316,8 +319,9 @@ def handle_pm_save(temp_paths: list, workspace: str, job_id=None, output_format:
             _notify_workspace_changed(workspace)
             yield format_sse({'type': 'tool_result', 'tool': 'create_file', 'result': f'บันทึก {filename} เรียบร้อย'})
         except Exception as e:
-            yield format_sse({'type': 'error', 'message': f'ไม่สามารถบันทึก {os.path.basename(temp_path)}: {str(e)}'})
-    
+            logger.error(f"[handle_pm_save] failed to save {os.path.basename(temp_path)}: {e}", exc_info=True)
+            yield format_sse({'type': 'error', 'message': f'ไม่สามารถบันทึก {os.path.basename(temp_path)} กรุณาลองใหม่'})
+
     if saved:
         names_str = ", ".join(saved)
         msg_text = f"✅ บันทึก {len(saved)} ไฟล์เรียบร้อย\n{names_str}"
@@ -464,11 +468,11 @@ def chat():
             yield format_sse({'type': 'done'})
         except Exception as e:
             db.fail_job(job_id)
-            logger.error(f"Error: {e}")
-            yield format_sse({'type': 'error', 'message': str(e)})
+            logger.error(f"[generate] unhandled error: {e}", exc_info=True)
+            yield format_sse({'type': 'error', 'message': 'เกิดข้อผิดพลาดจากระบบ กรุณาลองใหม่อีกครั้ง'})
             yield format_sse({'type': 'done'})
 
-    return Response(generate(), mimetype='text/event-stream; charset=utf-8', headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no', 'Connection': 'keep-alive'})
+    return Response(stream_with_context(generate()), mimetype='text/event-stream; charset=utf-8', headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no', 'Connection': 'keep-alive'})
 
 @app.route('/api/workspace', methods=['GET'])
 def get_workspace_api():
@@ -495,7 +499,8 @@ def list_workspaces():
             for entry in sorted(os.scandir(root), key=lambda e: e.name.lower()):
                 if entry.is_dir() and not entry.name.startswith('.'):
                     workspaces.append({'path': entry.path, 'name': entry.name, 'active': os.path.realpath(entry.path) == current})
-        except: pass
+        except OSError as e:
+            logger.warning(f"[list_workspaces] cannot scan root {root}: {e}")
         result['roots'].append({'root': root, 'label': os.path.basename(root) or root, 'workspaces': workspaces})
     return jsonify(result)
 
@@ -543,7 +548,7 @@ def files_stream():
             with _ws_change_lock:
                 bucket = _ws_change_queues.get(wp, [])
                 if event_queue in bucket: bucket.remove(event_queue)
-    return Response(generate(), mimetype='text/event-stream; charset=utf-8', headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no', 'Connection': 'keep-alive'})
+    return Response(stream_with_context(generate()), mimetype='text/event-stream; charset=utf-8', headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no', 'Connection': 'keep-alive'})
 
 @app.route('/api/health')
 def health():
