@@ -868,19 +868,19 @@ def handle_revise(pending_doc: str, pending_agent: str, instruction: str, worksp
     if pending_agent == 'hr':
         system_prompt = HR_PROMPT
         agent_label = 'HR Agent'
-        max_tokens = 7500
+        max_tokens = 10000
     elif pending_agent == 'manager':
         system_prompt = MANAGER_PROMPT
         agent_label = 'Manager Advisor'
-        max_tokens = 8000
+        max_tokens = 10000
     elif pending_agent == 'chat':
         system_prompt = CHAT_PROMPT
         agent_label = 'Assistant'
-        max_tokens = 1000
+        max_tokens = 10000
     else:
         system_prompt = ACCOUNTING_PROMPT
         agent_label = 'Accounting Agent'
-        max_tokens = 6000
+        max_tokens = 10000
 
     yield f"data: {json.dumps({'type': 'agent', 'agent': pending_agent, 'reason': 'แก้ไขเอกสาร'})}\n\n"
     yield f"data: {json.dumps({'type': 'status', 'message': f'{agent_label} กำลังแก้ไขเอกสาร...'})}\n\n"
@@ -1095,7 +1095,7 @@ def chat():
                 try:
                     orchestrator_response = client.chat.completions.create(
                         model=MODEL,
-                        max_tokens=7500,
+                        max_tokens=10000,
                         messages=_orch_messages
                     )
                 except RateLimitError:
@@ -1155,7 +1155,7 @@ def chat():
                     try:
                         pm_response = client.chat.completions.create(
                             model=MODEL,
-                            max_tokens=6000,
+                            max_tokens=10000,
                             messages=_pm_messages
                         )
                     except Exception as e:
@@ -1205,15 +1205,15 @@ def chat():
                     if sub_agent == 'hr':
                         sub_prompt = HR_PROMPT
                         sub_label = 'HR Agent'
-                        sub_max_tokens = 7500
+                        sub_max_tokens = 10000
                     elif sub_agent == 'manager':
                         sub_prompt = MANAGER_PROMPT
                         sub_label = 'Manager Advisor'
-                        sub_max_tokens = 8000
+                        sub_max_tokens = 10000
                     else:
                         sub_prompt = ACCOUNTING_PROMPT
                         sub_label = 'Accounting Agent'
-                        sub_max_tokens = 6000
+                        sub_max_tokens = 10000
 
                     yield f"data: {json.dumps({'type': 'agent', 'agent': sub_agent, 'reason': f'Subtask {i+1}/{len(subtasks)}'})}\n\n"
                     yield f"data: {json.dumps({'type': 'status', 'message': f'{sub_label} กำลังสร้างเอกสาร...'})}\n\n"
@@ -1256,19 +1256,19 @@ def chat():
                 if agent == 'hr':
                     system_prompt = HR_PROMPT
                     agent_label = 'HR Agent'
-                    agent_max_tokens = 7500
+                    agent_max_tokens = 10000
                 elif agent == 'manager':
                     system_prompt = MANAGER_PROMPT
                     agent_label = 'Manager Advisor'
-                    agent_max_tokens = 8000
+                    agent_max_tokens = 10000
                 elif agent == 'chat':
                     system_prompt = CHAT_PROMPT
                     agent_label = 'Assistant'
-                    agent_max_tokens = 1000
+                    agent_max_tokens = 10000
                 else:
                     system_prompt = ACCOUNTING_PROMPT
                     agent_label = 'Accounting Agent'
-                    agent_max_tokens = 6000
+                    agent_max_tokens = 10000
 
                 logger.info(f"Routed to {agent_label}: {user_input[:60]}")
                 yield f"data: {json.dumps({'type': 'status', 'message': f'{agent_label} กำลังตรวจสอบ workspace...'})}\n\n"

@@ -58,7 +58,7 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 - **ทุก commit ต้อง bump version** ใน index.html พร้อมกัน
 - **ทุก commit ต้องเพิ่ม entry ใน CHANGELOG.md** ระบุ version, วันที่, ประเภท, รายละเอียด
 - เมื่อ bump Minor ให้ reset Patch เป็น 0 เสมอ (v0.2.3 → v0.3.0)
-- Version ปัจจุบัน: **v0.11.0**
+- Version ปัจจุบัน: **v0.11.1**
 
 ประวัติ:
 - v0.1.0 — initial POC (HR + Accounting agents, SSE streaming)
@@ -117,6 +117,7 @@ Version แสดงใน `index.html` บรรทัด `<div class="version"
 - v0.10.0 — feat: web search via DDGS — HR/Accounting/Manager agents ค้นหาข้อมูลอินเทอร์เน็ตได้
 - v0.10.1 — fix: web_search infinite loop guard (MAX 3 calls) + fake tool call JSON detection
 - v0.11.0 — feat: Chat Agent + friendly conversation mode — acknowledge style, soften tone
+- v0.11.1 — fix: chat response ไม่ trigger save flow + max_tokens ทุก agent เพิ่มเป็น 10,000
 
 ## Rules ที่ต้องทำตามเสมอ
 - ภาษาไทยใน UI และ system prompts ทั้งหมด

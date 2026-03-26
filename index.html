@@ -1009,7 +1009,7 @@
         <span class="material-symbols-outlined" style="font-size:13px">folder_open</span>
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
-      <span class="version-tag">v0.11.0</span>
+      <span class="version-tag">v0.11.1</span>
     </div>
   </header>
 
@@ -1726,8 +1726,8 @@
               // PM task: staged files waiting for confirm
               isPendingConfirmation = true;
               _updateInputHint(true, pendingTempPaths.length);
-            } else if (receivedAgentEvent && !wasPMTask && lastAgent && outputText) {
-              // Single-agent: new document generated, waiting for confirm
+            } else if (receivedAgentEvent && !wasPMTask && lastAgent && lastAgent !== 'chat' && outputText) {
+              // Single-agent: new document generated, waiting for confirm (skip chat — no file saving)
               pendingDoc = outputText;
               pendingAgent = lastAgent;
               pendingFormat = 'md';

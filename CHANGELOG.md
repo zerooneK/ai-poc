@@ -1,6 +1,11 @@
 # Changelog — Internal AI Assistant POC
 
-n## [v0.11.0] — 26 มีนาคม 2569 · feat
+## [v0.11.1] — 26 มีนาคม 2569 · fix
+- fix: chat agent responses no longer trigger save-to-file confirmation flow — skip pendingDoc when lastAgent === 'chat'
+- fix: max_tokens ทุก agent (HR/Accounting/Manager/Chat) เพิ่มเป็น 10,000 — ป้องกัน context truncation สำหรับเอกสารยาว
+
+---
+## [v0.11.0] — 26 มีนาคม 2569 · feat
 - feat: Chat Agent ใหม่ — Orchestrator route "chat" สำหรับการทักทายและสนทนาทั่วไป
 - feat: CHAT_PROMPT — ตอบอย่างเป็นธรรมชาติ แนะนำระบบ ไม่สร้างเอกสาร
 - feat: HR/Accounting/Manager agents acknowledge งานก่อน output เอกสาร
