@@ -1,5 +1,10 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.15.0-c1] — 26 มีนาคม 2569 · fix
+- fix (C1): `_is_save_intent` false positive — แยก `'ok'` และ `'save'` ออกจาก substring set ใช้ `\b(?:ok|save)\b` regex แทน — ป้องกัน "stock", "look", "unsaved" ทริก save intent โดยไม่ตั้งใจ
+
+---
+
 ## [v0.14.1] — 26 มีนาคม 2569 · fix
 - fix: fake tool-call JSON (`{"request": "web_search", ...}`) แสดงเป็น plain text ระหว่าง live streaming — เพิ่ม real-time strip ใน `text` event handler (display-only; `outputText` ยังคง raw สำหรับ `text_replace`/`done`/`subtask_done` pipeline)
 
