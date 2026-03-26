@@ -743,6 +743,43 @@
       margin: 2px 0 6px;
     }
 
+    /* ─── Web Search Sources ─────────────────────────────────────────── */
+    .web-search-sources {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--on-surface-2);
+      opacity: 0.75;
+      margin: 2px 0 10px;
+    }
+    .web-search-sources .ws-icon {
+      font-size: 13px;
+      opacity: 0.65;
+    }
+    .ws-query {
+      opacity: 0.6;
+      font-style: italic;
+    }
+    .ws-sep { opacity: 0.4; }
+    .ws-domain {
+      display: inline-block;
+      background: var(--surface-hi);
+      border-radius: 4px;
+      padding: 1px 7px;
+      font-size: 10px;
+      color: var(--on-surface-2);
+      text-decoration: none;
+      border: 1px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .ws-domain:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+      opacity: 1;
+    }
+
     /* ── Pending Doc Confirmation Modal ─────────────────────────────────── */
     .modal-overlay {
       position: fixed;
@@ -1009,7 +1046,7 @@
         <span class="material-symbols-outlined" style="font-size:13px">folder_open</span>
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
-      <span class="version-tag">v0.13.2</span>
+      <span class="version-tag">v0.13.3</span>
     </div>
   </header>
 
@@ -1656,6 +1693,39 @@
           } else if (data.type === 'pending_file') {
             // PM subtask: content staged to temp, waiting for user confirmation
             pendingTempPaths.push(data.temp_path);
+
+          } else if (data.type === 'web_search_sources') {
+            const srcDiv = document.createElement('div');
+            srcDiv.className = 'web-search-sources';
+            const icon = document.createElement('span');
+            icon.className = 'material-symbols-outlined ws-icon';
+            icon.textContent = 'travel_explore';
+            srcDiv.appendChild(icon);
+            if (data.query) {
+              const q = document.createElement('span');
+              q.className = 'ws-query';
+              q.textContent = `"${data.query}"`;
+              srcDiv.appendChild(q);
+            }
+            if (data.sources && data.sources.length > 0) {
+              const sep = document.createElement('span');
+              sep.className = 'ws-sep';
+              sep.textContent = '·';
+              srcDiv.appendChild(sep);
+              data.sources.forEach(src => {
+                const pill = document.createElement('a');
+                pill.className = 'ws-domain';
+                if (src.url && /^https?:\/\//.test(src.url)) {
+                  pill.href = src.url;
+                  pill.target = '_blank';
+                  pill.rel = 'noopener noreferrer';
+                }
+                pill.textContent = src.domain || src.url;
+                srcDiv.appendChild(pill);
+              });
+            }
+            aiBody.insertBefore(srcDiv, currentOutputEl);
+            _scrollToBottom();
 
           } else if (data.type === 'tool_result') {
             // Show tool execution feedback

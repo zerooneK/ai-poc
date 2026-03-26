@@ -1,5 +1,12 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.13.3] — 26 มีนาคม 2569 · feat
+- feat: แสดงแหล่งที่มา web search เป็น pill chips ก่อนคำตอบ — SSE event `web_search_sources` ใหม่พร้อม query + domain pills ที่คลิกได้
+- feat: `extract_web_sources()` ใน `core/utils.py` parse `ที่มา:` lines จาก search result
+- feat: `base_agent.run_with_tools` emit `web_search_sources` แทน `tool_result` สำหรับ web_search — แสดง domain chips ด้วย Material Icon `travel_explore`
+
+---
+
 ## [v0.13.2] — 26 มีนาคม 2569 · fix
 - fix: เพิ่ม client-side regex strip ใน `done` และ `subtask_done` handlers — ลบ fake tool call JSON ออกจาก `outputText` ก่อน markdown render เสมอ (ป้องกัน JSON โชว์ใน bubble แม้ `text_replace` server event ไม่ถึง)
 - fix: `pendingDoc` และ `conversationHistory` รับ clean text เพราะ `outputText` ถูก strip ก่อน `done` handler ตั้งค่า `pendingDoc`

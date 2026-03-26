@@ -1,6 +1,8 @@
 import os
+import re
 import json
 import logging
+from urllib.parse import urlparse
 from mcp_server import fs_list_files, fs_create_file, fs_read_file, fs_update_file, fs_delete_file
 
 logger = logging.getLogger(__name__)
@@ -32,6 +34,19 @@ def _web_search(query: str, max_results: int = 5) -> str:
     except Exception as e:
         logger.warning(f"[web_search] error: {e}", exc_info=True)
         return "ไม่สามารถค้นหาข้อมูลได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง"
+
+_SOURCE_LINE_RE = re.compile(r'ที่มา:\s*(https?://\S+)')
+
+def extract_web_sources(result: str) -> list:
+    """Extract source URLs from a _web_search result string."""
+    sources = []
+    for url in _SOURCE_LINE_RE.findall(result):
+        try:
+            domain = urlparse(url).netloc
+            sources.append({"url": url, "domain": domain})
+        except Exception:
+            pass
+    return sources
 
 def execute_tool(workspace: str, tool_name: str, tool_args: dict) -> str:
     """Execute a named MCP filesystem tool and return result string."""

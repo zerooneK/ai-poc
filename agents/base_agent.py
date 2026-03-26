@@ -2,7 +2,7 @@ import json
 import logging
 import re
 from core.shared import get_client, get_model
-from core.utils import execute_tool, format_sse
+from core.utils import execute_tool, format_sse, extract_web_sources
 
 # Detect fake tool-call JSON that some models output as plain text instead of
 # using the structured tool_calls channel, e.g.:
@@ -141,9 +141,13 @@ class BaseAgent:
 
                 # Execution via core.utils
                 result = execute_tool(workspace, tool_name, args)
-                
+
                 messages.append({"role": "tool", "tool_call_id": tc["id"], "content": result})
-                yield {"type": "tool_result", "tool": tool_name, "result": result[:200]}
+                if tool_name == 'web_search':
+                    sources = extract_web_sources(result)
+                    yield {"type": "web_search_sources", "query": args.get('query', ''), "sources": sources}
+                else:
+                    yield {"type": "tool_result", "tool": tool_name, "result": result[:200]}
 
             if text_streamed:
                 return
