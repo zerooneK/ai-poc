@@ -1,13 +1,33 @@
 # Bug Fix Plan — v0.15.0
 ## วันที่: 26 มีนาคม 2569
 
+## สถานะการแก้ไข
+
+| # | Status | Bug | Commit |
+|---|--------|-----|--------|
+| C1 | ✅ DONE | `_SAVE_KEYWORDS` substring false positive | `v0.15.0-c1` (04829d2) |
+| C2 | ⏳ TODO | PM task output ไม่ถูก push ใน `conversationHistory` | — |
+| H1 | ⏳ TODO | `_web_search` ไม่มี timeout | — |
+| H2 | ⏳ TODO | `stream_response` ไม่มี exception handling | — |
+| H3 | ⏳ TODO | Partial document เข้า pending confirmation หลัง error | — |
+| H4 | ⏳ TODO | `global WORKSPACE_PATH` แก้ local binding | — |
+| H5 | ⏳ TODO | `GeneratorExit` ไม่ถูก handle | — |
+| H6 | ⏳ TODO | `copyOutput()` copy แค่ subtask สุดท้าย | — |
+| M1 | ⏳ TODO | N+1 Queries ใน `db.get_history` | — |
+| M2 | ⏳ TODO | `OPENROUTER_API_KEY` ไม่มี startup validation | — |
+| M3 | ⏳ TODO | `reader.cancel()` ขาดใน catch block | — |
+| M4 | ⏳ TODO | `handle_pm_save` ดึง agent type จากชื่อไฟล์ fragile | — |
+| M5 | ⏳ TODO | ไม่มี size limit บน `pending_doc` | — |
+
+---
+
 ---
 
 ## สรุป Bugs ที่พบ (พร้อมหลักฐาน)
 
 | # | Severity | Bug | File:Line | Confirmed |
 |---|----------|-----|-----------|-----------|
-| C1 | CRITICAL | `_SAVE_KEYWORDS` substring false positive (`'ok'`) | `app.py:190,198` | YES |
+| C1 | ~~CRITICAL~~ ✅ | `_SAVE_KEYWORDS` substring false positive (`'ok'`) | `app.py:190,198` | YES |
 | C2 | CRITICAL | PM task output ไม่ถูก push ใน `conversationHistory` | `index.html:1840,1889-1891` | YES |
 | H1 | HIGH | `_web_search` ไม่มี timeout | `core/utils.py:27` | YES |
 | H2 | HIGH | `stream_response` ไม่มี exception handling | `agents/base_agent.py:39-47` | YES |
@@ -796,7 +816,7 @@ if len(pending_doc_raw) > _MAX_PENDING_DOC_BYTES:
 
 | ลำดับ | Bug | ไฟล์ที่แก้ | เหตุผล |
 |-------|-----|-----------|--------|
-| 1 | C1 — save keyword false positive | `app.py`, `index.html` | CRITICAL — กระทบ core flow โดยตรง |
+| 1 | ~~C1 — save keyword false positive~~ ✅ DONE | `app.py` | commit `04829d2` |
 | 2 | C2 — PM output ไม่เข้า history | `index.html` | CRITICAL — กระทบ conversation context |
 | 3 | H2 — PM loop ไม่มี try/except | `agents/base_agent.py`, `app.py` | HIGH — ทำให้ UI ค้างเมื่อ error |
 | 4 | H4 — global WORKSPACE_PATH ผิด module | `app.py` | HIGH — workspace change ไม่มีผลจริง |
