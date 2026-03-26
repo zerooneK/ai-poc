@@ -439,12 +439,13 @@ def chat():
                     yield format_sse({'type': 'status', 'message': f'{sub_agent.name} กำลังสร้างเอกสาร...'})
                     
                     subtask_chunks = []
-                    subtask_failed = False
-                    for chunk in sub_agent.stream_response(sub_task_desc, max_tokens=10000):
+                    for chunk in sub_agent.stream_response(f"[PM_SUBTASK]\n{sub_task_desc}", max_tokens=10000):
                         yield format_sse({'type': 'text', 'content': chunk})
                         subtask_chunks.append(chunk)
-                    
-                    full_content = ''.join(subtask_chunks)
+
+                    # Strip sentinel echo and save-footer in case LLM ignores prompt rule
+                    _SAVE_FOOTER = '💬 ต้องการแก้ไขส่วนไหนไหม? หรือพิมพ์ **บันทึก** เพื่อบันทึกไฟล์'
+                    full_content = ''.join(subtask_chunks).replace('[PM_SUBTASK]', '').replace(_SAVE_FOOTER, '').strip()
                     all_pm_chunks.append(full_content)
                     if full_content.strip():
                         temp_path = _write_temp(full_content, sub_agent_type)

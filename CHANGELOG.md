@@ -1,5 +1,10 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.12.1] — 26 มีนาคม 2569 · fix
+- fix (A1): PM Agent ไม่สั่งให้ sub-agents บันทึกไฟล์แล้ว — แก้ `prompts/pm_agent.md` กฎข้อ 3 ป้องกัน sub-agents hallucinate write_file tool call
+- fix (A2): HR/Accounting/Manager agents ไม่แสดง footer "พิมพ์ บันทึก" เมื่อรันเป็น PM subtask — ใช้ `[PM_SUBTASK]` marker ใน task description และ conditional footer ใน prompts
+
+---
 ## [v0.12.0] — 26 มีนาคม 2569 · refactor
 - **Major Refactoring**: แยกโครงสร้างโปรเจกต์เป็น Modular Architecture
 - **Prompt Separation**: ย้าย System Prompts ทั้งหมดจาก `app.py` ไปเป็นไฟล์ `.md` ในโฟลเดอร์ `prompts/`
