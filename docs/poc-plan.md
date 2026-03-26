@@ -30,20 +30,31 @@ Output: เอกสารภาษาไทยพร้อมใช้
 | Accounting Agent | Invoice, งบประมาณ, เอกสารการเงิน |
 | Manager Advisor | Feedback พนักงาน, จัดสรร budget, ลำดับความสำคัญ, headcount |
 | PM Agent | งานหลายแผนก → แยก subtasks → route ไป HR/Accounting/Manager → สร้างไฟล์ใน workspace |
+| Chat Agent | สนทนาทั่วไป ทักทาย ถามเกี่ยวกับระบบ — ไม่สร้างเอกสาร ไม่ trigger save flow |
 
 ### สิ่งที่ POC นี้ **ไม่มี** (และต้องพูดตรงๆ กับหัวหน้า)
 - ❌ Login / Authentication
-- ❌ บันทึกประวัติการใช้งาน (แสดงแค่ session ปัจจุบัน)
-- ❌ Database
 - ❌ LangGraph (ใช้ direct API call + agentic loop แทน)
 
 ---
 
-## สรุปความคืบหน้า — 24 มีนาคม 2569
+## สรุปความคืบหน้า — 26 มีนาคม 2569
 
-**สถานะ: Prototype Phase — v0.11.0**
+**สถานะ: Prototype Phase — v0.12.1**
 
-### v0.11.0 — Web Search via DDGS (26 มีนาคม 2569)
+### v0.12.1 — PM Subtask Bug Fix (26 มีนาคม 2569)
+- ✅ แก้ PM subtask: pm_agent.md ไม่สั่งให้ sub-agents บันทึกไฟล์แล้ว
+- ✅ เพิ่ม [PM_SUBTASK] marker ใน task description ที่ส่งให้ sub-agents
+- ✅ HR/Accounting/Manager prompts: conditional footer ตรวจจับ [PM_SUBTASK]
+- ✅ Code-level strip sentinel + save-footer จาก full_content ก่อนเขียน temp file
+
+### v0.12.0 — Modular Architecture Refactor (26 มีนาคม 2569)
+- ✅ แยกโครงสร้างโปรเจกต์เป็น core/, agents/, prompts/
+- ✅ System Prompts ทั้งหมดย้ายเป็นไฟล์ .md ใน prompts/
+- ✅ Agent Logic แยกเป็นโมดูลอิสระใน agents/
+- ✅ Core Logic (Orchestrator, Factory, Shared, Utils) ย้ายไป core/
+
+### v0.10.0 — Web Search via DDGS (26 มีนาคม 2569)
 - ✅ เพิ่ม web_search tool ให้ HR/Accounting/Manager agents
 - ✅ _web_search() ใช้ ddgs library (ไม่ต้อง API key)
 - ✅ status message แสดง "กำลังค้นหา: {query}..." ระหว่าง streaming
@@ -166,11 +177,14 @@ Output: เอกสารภาษาไทยพร้อมใช้
 
 ```
 ai-poc/
-├── app.py                   ← Flask backend + Orchestrator + HR/Accounting/Manager/PM agents + Agentic loop + DB integration
+├── app.py                   ← Flask Routes + Request/Response flow (v0.12.0+: แยก logic ออกจาก app.py แล้ว)
+├── core/                    ← Orchestrator, AgentFactory, SharedState, Utils
+├── agents/                  ← Agent modules: hr, accounting, manager, pm, chat, base
+├── prompts/                 ← System Prompts (.md files) สำหรับแต่ละ agent
 ├── db.py                    ← SQLite persistence layer (jobs, saved_files) — graceful degradation
 ├── mcp_server.py            ← MCP Filesystem Server (FastMCP) + 5 tools (Layer A/B)
 ├── converter.py             ← Multi-format export (.txt/.docx/.xlsx/.pdf)
-├── index.html               ← Web UI ไฟล์เดียว (v0.11.0 — workspace picker modal + format popup + conversation memory + web search)
+├── index.html               ← Web UI ไฟล์เดียว (v0.12.1 — workspace picker modal + format popup + conversation memory + web search + chat agent)
 ├── history.html             ← Standalone job history viewer (/history route)
 ├── setup.sh                 ← auto-install: venv + pip + WeasyPrint libs + Thai fonts
 ├── start.sh                 ← run script: activate venv + flask run host=0.0.0.0
@@ -989,7 +1003,7 @@ OpenRouter มี rate limit ตาม tier ของ account
 - ✅ ตรวจสอบ OpenRouter migration checklist → **7/8 PASS** (item 6 extra_headers เป็น optional ไม่จำเป็นสำหรับ POC)
 - ✅ รัน demo-preparer tool → **CONDITIONAL GO → upgraded to GO** หลังจากทุก test ผ่านหมด
 - ✅ ถ่ายภาพหน้าจอ backup ทุก use case บันทึกใน backup/screenshots/
-- ✅ อ่าน demo script (backup/demo-script.md) เรียบร็อย
+- ✅ อ่าน demo script (backup/demo-script.md) เรียบร้อย
 
 **ผลการทดสอบ:**
 - **Orchestrator routing:** ถูกต้อง 100% (5/5 cases)

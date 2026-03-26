@@ -1,6 +1,6 @@
 # DEMO READINESS REPORT
 **Project:** Internal AI Assistant POC
-**Version:** v0.11.0
+**Version:** v0.12.1
 **Date:** 26 มีนาคม 2569
 **Assessor:** Claude Code
 
@@ -26,7 +26,7 @@
 
 - Flask Server: Running on port 5000
 - Health Endpoint: /api/health returns 200 with model name
-- UI Frontend: http://localhost:5000 loads (v0.11.0)
+- UI Frontend: http://localhost:5000 loads (v0.12.1)
 - Dependencies: All installed (flask, flask-cors, openai, python-dotenv, mcp, watchdog, ddgs)
 - API Key: Configured in .env
 - Model: configurable via OPENROUTER_MODEL env var
@@ -35,7 +35,7 @@
 
 ### CODE & DOCUMENTATION — COMPLETE
 
-- Backend: app.py (Orchestrator + HR + Accounting + Manager Advisor + PM Agent + Agentic loop + DB integration)
+- Backend: app.py + core/ + agents/ + prompts/ (Modular Architecture — Orchestrator + HR + Accounting + Manager Advisor + PM Agent + Chat Agent + DB integration)
 - DB Layer: db.py (SQLite persistence — jobs, saved_files, graceful degradation)
 - Converter: converter.py (multi-format export: .md/.txt/.docx/.xlsx/.pdf)
 - MCP Server: mcp_server.py (FastMCP + 5 filesystem tools)
@@ -92,16 +92,17 @@
 
 | Agent | Route Key | Badge Color | max_tokens | Tools |
 |---|---|---|---|---|
-| HR Agent | `"hr"` | เขียว | 7,500 | list_files, read_file, web_search |
-| Accounting Agent | `"accounting"` | น้ำเงิน/ม่วง | 6,000 | list_files, read_file, web_search |
-| Manager Advisor | `"manager"` | ม่วง | 8,000 | list_files, read_file, web_search |
-| PM Agent | `"pm"` | ส้ม | 8,000 | create_file, update_file, delete_file, list_files, read_file |
+| HR Agent | `"hr"` | เขียว | 10,000 | list_files, read_file, web_search |
+| Accounting Agent | `"accounting"` | น้ำเงิน/ม่วง | 10,000 | list_files, read_file, web_search |
+| Manager Advisor | `"manager"` | ม่วง | 10,000 | list_files, read_file, web_search |
+| PM Agent | `"pm"` | ส้ม | 10,000 | stream_response (sub-agents ไม่มี tool access) |
+| Chat Agent | `"chat"` | เทา | 10,000 | ไม่มี (สนทนาทั่วไป ไม่สร้างเอกสาร) |
 
 ---
 
-## UI FEATURES (v0.11.0)
+## UI FEATURES (v0.12.1)
 
-- ✅ Navbar: Fixed, frosted glass, version tag แสดง v0.11.0
+- ✅ Navbar: Fixed, frosted glass, version tag แสดง v0.12.1
 - ✅ Sidebar:
   - Workspace selector (dropdown + เลือก folder)
   - Agent badge (reserved space + idle state + overflow ellipsis)
@@ -142,6 +143,9 @@
 - ✅ Workspace file read context (v0.8.4): HR/Accounting/Manager อ่านไฟล์ workspace ก่อนเขียนเมื่อ user ระบุชื่อไฟล์
 - ✅ Conversation memory (v0.9.0): last 10 turns ส่งไปยัง Orchestrator + agents ทุก request
 - ✅ Web search via DDGS (v0.11.0): HR/Accounting/Manager agents ค้นหาข้อมูลอินเทอร์เน็ตได้ ไม่ต้อง API key
+- ✅ Chat Agent (v0.11.0): ตอบสนทนาทั่วไปและทักทาย ไม่ trigger save flow — badge "💬 Assistant"
+- ✅ Modular Architecture (v0.12.0): แยก app.py เป็น core/, agents/, prompts/ — maintainable และ extensible
+- ✅ PM subtask fix (v0.12.1): PM sub-agents ไม่ hallucinate write_file อีกต่อไป — [PM_SUBTASK] marker + code-level strip
 
 ---
 
@@ -150,7 +154,7 @@
 **30 Minutes Before Demo:**
 - [ ] Server running (`python app.py`)
 - [ ] Browser ready at http://localhost:5000
-- [ ] Version tag แสดง v0.11.0 ใน navbar (ขวาบน) ✅
+- [ ] Version tag แสดง v0.12.1 ใน navbar (ขวาบน) ✅
 - [ ] Model name แสดงใน sidebar footer
 - [ ] Workspace path configured in .env (WORKSPACE_PATH)
 - [ ] workspace/ and temp/ directories exist
@@ -203,7 +207,7 @@
 
 ## CONCLUSION
 
-**System Quality:** Production-ready POC — 4 agents + PM Agent with MCP, chat bubbles, confirmation flow, real-time file panel, conversation memory, web search
+**System Quality:** Production-ready POC — 5 agents (HR/Accounting/Manager/PM/Chat) + Modular Architecture, chat bubbles, confirmation flow, real-time file panel, conversation memory, web search
 **Documentation:** Comprehensive (CHANGELOG, PROJECT_SUMMARY, demo script, demo inputs)
 **Risk Level:** Medium (missing screenshots)
 **Success Probability:** 90% with proper prep
@@ -212,5 +216,5 @@
 
 ---
 
-**Report Updated:** 26 มีนาคม 2569 (v0.11.0)
+**Report Updated:** 26 มีนาคม 2569 (v0.12.1)
 **For details, see:** PRE-DEMO-CHECKLIST.md

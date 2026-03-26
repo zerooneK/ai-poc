@@ -8,7 +8,7 @@
 **Internal AI Assistant Platform** — ระบบ AI สำหรับพนักงานภายในบริษัทไทย
 พนักงานพิมพ์งานเป็นภาษาไทย → AI เลือก Agent ที่เหมาะสม → สร้างเอกสาร (Draft) → User ยืนยัน → บันทึกเป็นไฟล์จริงในระบบ
 
-- **Version ปัจจุบัน:** v0.12.0 (Major Refactoring)
+- **Version ปัจจุบัน:** v0.12.1 (PM Subtask Bug Fix)
 - **สถานะ:** Prototype Ready (Verified by Smoke Tests)
 
 ---

@@ -8,7 +8,7 @@ This project is a Proof of Concept (POC) for an **Internal AI Assistant Platform
 
 - **Purpose**: Automate the creation of Thai corporate documents and provide general AI assistance.
 - **Goal**: Demonstrate AI capability to senior management to secure budget for full production development.
-- **Current Version**: v0.11.1 (Updated: March 26, 2026)
+- **Current Version**: v0.12.1 (Updated: March 26, 2026)
 
 ### **Architecture**
 - **Orchestration**: A central Orchestrator analyzes user input and routes it to specialized agents or the general chat agent.
@@ -83,20 +83,22 @@ Activates `venv` and runs Flask on `http://localhost:5000` (host=0.0.0.0 for WSL
 
 ---
 
-## 🏗️ Imminent Refactoring Plan (Active Direction)
+## 🏗️ Architecture (Modular — Completed in v0.12.0)
 
-The project is currently transitioning from a monolithic `app.py` to a modular structure:
-1.  **Prompt Separation**: Extracting hardcoded `SYSTEM_PROMPTS` into `prompts/*.md` files.
-2.  **Agent Modularization**: Moving agent-specific logic from `app.py` to `agents/*.py` classes.
-3.  **Core Extraction**: Moving orchestrator and utility functions to `core/`.
+The project was refactored from a monolithic `app.py` to a modular structure:
+- **`app.py`**: Flask Routes and request/response flow only
+- **`core/`**: `orchestrator.py`, `agent_factory.py`, `shared.py`, `utils.py`
+- **`agents/`**: `base_agent.py`, `hr_agent.py`, `accounting_agent.py`, `manager_agent.py`, `pm_agent.py`, `chat_agent.py`
+- **`prompts/`**: System prompts as `.md` files for easy prompt engineering
 
 ---
 
 ## 🤖 Specialized Sub-Agents
 
 Instructional context for specific tasks can be found in `.claude/agents/`:
-- `python-reviewer.md`: Reviewing `.py` files.
+- `backend-python-reviewer.md`: **Primary reviewer** — run on every change to `app.py`, `core/`, `agents/`, `db.py`, `converter.py`, `mcp_server.py` before committing.
+- `python-reviewer.md`: Reviewing other `.py` files (test scripts, etc.).
 - `frontend-developer.md` & `ui-ux-reviewer.md`: UI/UX updates.
-- `thai-doc-checker.md`: Validating Thai document quality.
+- `thai-doc-checker.md`: Validating Thai document quality and cultural correctness.
 - `debug-assistant.md`: Troubleshooting errors.
 - `project-documenter.md`: Updating `poc-plan.md` at end of sessions.
