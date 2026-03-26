@@ -1,6 +1,6 @@
 # DEMO READINESS REPORT
 **Project:** Internal AI Assistant POC
-**Version:** v0.12.1
+**Version:** v0.12.2
 **Date:** 26 มีนาคม 2569
 **Assessor:** Claude Code
 
@@ -26,7 +26,7 @@
 
 - Flask Server: Running on port 5000
 - Health Endpoint: /api/health returns 200 with model name
-- UI Frontend: http://localhost:5000 loads (v0.12.1)
+- UI Frontend: http://localhost:5000 loads (v0.12.2)
 - Dependencies: All installed (flask, flask-cors, openai, python-dotenv, mcp, watchdog, ddgs)
 - API Key: Configured in .env
 - Model: configurable via OPENROUTER_MODEL env var
@@ -100,9 +100,9 @@
 
 ---
 
-## UI FEATURES (v0.12.1)
+## UI FEATURES (v0.12.2)
 
-- ✅ Navbar: Fixed, frosted glass, version tag แสดง v0.12.1
+- ✅ Navbar: Fixed, frosted glass, version tag แสดง v0.12.2
 - ✅ Sidebar:
   - Workspace selector (dropdown + เลือก folder)
   - Agent badge (reserved space + idle state + overflow ellipsis)
@@ -146,6 +146,8 @@
 - ✅ Chat Agent (v0.11.0): ตอบสนทนาทั่วไปและทักทาย ไม่ trigger save flow — badge "💬 Assistant"
 - ✅ Modular Architecture (v0.12.0): แยก app.py เป็น core/, agents/, prompts/ — maintainable และ extensible
 - ✅ PM subtask fix (v0.12.1): PM sub-agents ไม่ hallucinate write_file อีกต่อไป — [PM_SUBTASK] marker + code-level strip
+- ✅ SSE hardening (v0.12.2): stream_with_context บน SSE generators ทั้งสองเส้นทาง — ป้องกัน silent crash บน Gunicorn/WSGI
+- ✅ Error message hardening (v0.12.2): แทน str(e) ด้วย Thai messages ใน SSE events; bare except แก้เป็น except OSError; core/utils.py error leaks แก้แล้ว
 
 ---
 
@@ -154,7 +156,7 @@
 **30 Minutes Before Demo:**
 - [ ] Server running (`python app.py`)
 - [ ] Browser ready at http://localhost:5000
-- [ ] Version tag แสดง v0.12.1 ใน navbar (ขวาบน) ✅
+- [ ] Version tag แสดง v0.12.2 ใน navbar (ขวาบน) ✅
 - [ ] Model name แสดงใน sidebar footer
 - [ ] Workspace path configured in .env (WORKSPACE_PATH)
 - [ ] workspace/ and temp/ directories exist
@@ -207,7 +209,7 @@
 
 ## CONCLUSION
 
-**System Quality:** Production-ready POC — 5 agents (HR/Accounting/Manager/PM/Chat) + Modular Architecture, chat bubbles, confirmation flow, real-time file panel, conversation memory, web search
+**System Quality:** Production-ready POC — 5 agents (HR/Accounting/Manager/PM/Chat) + Modular Architecture (v0.12.0), SSE hardening + error leak fixes (v0.12.2), chat bubbles, confirmation flow, real-time file panel, conversation memory, web search
 **Documentation:** Comprehensive (CHANGELOG, PROJECT_SUMMARY, demo script, demo inputs)
 **Risk Level:** Medium (missing screenshots)
 **Success Probability:** 90% with proper prep
@@ -216,5 +218,5 @@
 
 ---
 
-**Report Updated:** 26 มีนาคม 2569 (v0.12.1)
+**Report Updated:** 26 มีนาคม 2569 (v0.12.2)
 **For details, see:** PRE-DEMO-CHECKLIST.md

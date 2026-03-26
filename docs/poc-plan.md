@@ -40,7 +40,13 @@ Output: เอกสารภาษาไทยพร้อมใช้
 
 ## สรุปความคืบหน้า — 26 มีนาคม 2569
 
-**สถานะ: Prototype Phase — v0.12.1**
+**สถานะ: Prototype Phase — v0.12.2**
+
+### v0.12.2 — SSE Hardening + Error Leak Fixes (26 มีนาคม 2569)
+- ✅ wrap SSE Response generators ทั้งสองเส้นทางด้วย `stream_with_context` — ป้องกัน silent crash บน Gunicorn/WSGI (B1)
+- ✅ แทน `str(e)` ในทุก SSE error event ด้วย Thai user-friendly messages; log full traceback server-side ด้วย `exc_info=True` (B2)
+- ✅ แก้ `except: pass` ใน `_cleanup_old_temp` → `except OSError` ป้องกันกลืน shutdown signals (B3)
+- ✅ แก้ `except: pass` ใน `list_workspaces()` → `except OSError`; แก้ `str(e)` leaks ใน `core/utils.py` (_web_search, execute_tool) (bonus)
 
 ### v0.12.1 — PM Subtask Bug Fix (26 มีนาคม 2569)
 - ✅ แก้ PM subtask: pm_agent.md ไม่สั่งให้ sub-agents บันทึกไฟล์แล้ว
@@ -184,13 +190,13 @@ ai-poc/
 ├── db.py                    ← SQLite persistence layer (jobs, saved_files) — graceful degradation
 ├── mcp_server.py            ← MCP Filesystem Server (FastMCP) + 5 tools (Layer A/B)
 ├── converter.py             ← Multi-format export (.txt/.docx/.xlsx/.pdf)
-├── index.html               ← Web UI ไฟล์เดียว (v0.12.1 — workspace picker modal + format popup + conversation memory + web search + chat agent)
+├── index.html               ← Web UI ไฟล์เดียว (v0.12.2 — workspace picker modal + format popup + conversation memory + web search + chat agent)
 ├── history.html             ← Standalone job history viewer (/history route)
 ├── setup.sh                 ← auto-install: venv + pip + WeasyPrint libs + Thai fonts
 ├── start.sh                 ← run script: activate venv + flask run host=0.0.0.0
 ├── test_cases.py            ← Automated test script (5 use cases)
 ├── quick-demo-check.py      ← Full validation (7 checks: 6 cases + health)
-├── CHANGELOG.md             ← Version history (v0.1.0 → v0.8.3)
+├── CHANGELOG.md             ← Version history (v0.1.0 → v0.12.2)
 ├── PROJECT_SUMMARY.md       ← ภาพรวมโปรเจกต์สำหรับ AI context
 ├── CLAUDE.md                ← Rules สำหรับ Claude Code
 ├── PRE-DEMO-CHECKLIST.md    ← Checklist 30 นาทีก่อน demo

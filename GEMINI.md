@@ -8,7 +8,7 @@ This project is a Proof of Concept (POC) for an **Internal AI Assistant Platform
 
 - **Purpose**: Automate the creation of Thai corporate documents and provide general AI assistance.
 - **Goal**: Demonstrate AI capability to senior management to secure budget for full production development.
-- **Current Version**: v0.12.1 (Updated: March 26, 2026)
+- **Current Version**: v0.12.2 (Updated: March 26, 2026)
 
 ### **Architecture**
 - **Orchestration**: A central Orchestrator analyzes user input and routes it to specialized agents or the general chat agent.
@@ -83,13 +83,18 @@ Activates `venv` and runs Flask on `http://localhost:5000` (host=0.0.0.0 for WSL
 
 ---
 
-## 🏗️ Architecture (Modular — Completed in v0.12.0)
+## 🏗️ Architecture (Modular — Completed in v0.12.0, Hardened in v0.12.2)
 
 The project was refactored from a monolithic `app.py` to a modular structure:
 - **`app.py`**: Flask Routes and request/response flow only
 - **`core/`**: `orchestrator.py`, `agent_factory.py`, `shared.py`, `utils.py`
 - **`agents/`**: `base_agent.py`, `hr_agent.py`, `accounting_agent.py`, `manager_agent.py`, `pm_agent.py`, `chat_agent.py`
-- **`prompts/`**: System prompts as `.md` files for easy prompt engineering
+- **`prompts/`**: System prompts as `.md` files for easy prompt engineering (`orchestrator.md`, `hr_agent.md`, `accounting_agent.md`, `manager_agent.md`, `pm_agent.md`, `chat_agent.md`)
+
+### Hardening Rules (v0.12.2)
+- Both SSE Response generators must be wrapped with `stream_with_context` — prevents silent crashes under Gunicorn/production WSGI.
+- All `str(e)` in SSE error events replaced with Thai user-friendly messages; full tracebacks logged server-side with `exc_info=True`.
+- Bare `except: pass` blocks replaced with `except OSError` (or specific exception) to avoid swallowing signals.
 
 ---
 
@@ -98,7 +103,11 @@ The project was refactored from a monolithic `app.py` to a modular structure:
 Instructional context for specific tasks can be found in `.claude/agents/`:
 - `backend-python-reviewer.md`: **Primary reviewer** — run on every change to `app.py`, `core/`, `agents/`, `db.py`, `converter.py`, `mcp_server.py` before committing.
 - `python-reviewer.md`: Reviewing other `.py` files (test scripts, etc.).
-- `frontend-developer.md` & `ui-ux-reviewer.md`: UI/UX updates.
+- `frontend-developer.md` & `ui-ux-reviewer.md`: UI/UX updates to `index.html` or `history.html`.
 - `thai-doc-checker.md`: Validating Thai document quality and cultural correctness.
-- `debug-assistant.md`: Troubleshooting errors.
+- `debug-assistant.md`: Troubleshooting errors — run immediately on any error, before attempting fixes.
+- `security-checker.md`: Run before demo, before git commit, and when touching `.env` or API key config.
+- `db-checker.md`: Run after editing `db.py` or `converter.py`, and before demo.
+- `prompt-engineer.md`: Run when agent output is wrong, routing misbehaves, or when writing/editing system prompts.
+- `demo-preparer.md`: Run when preparing for demo or dry-run.
 - `project-documenter.md`: Updating `poc-plan.md` at end of sessions.

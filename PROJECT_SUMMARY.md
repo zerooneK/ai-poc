@@ -8,7 +8,7 @@
 **Internal AI Assistant Platform** — ระบบ AI สำหรับพนักงานภายในบริษัทไทย
 พนักงานพิมพ์งานเป็นภาษาไทย → AI เลือก Agent ที่เหมาะสม → สร้างเอกสาร (Draft) → User ยืนยัน → บันทึกเป็นไฟล์จริงในระบบ
 
-- **Version ปัจจุบัน:** v0.12.1 (PM Subtask Bug Fix)
+- **Version ปัจจุบัน:** v0.12.2 (SSE Hardening + Error Leak Fixes)
 - **สถานะ:** Prototype Ready (Verified by Smoke Tests)
 
 ---
@@ -27,6 +27,7 @@
     *   `base_agent.py`: คลาสแม่ที่มี Logic การเรียก LLM และ Streaming
     *   `hr_agent.py`, `accounting_agent.py`, `manager_agent.py`, `pm_agent.py`, `chat_agent.py`
 4.  **`prompts/`**: แหล่งเก็บ System Prompts แยกเป็นไฟล์ `.md` เพื่อให้ทำ Prompt Engineering ได้สะดวก
+    *   `orchestrator.md`, `hr_agent.md`, `accounting_agent.md`, `manager_agent.md`, `pm_agent.md`, `chat_agent.md`
 
 ---
 
@@ -47,3 +48,5 @@
 3.  **ความปลอดภัย:** ตรวจสอบ Path ผ่าน `_is_allowed_workspace_path` เสมอ
 4.  **Version Control:** Bump version ทุกครั้งที่มีการแก้โค้ด และบันทึกลง CHANGELOG.md
 5.  **Modular:** ห้ามใส่ Business Logic ยาวๆ ใน `app.py` ให้แยกเป็น Agent หรือ Core โมดูลเสมอ
+6.  **SSE Safety:** SSE Response generators ทั้งสองเส้นทาง (`/api/chat`, `/api/workspace/files/stream`) ต้อง wrap ด้วย `stream_with_context` เสมอ — ป้องกัน silent crash บน Gunicorn/production WSGI
+7.  **Error Messages:** ห้าม leak `str(e)` ออก frontend — ใช้ Thai user-friendly message แทน และ log full traceback server-side ด้วย `exc_info=True`

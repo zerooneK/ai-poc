@@ -1,8 +1,8 @@
 # PRE-DEMO CHECKLIST — Internal AI Assistant POC
 **Demo Date:** 2026-03-23 (หรือตามกำหนด)
 **Duration:** 7 นาที
-**Version:** v0.10.0
-**Status:** 🟡 NEEDS ATTENTION (อ่านด้านล่าง)
+**Version:** v0.12.2
+**Status:** NEEDS ATTENTION (อ่านด้านล่าง)
 
 ---
 
@@ -54,8 +54,11 @@
 - ✅ UI accessible ที่ http://localhost:5000 (HTTP 200)
 
 #### Application Structure
-- ✅ app.py — Backend with Orchestrator + HR / Accounting / Manager Advisor + PM Agent + conversation memory + web search
-- ✅ index.html — Frontend v0.10.0 (chat bubbles, dark/light toggle, workspace picker, format modal, SSE streaming)
+- ✅ app.py — Flask Routes only (v0.12.0+ Modular Architecture)
+- ✅ core/ — orchestrator.py, agent_factory.py, shared.py, utils.py
+- ✅ agents/ — base_agent.py, hr_agent.py, accounting_agent.py, manager_agent.py, pm_agent.py, chat_agent.py
+- ✅ prompts/ — System prompts as .md files (orchestrator, hr_agent, accounting_agent, manager_agent, pm_agent, chat_agent)
+- ✅ index.html — Frontend v0.12.2 (chat bubbles, dark/light toggle, workspace picker, format modal, SSE streaming)
 - ✅ test_cases.py — Automated test suite (6 use cases)
 - ✅ quick-demo-check.py — Full validation (7 checks: 6 cases + health)
 - ✅ backup/demo-inputs.txt — Demo scripts ready (ครบ 6 cases)
@@ -314,5 +317,5 @@ Expected:
 ---
 
 **Prepared by:** Claude Code
-**Last Updated:** 2026-03-26 (v0.10.0)
+**Last Updated:** 2026-03-26 (v0.12.2)
 **Contact:** [Your email/Slack]
