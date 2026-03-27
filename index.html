@@ -1083,7 +1083,8 @@
         <span class="material-symbols-outlined" style="font-size:13px">folder_open</span>
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
-      <span class="version-tag">v0.21.0</span>
+      <span id="localAgentBadge" title="Local Agent ไม่พบ — ไฟล์จะบันทึกบน server" style="display:none;font-size:10px;padding:2px 7px;border-radius:10px;background:#22c55e;color:#fff;font-weight:600;cursor:default">💻 Local</span>
+      <span class="version-tag">v0.22.0</span>
     </div>
   </header>
 
@@ -1364,7 +1365,54 @@
     return sid;
   }
 
-  // Confirmation flow state
+  // ─── Local File Agent ────────────────────────────────────────────────────────
+  // local_agent.py รันบนเครื่อง user ที่ localhost:7000
+  // ถ้าไม่รัน → fallback บันทึกบน server เหมือนเดิม
+  const LOCAL_AGENT_URL = 'http://localhost:7000';
+  let localAgentActive = false;
+  let localAgentWorkspace = '';
+
+  async function _checkLocalAgent() {
+    try {
+      const r = await fetch(`${LOCAL_AGENT_URL}/health`, { signal: AbortSignal.timeout(1500) });
+      if (!r.ok) return;
+      const d = await r.json();
+      if (d.status === 'ok') {
+        localAgentActive = true;
+        localAgentWorkspace = d.workspace || '';
+        const badge = document.getElementById('localAgentBadge');
+        if (badge) {
+          badge.style.display = 'inline';
+          badge.title = `Local Agent พร้อม — workspace: ${localAgentWorkspace}`;
+        }
+      }
+    } catch (_) {
+      localAgentActive = false;
+    }
+  }
+
+  async function _localSave(filename, content) {
+    // ตรวจ duplicate — ถ้ามีไฟล์อยู่แล้วให้ update แทน create
+    const action = await fetch(`${LOCAL_AGENT_URL}/files`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'list' })
+    }).then(r => r.json()).then(d => {
+      const exists = (d.files || []).some(f => f.name === filename);
+      return exists ? 'update' : 'create';
+    }).catch(() => 'create');
+
+    const res = await fetch(`${LOCAL_AGENT_URL}/files`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, filename, content })
+    });
+    const d = await res.json();
+    if (!d.ok) throw new Error(d.error || 'Local agent error');
+    return d.message || `บันทึกไฟล์ '${filename}' ลงเครื่องสำเร็จ`;
+  }
+
+  // ─── Confirmation flow state ──────────────────────────────────────────────
   let pendingDoc = '';
   let pendingAgent = '';
   let pendingFormat = 'md';    // output format locked at generation time
@@ -1668,6 +1716,42 @@
         output_format: resolvedFormat,
         conversation_history: conversationHistory.slice(-(MAX_HISTORY_TURNS * 2))
       };
+      // ── Local Agent Save Intercept ──────────────────────────────────────────
+      // ถ้า local agent รันอยู่ และเป็น single-doc save → บันทึกลงเครื่อง user โดยตรง
+      // PM mode (pendingTempPaths) ยังคงบันทึกบน server เหมือนเดิม
+      if (isPendingConfirmation && localAgentActive && pendingDoc && pendingAgent && _isSaveIntentJS(message)) {
+        conversationHistory.push({ role: 'user', content: message });
+        isPendingConfirmation = false;
+        const savedDoc   = pendingDoc;
+        const savedAgent = pendingAgent;
+        const savedFmt   = detectedFormat || pendingFormat || 'md';
+        pendingDoc = ''; pendingAgent = ''; pendingFormat = 'md';
+        pendingFileFormats = null; pendingTempPaths = []; pendingFileAgents = [];
+        _updateInputHint(false, 0);
+
+        // สร้าง AI bubble แสดงผล
+        const _cl = document.getElementById('chatLog');
+        const _ct = document.createElement('div'); _ct.className = 'msg-ai-container';
+        const _ab = document.createElement('div'); _ab.className = 'ai-accent-line';
+        const _bd = document.createElement('div'); _bd.className = 'msg-ai-body';
+        const _oa = document.createElement('div'); _oa.className = 'output-area';
+        _bd.appendChild(_oa); _ct.appendChild(_ab); _ct.appendChild(_bd); _cl.appendChild(_ct);
+        document.getElementById('outputWrap').scrollTop = 99999;
+
+        // สร้างชื่อไฟล์
+        const _ts = new Date().toISOString().slice(0,19).replace('T','_').replaceAll(':','-');
+        const filename = `${savedAgent}_${_ts}.${savedFmt}`;
+        try {
+          const result = await _localSave(filename, savedDoc);
+          _oa.textContent = `💻 บันทึกลงเครื่องสำเร็จ\n📁 ${localAgentWorkspace}\\${filename}`;
+          conversationHistory.push({ role: 'assistant', content: `บันทึกไฟล์ ${filename} ลงเครื่องสำเร็จ` });
+        } catch (err) {
+          _oa.textContent = `❌ Local agent error: ${err.message}\nกรุณาตรวจสอบว่า local_agent.py รันอยู่`;
+        }
+        return;
+      }
+      // ────────────────────────────────────────────────────────────────────────
+
       if (isPendingConfirmation) {
         if (pendingTempPaths.length > 0) {
           reqBody.pending_temp_paths = pendingTempPaths;
@@ -2184,6 +2268,7 @@
       });
 
     startFileStream();
+    _checkLocalAgent();
   });
 
   function toggleTheme() {

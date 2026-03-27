@@ -1,5 +1,12 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.22.0] — 27 มีนาคม 2569 · feat
+- feat: `local_agent.py` — HTTP server (localhost:7000) สำหรับจัดการไฟล์บนเครื่อง user โดยตรง, sandbox ด้วย `_validate_path()`, stdlib เท่านั้น (ไม่ต้อง pip install เพิ่ม), รองรับ 5 actions: list/create/read/update/delete, CORS headers ครบ
+- feat (index.html): detect local agent ตอนโหลดหน้า (`_checkLocalAgent`), badge `💻 Local` ที่ header เมื่อ agent รัน, intercept save → บันทึกลงเครื่อง user แทน server เมื่อ `localAgentActive=true`, fallback server-side เมื่อ agent ไม่รัน
+- docs: เพิ่ม `plans/local_agent_plan.md` — แผน 4 Phase (v0.22–v0.25)
+
+---
+
 ## [v0.21.0] — 27 มีนาคม 2569 · test
 - test (D2): รัน concurrency test `test_concurrency_pm.py` ครบทั้ง 4 TC บน gunicorn+gevent — **ผ่านทุก TC**
   - TC-1 (2 PM พร้อมกัน): ✅ PASS (17.5s / 74.0s)
