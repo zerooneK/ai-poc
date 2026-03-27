@@ -18,6 +18,9 @@
 | M3 | ⏳ TODO | `reader.cancel()` ขาดใน catch block | — |
 | M4 | ⏳ TODO | `handle_pm_save` ดึง agent type จากชื่อไฟล์ fragile | — |
 | M5 | ⏳ TODO | ไม่มี size limit บน `pending_doc` | — |
+| I1 | ⏳ TODO | `run_with_tools` — silent failure เมื่อ max_iterations หมด (frontend ค้าง) | — |
+| I2 | ⏳ TODO | `run_with_tools` — ไม่ check `finish_reason` — tool arguments อาจถูก truncate แบบ silent | — |
+| I3 | ⏳ TODO | `run_with_tools` — `content: text_streamed or None` อาจ break บาง OpenRouter models | — |
 
 ---
 
@@ -804,6 +807,111 @@ if len(pending_doc_raw) > _MAX_PENDING_DOC_BYTES:
 
 ---
 
+### I1 — `run_with_tools` silent failure เมื่อ max_iterations หมด
+
+**หลักฐาน:** `agents/base_agent.py:60`
+
+**Code ที่มีปัญหา:**
+```python
+for iteration in range(max_iterations):   # max 5 รอบ
+    ...
+    # ลูปจบโดยไม่มี yield error ใดๆ
+# generator ends silently
+```
+
+**ปัญหา:**
+ถ้า model เรียก tool ซ้ำๆ ครบ 5 รอบโดยไม่ return text เลย generator จบเงียบๆ ไม่มี `error` event → `app.py` ยัง yield `done` ปกติ แต่ `text_chunks` จะว่างเปล่า → frontend แสดง empty bubble และ job ถูก complete ด้วย content ว่าง
+
+**วิธีแก้:**
+```python
+# agents/base_agent.py — เพิ่ม else clause หลัง for loop
+for iteration in range(max_iterations):
+    ...
+else:
+    # for-else ใน Python: ถ้า loop จบโดยไม่โดน break/return
+    logger.warning("[%s] reached max_iterations=%d without producing final text",
+                   self.name, max_iterations)
+    yield {"type": "error",
+           "message": f"{self.name} ประมวลผลนานเกินไป กรุณาลองคำถามใหม่อีกครั้ง"}
+```
+
+**ผลกระทบ:** Frontend ได้รับ error message ที่ชัดเจนแทนที่จะแสดง bubble ว่างเปล่า ไม่กระทบ happy path (ลูปปกติ return กลางคันผ่าน `return` statement ซึ่งไม่ trigger `else`)
+**ลำดับ:** 14
+
+---
+
+### I2 — `run_with_tools` ไม่ check `finish_reason` — tool arguments truncated แบบ silent
+
+**หลักฐาน:** `agents/base_agent.py:73-87` (ไม่มี finish_reason check ใดๆ)
+
+**Code ที่มีปัญหา:**
+```python
+for chunk in stream:
+    if not chunk.choices: continue
+    delta = chunk.choices[0].delta
+    # ← ไม่เคย check chunk.choices[0].finish_reason
+    if delta and delta.content:
+        ...
+    if delta and delta.tool_calls:
+        ...
+```
+
+**ปัญหา:**
+ถ้า model output ถูกตัดกลางคัน (`finish_reason == 'length'`) tool call arguments จะเป็น JSON ไม่สมบูรณ์ เช่น `{"query": "กฎหมาย` (ขาดปิด) — `json.loads` catch ได้ แต่ return `{"type": "error"}` ทันทีโดยไม่มี context ว่าเกิดจาก truncation ทำให้ debug ยาก
+
+**วิธีแก้:**
+```python
+# agents/base_agent.py — เพิ่มใน stream loop
+finish_reason = None
+for chunk in stream:
+    if not chunk.choices: continue
+    finish_reason = chunk.choices[0].finish_reason or finish_reason
+    delta = chunk.choices[0].delta
+    ...
+
+# หลัง stream loop จบ
+if finish_reason == 'length':
+    logger.warning("[%s] response truncated by max_tokens limit", self.name)
+    yield {"type": "error",
+           "message": "คำตอบยาวเกินไป กรุณาลองคำถามที่สั้นลงหรือเพิ่ม max_tokens"}
+    return
+```
+
+**ผลกระทบ:** Error message บอก root cause ชัดเจนขึ้น ช่วย debug production issues ได้ง่ายขึ้น ไม่กระทบ happy path
+**ลำดับ:** 15
+
+---
+
+### I3 — `run_with_tools` — `content: text_streamed or None` อาจ break บาง OpenRouter models
+
+**หลักฐาน:** `agents/base_agent.py:115`
+
+**Code ที่มีปัญหา:**
+```python
+messages.append({
+    "role": "assistant",
+    "content": text_streamed or None,   # ← "" → None
+    "tool_calls": tool_calls_list
+})
+```
+
+**ปัญหา:**
+เมื่อ model ทำ tool call โดยไม่มี text ก่อน (พฤติกรรมปกติ) `text_streamed = ""` → `text_streamed or None` = `None` → ส่ง `"content": null` ไปใน messages OpenAI spec รองรับ `null` แต่บาง OpenRouter models หรือ middleware อาจ reject หรือ behave แตกต่าง — reproduce ยากเพราะขึ้นกับโมเดลที่ใช้
+
+**วิธีแก้:**
+```python
+# agents/base_agent.py:115 — omit content key เมื่อ empty แทนการส่ง null
+assistant_msg = {"role": "assistant", "tool_calls": tool_calls_list}
+if text_streamed:
+    assistant_msg["content"] = text_streamed
+messages.append(assistant_msg)
+```
+
+**ผลกระทบ:** Compatible กับ OpenAI spec และ OpenRouter providers ทุกตัว ไม่มีผลต่อ logic
+**ลำดับ:** 16
+
+---
+
 ### L1 — `pmSubtaskIndex` dead variable
 
 **หลักฐาน:** ค้นหาใน `index.html` ทั้งไฟล์แล้วไม่พบ variable ชื่อ `pmSubtaskIndex`
@@ -829,6 +937,9 @@ if len(pending_doc_raw) > _MAX_PENDING_DOC_BYTES:
 | 11 | M3 — reader.cancel ขาด | `index.html` | MEDIUM — resource |
 | 12 | M4 — agent type จากชื่อไฟล์ fragile | `app.py`, `index.html` | MEDIUM — maintainability |
 | 13 | M5 — ไม่มี size limit pending_doc | `app.py` | MEDIUM — safety |
+| 14 | I1 — silent failure เมื่อ max_iterations หมด | `agents/base_agent.py` | MEDIUM — frontend ค้าง/empty bubble |
+| 15 | I2 — ไม่ check `finish_reason` — truncated args silent | `agents/base_agent.py` | MEDIUM — debug ยาก |
+| 16 | I3 — `content: null` ใน assistant message | `agents/base_agent.py` | LOW — provider compatibility |
 
 ---
 
