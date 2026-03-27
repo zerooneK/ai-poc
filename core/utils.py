@@ -69,6 +69,10 @@ def execute_tool(workspace: str, tool_name: str, tool_args: dict) -> str:
                 f"- {f['name']} ({f['size']} bytes, แก้ไขล่าสุด: {f['modified']})"
                 for f in files
             )
+        elif tool_name == 'local_delete':
+            # ส่ง marker กลับ — app.py จะแปลงเป็น SSE event ให้ browser ลบจริง
+            filename = tool_args.get('filename', '')
+            return f"__LOCAL_DELETE__:{filename}"
         elif tool_name == 'web_search':
             query = tool_args.get('query', '')
             max_results = min(int(tool_args.get('max_results', 5)), 10)

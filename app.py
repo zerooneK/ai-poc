@@ -182,6 +182,28 @@ MCP_TOOLS = [
 
 READ_ONLY_TOOLS = [t for t in MCP_TOOLS if t['function']['name'] in ('list_files', 'read_file', 'web_search')]
 
+_LOCAL_DELETE_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "local_delete",
+        "description": "ลบไฟล์จาก Local Workspace บนเครื่อง user (ใช้เมื่ออยู่ใน Local Agent Mode เท่านั้น)",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "filename": {
+                    "type": "string",
+                    "description": "ชื่อไฟล์ที่ต้องการลบ"
+                }
+            },
+            "required": ["filename"]
+        }
+    }
+}
+
+LOCAL_AGENT_TOOLS = [
+    t for t in MCP_TOOLS if t['function']['name'] == 'web_search'
+] + [_LOCAL_DELETE_TOOL]
+
 def _tool_result_is_error(result: str) -> bool:
     """Return True when a tool result string represents a failure."""
     return result.strip().startswith('❌')
@@ -368,8 +390,9 @@ def chat():
     session_id = request.json.get('session_id')
     output_format = request.json.get('output_format', 'md').lower()
     output_formats = request.json.get('output_formats')
+    local_agent_mode = bool(request.json.get('local_agent_mode', False))
     raw_history = request.json.get('conversation_history', [])
-    
+
     conversation_history = [
         {'role': m['role'], 'content': str(m['content'])[:3000]}
         for m in (raw_history[-20:] if isinstance(raw_history, list) else [])
@@ -478,9 +501,17 @@ def chat():
                 db.complete_job(job_id, '\n\n---\n\n'.join(all_pm_chunks))
             else:
                 yield format_sse({'type': 'status', 'message': f'{agent_instance.name} กำลังตรวจสอบ workspace...'})
+                active_tools = LOCAL_AGENT_TOOLS if local_agent_mode else READ_ONLY_TOOLS
                 text_chunks = []
-                for sse_data in agent_instance.run_with_tools(user_input, workspace, tools=READ_ONLY_TOOLS, history=conversation_history, max_tokens=10000):
-                    yield format_sse(sse_data)
+                for sse_data in agent_instance.run_with_tools(user_input, workspace, tools=active_tools, history=conversation_history, max_tokens=10000):
+                    # Intercept local_delete marker — ส่ง event ให้ browser ลบจริง
+                    if (sse_data.get('type') == 'tool_result'
+                            and sse_data.get('tool') == 'local_delete'
+                            and sse_data.get('result', '').startswith('__LOCAL_DELETE__:')):
+                        filename = sse_data['result'].split(':', 1)[1]
+                        yield format_sse({'type': 'local_delete', 'filename': filename})
+                    else:
+                        yield format_sse(sse_data)
                     if sse_data.get('type') == 'text': text_chunks.append(sse_data.get('content', ''))
                 db.complete_job(job_id, ''.join(text_chunks))
 

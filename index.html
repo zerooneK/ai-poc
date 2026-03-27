@@ -1440,6 +1440,18 @@
     return d.message || `บันทึกไฟล์ '${filename}' ลงเครื่องสำเร็จ`;
   }
 
+  async function _localDelete(filename) {
+    const res = await fetch(`${LOCAL_AGENT_URL}/files`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', filename })
+    });
+    const d = await res.json();
+    if (!d.ok) throw new Error(d.error || 'Local agent error');
+    _refreshLocalFiles();
+    return d.message || `ลบไฟล์ '${filename}' ออกจากเครื่องสำเร็จ`;
+  }
+
   // ─── Confirmation flow state ──────────────────────────────────────────────
   let pendingDoc = '';
   let pendingAgent = '';
@@ -1742,7 +1754,8 @@
         message,
         session_id: _getSessionId(),
         output_format: resolvedFormat,
-        conversation_history: conversationHistory.slice(-(MAX_HISTORY_TURNS * 2))
+        conversation_history: conversationHistory.slice(-(MAX_HISTORY_TURNS * 2)),
+        ...(localAgentActive ? { local_agent_mode: true } : {})
       };
       // ── Local Agent Save Intercept ──────────────────────────────────────────
       // ถ้า local agent รันอยู่ และเป็น single-doc save → บันทึกลงเครื่อง user โดยตรง
@@ -1963,6 +1976,15 @@
             }
             currentOutputEl.before(srcDiv);
             _scrollToBottom();
+
+          } else if (data.type === 'local_delete') {
+            // browser ลบไฟล์จาก local agent แทน server
+            _localDelete(data.filename).catch(err => {
+              const errLine = document.createElement('div');
+              errLine.className = 'tool-result-line';
+              errLine.textContent = `❌ ลบไฟล์ไม่สำเร็จ: ${err.message}`;
+              currentOutputEl.before(errLine);
+            });
 
           } else if (data.type === 'tool_result') {
             // Show tool execution feedback
