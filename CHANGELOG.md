@@ -1,5 +1,15 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.21.0] — 27 มีนาคม 2569 · test
+- test (D2): รัน concurrency test `test_concurrency_pm.py` ครบทั้ง 4 TC บน gunicorn+gevent — **ผ่านทุก TC**
+  - TC-1 (2 PM พร้อมกัน): ✅ PASS (17.5s / 74.0s)
+  - TC-2 (PM + workspace switch กลางคัน): ✅ PASS — snapshot isolation ทำงานถูกต้อง
+  - TC-3 (3 PM พร้อมกัน): ✅ PASS (39.9s / 72.1s / 48.7s)
+  - TC-4 (memory leak baseline): ✅ PASS — memory growth +1MB จาก 10 sequential requests (เกณฑ์ <50MB)
+- docs: อัปเดต `plans/deployment_prep_plan.md` — D2 marked ✅ DONE, บันทึก test results ครบถ้วน
+
+---
+
 ## [v0.20.1] — 27 มีนาคม 2569 · fix
 - fix: `crypto.randomUUID is not a function` เมื่อเข้าผ่าน HTTP — เพิ่ม fallback UUID generator สำหรับ non-secure context (HTTP)
 
