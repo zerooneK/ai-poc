@@ -1,5 +1,36 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.23.0] — 27 มีนาคม 2569 · feat
+- feat: **Local Agent Mode** — เมื่อ `local_agent_mode: true` ถูกส่งจาก browser, server จะใช้ `LOCAL_AGENT_TOOLS` (web_search + local_delete เท่านั้น) แทน `READ_ONLY_TOOLS` — ตัด `list_files`/`read_file`/`create_file`/`update_file` ออกทั้งหมด เพราะถูกแทนที่ด้วย browser context injection + save intercept
+- feat: `local_delete` tool ใหม่ใน `app.py` + `core/utils.py` — เมื่อ AI เรียก tool นี้ server คืน marker `__LOCAL_DELETE__:{filename}` แทนการลบจาก WSL; `app.py` แปลง marker เป็น SSE event `type: local_delete`
+- feat (index.html): ส่ง `local_agent_mode: true` ใน reqBody เมื่อ `localAgentActive`
+- feat (index.html): `_localDelete(filename)` — POST ไปยัง `localhost:7000` action:delete แล้ว refresh sidebar
+- feat (index.html): handle SSE event `type: local_delete` ใน stream loop — browser ลบไฟล์จริงบน Windows แทน server
+
+---
+
+## [v0.22.4] — 27 มีนาคม 2569 · feat
+- feat (index.html): inject เนื้อหาไฟล์จริง (text files ≤50KB) เข้า AI context พร้อมกับ file list — AI อ่านเนื้อหาไฟล์ได้โดยไม่ต้องเรียก `read_file` tool (ซึ่งอ่านจาก WSL ผิด workspace)
+- รองรับนามสกุล: md, txt, py, js, ts, json, csv, html, xml, yaml, yml, ini, cfg, log, sh, bat, sql
+- ไฟล์ binary หรือใหญ่เกิน 50KB แนบแค่ metadata
+
+---
+
+## [v0.22.3] — 27 มีนาคม 2569 · feat
+- feat (index.html): inject local workspace file list เป็น context ให้ AI ทุกครั้งที่ส่ง message เมื่อ `localAgentActive` — AI รู้ว่ามีไฟล์อะไรบน Windows โดยไม่ต้องเรียก `list_files` tool
+
+---
+
+## [v0.22.2] — 27 มีนาคม 2569 · feat
+- feat (index.html): sidebar แสดงไฟล์จาก local agent (poll `localhost:7000` ทุก 3 วินาที) แทน SSE จาก server เมื่อ `localAgentActive` — ผู้ใช้เห็นไฟล์ Windows workspace จริงๆ ใน sidebar
+
+---
+
+## [v0.22.1] — 27 มีนาคม 2569 · fix
+- fix (index.html): แสดง local agent workspace path ใน header path text เมื่อ detect agent สำเร็จ — แทนที่ server workspace path ด้วย Windows workspace path
+
+---
+
 ## [v0.22.0] — 27 มีนาคม 2569 · feat
 - feat: `local_agent.py` — HTTP server (localhost:7000) สำหรับจัดการไฟล์บนเครื่อง user โดยตรง, sandbox ด้วย `_validate_path()`, stdlib เท่านั้น (ไม่ต้อง pip install เพิ่ม), รองรับ 5 actions: list/create/read/update/delete, CORS headers ครบ
 - feat (index.html): detect local agent ตอนโหลดหน้า (`_checkLocalAgent`), badge `💻 Local` ที่ header เมื่อ agent รัน, intercept save → บันทึกลงเครื่อง user แทน server เมื่อ `localAgentActive=true`, fallback server-side เมื่อ agent ไม่รัน

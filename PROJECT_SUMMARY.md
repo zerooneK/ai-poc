@@ -8,8 +8,8 @@
 **Internal AI Assistant Platform** — ระบบ AI สำหรับพนักงานภายในบริษัทไทย
 พนักงานพิมพ์งานเป็นภาษาไทย → AI เลือก Agent ที่เหมาะสม → สร้างเอกสาร (Draft) → User ยืนยัน → บันทึกเป็นไฟล์จริงในระบบ
 
-- **Version ปัจจุบัน:** v0.12.2 (SSE Hardening + Error Leak Fixes)
-- **สถานะ:** Prototype Ready (Verified by Smoke Tests)
+- **Version ปัจจุบัน:** v0.23.0 (Local Agent Mode — File ops บน Windows)
+- **สถานะ:** Prototype Ready + Local Agent Feature Active
 
 ---
 
@@ -28,6 +28,7 @@
     *   `hr_agent.py`, `accounting_agent.py`, `manager_agent.py`, `pm_agent.py`, `chat_agent.py`
 4.  **`prompts/`**: แหล่งเก็บ System Prompts แยกเป็นไฟล์ `.md` เพื่อให้ทำ Prompt Engineering ได้สะดวก
     *   `orchestrator.md`, `hr_agent.md`, `accounting_agent.md`, `manager_agent.md`, `pm_agent.md`, `chat_agent.md`
+5.  **`local_agent.py`**: HTTP server (localhost:7000) รันบนเครื่อง user (Windows) — จัดการไฟล์ใน Windows workspace โดยตรง (list/create/read/update/delete) พร้อม path sandbox ด้วย `_validate_path()`
 
 ---
 
@@ -38,6 +39,7 @@
 - **Frontend:** Vanilla HTML/JS/CSS (Silent Concierge Design)
 - **Persistence:** SQLite (db.py) + Workspace Filesystem (MCP Server)
 - **Streaming:** SSE (Server-Sent Events) พร้อมระบบ `format_sse` เพื่อความเสถียร
+- **Local Agent:** `local_agent.py` (stdlib only) + browser middleware — file ops บน Windows โดยตรง ไม่ผ่าน server
 
 ---
 
