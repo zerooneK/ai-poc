@@ -17,9 +17,9 @@ from datetime import datetime
 
 # New core imports
 from core.shared import (
-    client, MODEL, OPENROUTER_API_KEY, WORKSPACE_PATH, _ALLOWED_ROOTS, 
+    client, MODEL, OPENROUTER_API_KEY, _ALLOWED_ROOTS,
     _DEFAULT_WORKSPACE, _workspace_lock, _ws_change_queues, _ws_change_lock,
-    TEMP_DIR, _notify_workspace_changed
+    TEMP_DIR, _notify_workspace_changed, get_workspace, set_workspace
 )
 from core.utils import load_prompt, execute_tool, format_sse
 from core.orchestrator import Orchestrator
@@ -28,6 +28,8 @@ from core.agent_factory import AgentFactory
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+_MAX_PENDING_DOC_BYTES = int(os.getenv('MAX_PENDING_DOC_BYTES', str(200 * 1024)))  # 200KB default
 
 # Suppress WeasyPrint's extremely verbose font subsetting logs
 logging.getLogger('fontTools').setLevel(logging.ERROR)
@@ -290,7 +292,7 @@ def _is_safe_temp_path(path: str) -> bool:
     except (ValueError, TypeError):
         return False
 
-def handle_pm_save(temp_paths: list, workspace: str, job_id=None, output_format: str = 'md', output_formats: list = None):
+def handle_pm_save(temp_paths: list, workspace: str, job_id=None, output_format: str = 'md', output_formats: list = None, agent_types: list = None):
     saved = []
     for i, temp_path in enumerate(temp_paths):
         fmt = (output_formats[i] if output_formats and i < len(output_formats) else output_format)
@@ -309,7 +311,8 @@ def handle_pm_save(temp_paths: list, workspace: str, job_id=None, output_format:
                 os.remove(temp_path)
             saved.append(filename)
             size = os.path.getsize(os.path.join(workspace, filename))
-            db.record_file(job_id, filename, filename.split('_')[0], size)
+            agent_type = (agent_types[i] if agent_types and i < len(agent_types) else filename.split('_')[0])
+            db.record_file(job_id, filename, agent_type, size)
             _notify_workspace_changed(workspace)
             yield format_sse({'type': 'tool_result', 'tool': 'create_file', 'result': f'บันทึก {filename} เรียบร้อย'})
         except Exception as e:
@@ -330,6 +333,21 @@ app.json.ensure_ascii = False
 CORS(app, origins=["http://localhost:5000", "http://127.0.0.1:5000", "http://0.0.0.0:5000"])
 db.init_db()
 
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_limiter.errors import RateLimitExceeded
+
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=[],
+    storage_uri=os.getenv("RATELIMIT_STORAGE_URI", "memory://"),
+)
+
+@app.errorhandler(RateLimitExceeded)
+def handle_rate_limit(e):
+    return jsonify({'error': 'คุณส่งคำสั่งบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่'}), 429
+
 @app.route('/')
 def index(): return send_file('index.html')
 
@@ -337,14 +355,16 @@ def index(): return send_file('index.html')
 def history_page(): return send_file('history.html')
 
 @app.route('/api/chat', methods=['POST'])
+@limiter.limit(os.getenv("CHAT_RATE_LIMIT", "10 per minute"))
 def chat():
     if not request.json: return jsonify({'error': 'Invalid request'}), 400
     user_input = request.json.get('message', '').strip()
     if not user_input: return jsonify({'error': 'ไม่มีข้อความ'}), 400
     
-    pending_doc = request.json.get('pending_doc', '').strip()
+    pending_doc = request.json.get('pending_doc', '').strip()[:_MAX_PENDING_DOC_BYTES]
     pending_agent = request.json.get('pending_agent', '').strip()
     pending_temp_paths = request.json.get('pending_temp_paths', [])
+    pending_agent_types = request.json.get('agent_types') or []
     session_id = request.json.get('session_id')
     output_format = request.json.get('output_format', 'md').lower()
     output_formats = request.json.get('output_formats')
@@ -358,13 +378,15 @@ def chat():
 
     def generate():
         job_id = db.create_job(user_input, session_id)
-        with _workspace_lock: workspace = WORKSPACE_PATH
+        # Capture workspace once at request start — do NOT call get_workspace() again
+        # inside the PM loop or sub-agent calls (D3: global state risk).
+        workspace = get_workspace()
         os.makedirs(workspace, exist_ok=True)
         _cleanup_old_temp()
 
         if pending_temp_paths:
             if _is_save_intent(user_input):
-                for sse in handle_pm_save(pending_temp_paths, workspace, job_id, output_format, output_formats): yield sse
+                for sse in handle_pm_save(pending_temp_paths, workspace, job_id, output_format, output_formats, pending_agent_types): yield sse
                 db.complete_job(job_id, '')
                 yield format_sse({'type': 'done'})
                 return
@@ -434,9 +456,15 @@ def chat():
                     yield format_sse({'type': 'status', 'message': f'{sub_agent.name} กำลังสร้างเอกสาร...'})
                     
                     subtask_chunks = []
-                    for chunk in sub_agent.stream_response(f"[PM_SUBTASK]\n{sub_task_desc}", max_tokens=10000):
-                        yield format_sse({'type': 'text', 'content': chunk})
-                        subtask_chunks.append(chunk)
+                    try:
+                        for chunk in sub_agent.stream_response(f"[PM_SUBTASK]\n{sub_task_desc}", max_tokens=10000):
+                            yield format_sse({'type': 'text', 'content': chunk})
+                            subtask_chunks.append(chunk)
+                    except Exception as sub_e:
+                        logger.error("[PM subtask %d] stream_response failed: %s", i + 1, sub_e, exc_info=True)
+                        yield format_sse({'type': 'error', 'message': f'Subtask {i + 1} ({sub_agent.name}) เกิดข้อผิดพลาด: กรุณาลองใหม่อีกครั้ง'})
+                        yield format_sse({'type': 'subtask_done', 'agent': sub_agent_type, 'index': i, 'total': len(subtasks)})
+                        continue
 
                     # Strip sentinel echo and save-footer in case LLM ignores prompt rule
                     _SAVE_FOOTER = '💬 ต้องการแก้ไขส่วนไหนไหม? หรือพิมพ์ **บันทึก** เพื่อบันทึกไฟล์'
@@ -467,22 +495,21 @@ def chat():
 
 @app.route('/api/workspace', methods=['GET'])
 def get_workspace_api():
-    with _workspace_lock: wp = WORKSPACE_PATH
+    wp = get_workspace()
     return jsonify({'path': wp, 'exists': os.path.isdir(wp), 'files': len(fs_list_files(wp))})
 
 @app.route('/api/workspace', methods=['POST'])
 def set_workspace_api():
-    global WORKSPACE_PATH
     new_path = (request.json or {}).get('path', '').strip()
     abs_path = _normalize_workspace_path(new_path)
     if len(abs_path) <= 3 or not _is_allowed_workspace_path(abs_path): return jsonify({'error': 'Invalid path'}), 400
     os.makedirs(abs_path, exist_ok=True)
-    with _workspace_lock: WORKSPACE_PATH = abs_path
+    set_workspace(abs_path)
     return jsonify({'path': abs_path, 'exists': True})
 
 @app.route('/api/workspaces', methods=['GET'])
 def list_workspaces():
-    with _workspace_lock: current = os.path.realpath(WORKSPACE_PATH)
+    current = os.path.realpath(get_workspace())
     result = {'current': current, 'roots': []}
     for root in _ALLOWED_ROOTS:
         workspaces = []
@@ -497,24 +524,23 @@ def list_workspaces():
 
 @app.route('/api/workspace/new', methods=['POST'])
 def create_workspace_folder():
-    global WORKSPACE_PATH
     data = request.json or {}
     root, name = data.get('root', '').strip(), data.get('name', '').strip()
     if not root or not name or not re.match(r'^[a-zA-Z0-9_-]{1,50}$', name): return jsonify({'error': 'Invalid request'}), 400
     new_path = os.path.realpath(os.path.join(root, name))
     os.makedirs(new_path, exist_ok=True)
-    with _workspace_lock: WORKSPACE_PATH = new_path
+    set_workspace(new_path)
     return jsonify({'path': new_path, 'name': name})
 
 @app.route('/api/files')
 def list_files_snapshot():
-    with _workspace_lock: wp = WORKSPACE_PATH
+    wp = get_workspace()
     return jsonify({'workspace': wp, 'files': fs_list_files(wp)})
 
 @app.route('/api/files/stream')
 def files_stream():
     def generate():
-        with _workspace_lock: wp = WORKSPACE_PATH
+        wp = get_workspace()
         event_queue = queue.Queue(maxsize=20)
         with _ws_change_lock: _ws_change_queues.setdefault(wp, []).append(event_queue)
         class Handler(FileSystemEventHandler):
@@ -543,7 +569,7 @@ def files_stream():
 
 @app.route('/api/health')
 def health():
-    with _workspace_lock: wp = WORKSPACE_PATH
+    wp = get_workspace()
     return jsonify({'status': 'ok', 'model': MODEL, 'workspace': wp, 'db': db.db_status()})
 
 @app.route('/api/history')

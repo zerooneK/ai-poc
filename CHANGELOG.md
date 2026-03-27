@@ -1,5 +1,54 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.20.0] — 27 มีนาคม 2569 · deploy
+- deploy (D3): audit workspace global state risk — ผล: PM loop ปลอดภัยแล้ว เพราะ `workspace` ถูก capture ครั้งเดียวที่ต้น request (line 381) และส่งผ่าน parameter ตลอด ไม่มี agent ใดเรียก `get_workspace()` เอง — เพิ่ม guard comment ใน `core/shared.py` และ `app.py` ป้องกัน regression ในอนาคต
+- deploy (Nginx): สร้าง `nginx.conf` — reverse proxy หน้า gunicorn, แยก location สำหรับ SSE (`/api/chat`, `/api/files/stream`) ด้วย `proxy_buffering off` + `proxy_read_timeout 130s`, security headers, `client_max_body_size 1m`
+
+---
+
+## [v0.19.0] — 27 มีนาคม 2569 · deploy
+- deploy (D4): rate limiting บน `/api/chat` — เพิ่ม `flask-limiter`, init `Limiter` ด้วย `get_remote_address`, apply `@limiter.limit("10 per minute")` บน `/api/chat`, เพิ่ม Thai error handler 429, configurable ด้วย `CHAT_RATE_LIMIT` env var
+
+---
+
+## [v0.18.0] — 27 มีนาคม 2569 · deploy
+- deploy (D1): switch Flask dev server → gunicorn + gevent — เพิ่ม `gunicorn` + `gevent` ใน `requirements.txt`, สร้าง `gunicorn.conf.py` (2 workers, gevent, timeout 120s), อัปเดต `start.sh` ให้รัน `gunicorn --config gunicorn.conf.py "app:app"` แทน `python app.py`
+- deploy (D5): แก้ `.env.example` — แยก `OPENROUTER_TIMEOUT` และ `ALLOWED_WORKSPACE_ROOTS` ที่ถูก merge เป็นบรรทัดเดียวออกจากกัน, จัดกลุ่ม env vars ตาม section, เพิ่ม gunicorn vars (`GUNICORN_WORKERS`, `GUNICORN_CONNECTIONS`, `GUNICORN_TIMEOUT`, `GUNICORN_LOG_LEVEL`), เพิ่ม `MAX_PENDING_DOC_BYTES`, `WEB_SEARCH_TIMEOUT`, `FLASK_DEBUG`, `FLASK_HOST`, `FLASK_PORT`
+- fix: `Orchestrator.route()` crash เมื่อ OpenRouter return `content=None` — เพิ่ม null check + `TypeError` ใน except, fallback เป็น chat agent แทน crash
+
+---
+
+## [v0.17.0] — 27 มีนาคม 2569 · fix
+- fix (M1): N+1 queries ใน `db.get_history` — เปลี่ยนเป็น batch query ด้วย `IN (...)` clause รวบรวม files ทั้งหมดใน 1 query แล้ว group by job_id ใน Python
+- fix (M2): `OPENROUTER_API_KEY` ไม่มี startup validation — เพิ่ม `logger.error` ตอน module load ถ้า key ไม่ถูก set
+- fix (M3): `reader.cancel()` ขาดใน catch block — เพิ่ม `reader.cancel().catch(()=>{})` ใน `catch(err)` ป้องกัน dangling stream
+- fix (M4): `handle_pm_save` ดึง agent type จากชื่อไฟล์ fragile — เพิ่ม `agent_types` parameter ส่งผ่าน frontend (`pendingFileAgents`) → reqBody → backend แทนการ split filename
+- fix (M5): ไม่มี size limit บน `pending_doc` — เพิ่ม `_MAX_PENDING_DOC_BYTES` (200KB default, override ด้วย env) ตัด pending_doc ก่อน process
+- fix (H6): `copyOutput()` copy แค่ subtask สุดท้าย — เปลี่ยนเป็น `lastContainer.querySelectorAll('.output-area')` รวม text ทุก subtask ด้วย `---` separator
+
+---
+
+## [v0.16.0] — 27 มีนาคม 2569 · fix
+- fix (H2): `stream_response` ไม่มี exception handling — เพิ่ม `try/except` ครอบทั้ง API call + chunk loop; PM subtask loop ใน `app.py` เพิ่ม error recovery emit `error` + `subtask_done` แล้ว `continue` subtask ถัดไป
+- fix (H3): Partial document เข้า `pendingDoc` เมื่อ stream error — เพิ่ม `hadError` flag; `done` handler guard `&& !hadError` ก่อน set pending state
+- fix (H4): `global WORKSPACE_PATH` แก้ local binding ใน app.py เท่านั้น — เปลี่ยนมาใช้ `set_workspace()` / `get_workspace()` จาก `core.shared` ทำให้ทุก module เห็น workspace ที่อัปเดตแล้ว
+- fix (H5): `GeneratorExit` ไม่ถูก handle — เพิ่ม `except GeneratorExit: raise` ป้องกัน stream cleanup ผิดพลาด
+- fix (I1): `run_with_tools` silent exhaustion — เพิ่ม warning log + emit `status` แจ้ง user เมื่อ max_iterations หมด
+- fix (I2): ไม่ check `finish_reason` — track per-chunk `finish_reason`; log + emit status เมื่อ `length`
+- fix (I3): `content: None` — เปลี่ยนเป็น `content: ""` ป้องกัน provider ที่ไม่รับ null
+
+---
+
+## [v0.15.2] — 27 มีนาคม 2569 · fix
+- fix (H1): `_web_search` ไม่มี timeout — เพิ่ม `DDGS(timeout=_WEB_SEARCH_TIMEOUT)` (default 15 วินาที, override ได้ด้วย env `WEB_SEARCH_TIMEOUT`) — ป้องกัน search request ค้างแบบ infinite ซึ่งบล็อก Flask worker thread
+
+---
+
+## [v0.15.1] — 27 มีนาคม 2569 · fix
+- fix (C2): PM task output ไม่ถูก push เข้า `conversationHistory` — เพิ่ม `pmOutputAccumulator` รวบรวม output ของแต่ละ subtask ใน `subtask_done` handler แล้วใช้ accumulator แทน `outputText` เมื่อ `done` fired — PM context พร้อมสำหรับ turn ถัดไปแล้ว
+
+---
+
 ## [v0.15.0-c1] — 26 มีนาคม 2569 · fix
 - fix (C1): `_is_save_intent` false positive — แยก `'ok'` และ `'save'` ออกจาก substring set ใช้ `\b(?:ok|save)\b` regex แทน — ป้องกัน "stock", "look", "unsaved" ทริก save intent โดยไม่ตั้งใจ
 

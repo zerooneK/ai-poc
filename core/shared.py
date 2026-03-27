@@ -9,6 +9,12 @@ load_dotenv()
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 MODEL = os.getenv("OPENROUTER_MODEL", "anthropic/claude-sonnet-4-5")
 
+import logging as _logging
+if not OPENROUTER_API_KEY:
+    _logging.getLogger(__name__).error(
+        "[shared] OPENROUTER_API_KEY is not set — copy .env.example to .env and set your key. All API calls will fail."
+    )
+
 _PROJECT_ROOT = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
 # Allowed workspace roots
@@ -24,6 +30,11 @@ _DEFAULT_WORKSPACE = os.path.abspath(
 )
 
 # Shared state
+# ⚠️  DEPLOYMENT RISK — D3: WORKSPACE_PATH is a single global shared across ALL sessions.
+# set_workspace() changes the path for every concurrent user simultaneously.
+# Safe usage rule: ALWAYS capture workspace once at request start via get_workspace()
+# and pass it as a parameter — NEVER call get_workspace() again inside loops or sub-calls.
+# For multi-user production: replace with per-session dict keyed by session_id.
 WORKSPACE_PATH = _DEFAULT_WORKSPACE
 _workspace_lock = threading.Lock()
 

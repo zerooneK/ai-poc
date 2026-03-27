@@ -222,20 +222,27 @@ def get_history(limit: int = 50) -> list:
                 (limit,)
             ).fetchall()
 
-            result = []
-            for job in jobs:
-                files = conn.execute(
-                    """SELECT filename, agent, size_bytes, created_at
-                       FROM saved_files
-                       WHERE job_id = ?
-                       ORDER BY created_at""",
-                    (job['id'],)
-                ).fetchall()
-                result.append({
-                    **dict(job),
-                    'files': [dict(f) for f in files]
-                })
-            return result
+            if not jobs:
+                return []
+
+            job_ids = [j['id'] for j in jobs]
+            placeholders = ','.join('?' * len(job_ids))
+            all_files = conn.execute(
+                f"""SELECT job_id, filename, agent, size_bytes, created_at
+                    FROM saved_files
+                    WHERE job_id IN ({placeholders})
+                    ORDER BY created_at""",
+                job_ids
+            ).fetchall()
+
+            files_by_job = {}
+            for f in all_files:
+                files_by_job.setdefault(f['job_id'], []).append(dict(f))
+
+            return [
+                {**dict(job), 'files': files_by_job.get(job['id'], [])}
+                for job in jobs
+            ]
 
     except Exception as e:
         logger.warning(f"[db] get_history failed: {e}")

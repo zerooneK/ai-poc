@@ -37,6 +37,6 @@ echo "   URL: http://localhost:5000"
 echo "   หยุดด้วย Ctrl+C"
 echo ""
 
-# Run Flask (UTF-8 safe for Thai text on Linux/WSL)
+# Run via gunicorn + gevent (production-safe, SSE-compatible)
 export PYTHONIOENCODING=utf-8
-python app.py
+./venv/bin/gunicorn --config gunicorn.conf.py "app:app"

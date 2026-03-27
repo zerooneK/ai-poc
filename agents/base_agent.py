@@ -35,16 +35,21 @@ class BaseAgent:
             *(history or []),
             {"role": "user", "content": message}
         ]
-        
-        stream = self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            max_tokens=max_tokens,
-            stream=True
-        )
-        for chunk in stream:
-            if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
-                yield chunk.choices[0].delta.content
+        try:
+            stream = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                max_tokens=max_tokens,
+                stream=True
+            )
+            for chunk in stream:
+                if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
+                    yield chunk.choices[0].delta.content
+        except GeneratorExit:
+            raise
+        except Exception as e:
+            logger.error("[%s] stream_response error: %s", self.name, e, exc_info=True)
+            raise
 
     def run_with_tools(self, user_message, workspace, tools, history=None, max_tokens=8000, max_iterations=5):
         """Agentic loop with tools (yields dicts for app.py to format as SSE)."""
@@ -70,9 +75,13 @@ class BaseAgent:
                 stream=True
             )
 
+            finish_reason = None
             for chunk in stream:
                 if not chunk.choices: continue
-                delta = chunk.choices[0].delta
+                choice = chunk.choices[0]
+                if choice.finish_reason:
+                    finish_reason = choice.finish_reason
+                delta = choice.delta
                 if delta and delta.content:
                     text_streamed += delta.content
                     yield {"type": "text", "content": delta.content}
@@ -85,6 +94,13 @@ class BaseAgent:
                         if tc_delta.function:
                             if tc_delta.function.name: tool_calls_acc[idx]["name"] += tc_delta.function.name
                             if tc_delta.function.arguments: tool_calls_acc[idx]["arguments"] += tc_delta.function.arguments
+
+            # I2: truncated response — tool args may be incomplete
+            if finish_reason == 'length':
+                logger.warning("[%s] finish_reason=length at iteration %d — response truncated", self.name, iteration)
+                yield {"type": "status", "message": f"{self.name}: คำตอบถูกตัดเนื่องจากความยาวเกิน กำลังดำเนินการต่อ..."}
+                if not tool_calls_acc:
+                    return
 
             # Detect and strip fake tool-call JSON leaked into text stream
             if _FAKE_TOOL_CALL_RE.search(text_streamed):
@@ -112,7 +128,7 @@ class BaseAgent:
                 for i in sorted(tool_calls_acc.keys())
             ]
 
-            messages.append({"role": "assistant", "content": text_streamed or None, "tool_calls": tool_calls_list})
+            messages.append({"role": "assistant", "content": text_streamed or "", "tool_calls": tool_calls_list})
 
             allowed_names = {t['function']['name'] for t in tools}
             for tc in tool_calls_list:
@@ -151,3 +167,7 @@ class BaseAgent:
 
             if text_streamed:
                 return
+
+        # I1: loop exhausted without a final text response
+        logger.warning("[%s] run_with_tools exhausted max_iterations=%d without finishing", self.name, max_iterations)
+        yield {"type": "status", "message": f"{self.name}: ดำเนินการครบ {max_iterations} รอบแล้ว กรุณาลองใหม่หรือปรับคำถาม"}

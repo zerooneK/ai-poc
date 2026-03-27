@@ -18,12 +18,14 @@ def load_prompt(name: str) -> str:
     with open(path, "r", encoding="utf-8") as f:
         return f.read().strip()
 
+_WEB_SEARCH_TIMEOUT = int(os.getenv('WEB_SEARCH_TIMEOUT', '15'))
+
 def _web_search(query: str, max_results: int = 5) -> str:
     """ค้นหาข้อมูลจากอินเทอร์เน็ตด้วย DuckDuckGo"""
     try:
         from ddgs import DDGS
         results = []
-        with DDGS() as ddgs:
+        with DDGS(timeout=_WEB_SEARCH_TIMEOUT) as ddgs:
             for r in ddgs.text(query, max_results=max_results):
                 results.append(
                     f"**{r['title']}**\n{r['body']}\nที่มา: {r['href']}"

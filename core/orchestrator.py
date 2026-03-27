@@ -25,7 +25,10 @@ class Orchestrator:
         )
         
         try:
-            result = json.loads(response.choices[0].message.content)
+            content = response.choices[0].message.content
+            if not content:
+                return "chat", "Orchestrator returned empty response"
+            result = json.loads(content)
             return result.get("agent", "chat"), result.get("reason", "")
-        except (json.JSONDecodeError, KeyError):
+        except (json.JSONDecodeError, KeyError, TypeError):
             return "chat", "Error parsing orchestrator response"

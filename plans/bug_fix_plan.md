@@ -1,26 +1,27 @@
-# Bug Fix Plan — v0.15.0
-## วันที่: 26 มีนาคม 2569
+# Bug Fix Plan — v0.15.0 → v0.17.0
+## วันที่: 26-27 มีนาคม 2569
+## ✅ COMPLETED — 27 มีนาคม 2569 (ทุก 16 items แก้ไขเสร็จสิ้นแล้ว)
 
 ## สถานะการแก้ไข
 
 | # | Status | Bug | Commit |
 |---|--------|-----|--------|
 | C1 | ✅ DONE | `_SAVE_KEYWORDS` substring false positive | `v0.15.0-c1` (04829d2) |
-| C2 | ⏳ TODO | PM task output ไม่ถูก push ใน `conversationHistory` | — |
-| H1 | ⏳ TODO | `_web_search` ไม่มี timeout | — |
-| H2 | ⏳ TODO | `stream_response` ไม่มี exception handling | — |
-| H3 | ⏳ TODO | Partial document เข้า pending confirmation หลัง error | — |
-| H4 | ⏳ TODO | `global WORKSPACE_PATH` แก้ local binding | — |
-| H5 | ⏳ TODO | `GeneratorExit` ไม่ถูก handle | — |
-| H6 | ⏳ TODO | `copyOutput()` copy แค่ subtask สุดท้าย | — |
-| M1 | ⏳ TODO | N+1 Queries ใน `db.get_history` | — |
-| M2 | ⏳ TODO | `OPENROUTER_API_KEY` ไม่มี startup validation | — |
-| M3 | ⏳ TODO | `reader.cancel()` ขาดใน catch block | — |
-| M4 | ⏳ TODO | `handle_pm_save` ดึง agent type จากชื่อไฟล์ fragile | — |
-| M5 | ⏳ TODO | ไม่มี size limit บน `pending_doc` | — |
-| I1 | ⏳ TODO | `run_with_tools` — silent failure เมื่อ max_iterations หมด (frontend ค้าง) | — |
-| I2 | ⏳ TODO | `run_with_tools` — ไม่ check `finish_reason` — tool arguments อาจถูก truncate แบบ silent | — |
-| I3 | ⏳ TODO | `run_with_tools` — `content: text_streamed or None` อาจ break บาง OpenRouter models | — |
+| C2 | ✅ DONE | PM task output ไม่ถูก push ใน `conversationHistory` | `v0.15.1` |
+| H1 | ✅ DONE | `_web_search` ไม่มี timeout | `v0.15.2` |
+| H2 | ✅ DONE | `stream_response` ไม่มี exception handling | `v0.16.0` |
+| H3 | ✅ DONE | Partial document เข้า pending confirmation หลัง error | `v0.16.0` |
+| H4 | ✅ DONE | `global WORKSPACE_PATH` แก้ local binding | `v0.16.0` |
+| H5 | ✅ DONE | `GeneratorExit` ไม่ถูก handle | `v0.16.0` |
+| H6 | ✅ DONE | `copyOutput()` copy แค่ subtask สุดท้าย | `v0.17.0` |
+| M1 | ✅ DONE | N+1 Queries ใน `db.get_history` | `v0.17.0` |
+| M2 | ✅ DONE | `OPENROUTER_API_KEY` ไม่มี startup validation | `v0.17.0` |
+| M3 | ✅ DONE | `reader.cancel()` ขาดใน catch block | `v0.17.0` |
+| M4 | ✅ DONE | `handle_pm_save` ดึง agent type จากชื่อไฟล์ fragile | `v0.17.0` |
+| M5 | ✅ DONE | ไม่มี size limit บน `pending_doc` | `v0.17.0` |
+| I1 | ✅ DONE | `run_with_tools` — silent failure เมื่อ max_iterations หมด (frontend ค้าง) | `v0.16.0` |
+| I2 | ✅ DONE | `run_with_tools` — ไม่ check `finish_reason` — tool arguments อาจถูก truncate แบบ silent | `v0.16.0` |
+| I3 | ✅ DONE | `run_with_tools` — `content: text_streamed or None` อาจ break บาง OpenRouter models | `v0.16.0` |
 
 ---
 

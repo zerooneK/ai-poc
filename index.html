@@ -1083,7 +1083,7 @@
         <span class="material-symbols-outlined" style="font-size:13px">folder_open</span>
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
-      <span class="version-tag">v0.14.1</span>
+      <span class="version-tag">v0.20.0</span>
     </div>
   </header>
 
@@ -1361,6 +1361,7 @@
   let pendingAgent = '';
   let pendingFormat = 'md';    // output format locked at generation time
   let pendingTempPaths = [];   // PM task: staged temp file paths waiting for confirm
+  let pendingFileAgents = [];  // agent type per pending temp file
   let isPendingConfirmation = false;
   let wasPMTask = false;
   let currentPmCard = null;
@@ -1662,6 +1663,7 @@
       if (isPendingConfirmation) {
         if (pendingTempPaths.length > 0) {
           reqBody.pending_temp_paths = pendingTempPaths;
+          reqBody.agent_types = pendingFileAgents;
           if (pendingFileFormats) {
             reqBody.output_formats = pendingFileFormats;
           }
@@ -1678,6 +1680,7 @@
       pendingFormat = 'md';
       pendingFileFormats = null;
       pendingTempPaths = [];
+      pendingFileAgents = [];
 
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -1688,12 +1691,15 @@
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       const reader = response.body.getReader();
+      // Keep reference for cancel() in catch block
       const decoder = new TextDecoder();
       let buffer = '';
       let outputText = '';
       let totalChars = 0;
       let saveFailed = false;
       let receivedAgentEvent = false;
+      let pmOutputAccumulator = [];
+      let hadError = false;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -1756,6 +1762,7 @@
           } else if (data.type === 'pending_file') {
             // PM subtask: content staged to temp, waiting for user confirmation
             pendingTempPaths.push(data.temp_path);
+            pendingFileAgents.push(data.agent || '');
 
           } else if (data.type === 'web_search_sources') {
             const srcDiv = document.createElement('div');
@@ -1836,6 +1843,7 @@
               .trim();
             if (outputText) {
               _renderMarkdown(currentOutputEl, outputText);
+              pmOutputAccumulator.push(outputText);
             }
             outputText = '';
             currentPmCard = null;
@@ -1878,7 +1886,7 @@
               // PM task: staged files waiting for confirm
               isPendingConfirmation = true;
               _updateInputHint(true, pendingTempPaths.length);
-            } else if (receivedAgentEvent && !wasPMTask && lastAgent && lastAgent !== 'chat' && outputText) {
+            } else if (receivedAgentEvent && !wasPMTask && lastAgent && lastAgent !== 'chat' && outputText && !hadError) {
               // Single-agent: new document generated, waiting for confirm (skip chat — no file saving)
               pendingDoc = outputText;
               pendingAgent = lastAgent;
@@ -1887,8 +1895,11 @@
               _updateInputHint(true, 0);
             }
             // Push assistant turn to history so next request has full context
-            if (outputText) {
-              conversationHistory.push({ role: 'assistant', content: outputText });
+            const historyContent = pmOutputAccumulator.length > 0
+              ? pmOutputAccumulator.join('\n\n---\n\n')
+              : outputText;
+            if (historyContent) {
+              conversationHistory.push({ role: 'assistant', content: historyContent });
             }
             wasPMTask = false;
 
@@ -1900,6 +1911,7 @@
             }
 
           } else if (data.type === 'error') {
+            hadError = true;
             _setInlineError(currentOutputEl, `เกิดข้อผิดพลาด: ${data.message}`);
             status.textContent = 'กรุณาลองใหม่อีกครั้ง';
             container.classList.remove('streaming');
@@ -1921,6 +1933,9 @@
         }
       }
     } catch (err) {
+      if (typeof reader !== 'undefined' && reader) {
+        reader.cancel().catch(() => {});
+      }
       _setInlineError(currentOutputEl, `ไม่สามารถเชื่อมต่อ server ได้: ${err.message}`);
       status.textContent = 'กรุณาตรวจสอบว่า Flask server รันอยู่ที่ port 5000';
       container.classList.remove('streaming');
@@ -1942,8 +1957,15 @@
   }
 
   function copyOutput() {
-    const outputs = document.querySelectorAll('.output-area');
-    const text = outputs.length ? outputs[outputs.length - 1].textContent : '';
+    const containers = document.querySelectorAll('.msg-ai-container');
+    if (!containers.length) return;
+    const lastContainer = containers[containers.length - 1];
+    const outputs = lastContainer.querySelectorAll('.output-area');
+    const text = Array.from(outputs)
+      .map(el => el.textContent.trim())
+      .filter(Boolean)
+      .join('\n\n---\n\n');
+    if (!text) return;
     navigator.clipboard.writeText(text).then(() => {
       const btn = document.getElementById('copyBtn');
       const orig = btn.innerHTML;
