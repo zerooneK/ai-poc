@@ -1803,25 +1803,47 @@
       pendingFileAgents = [];
 
       // ── Local Agent File Context Injection ──────────────────────────────────
-      // ถ้า local agent รันอยู่ → ดึง file list แล้วแนบเป็น context ให้ AI รู้
+      // ถ้า local agent รันอยู่ → ดึง file list + เนื้อหา text files แนบให้ AI
       // user bubble แสดง message เดิม — AI เห็น message + context เสริม
+      const _TEXT_EXTS = new Set(['md','txt','py','js','ts','json','csv','html','xml','yaml','yml','ini','cfg','log','sh','bat','sql']);
+      const _MAX_FILE_BYTES = 50000; // 50KB per file
       if (localAgentActive && localAgentWorkspace) {
         try {
           const _lr = await fetch(`${LOCAL_AGENT_URL}/files`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'list' }),
-            signal: AbortSignal.timeout(2000)
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'list' }), signal: AbortSignal.timeout(2000)
           });
           const _ld = await _lr.json();
           if (_ld.ok && Array.isArray(_ld.files)) {
-            const fileLines = _ld.files.length === 0
-              ? '(ยังไม่มีไฟล์)'
-              : _ld.files.map(f => `  - ${f.name} (${f.size} bytes, แก้ไขล่าสุด: ${f.modified})`).join('\n');
-            reqBody.message =
-              `[Local Workspace: ${localAgentWorkspace}]\n` +
-              `ไฟล์ที่มีอยู่ในเครื่อง user ขณะนี้:\n${fileLines}\n\n` +
-              `คำถาม/คำสั่งของ user: ${reqBody.message}`;
+            const contextParts = [`[Local Workspace: ${localAgentWorkspace}]`];
+            if (_ld.files.length === 0) {
+              contextParts.push('ยังไม่มีไฟล์ใน workspace');
+            } else {
+              for (const f of _ld.files) {
+                const ext = f.name.split('.').pop().toLowerCase();
+                if (_TEXT_EXTS.has(ext) && f.size <= _MAX_FILE_BYTES) {
+                  try {
+                    const _cr = await fetch(`${LOCAL_AGENT_URL}/files`, {
+                      method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ action: 'read', filename: f.name }),
+                      signal: AbortSignal.timeout(3000)
+                    });
+                    const _cd = await _cr.json();
+                    if (_cd.ok) {
+                      contextParts.push(`--- ไฟล์: ${f.name} (${f.size} bytes, แก้ไขล่าสุด: ${f.modified}) ---\n${_cd.content}\n---`);
+                    } else {
+                      contextParts.push(`- ${f.name} (${f.size} bytes, แก้ไขล่าสุด: ${f.modified}) [อ่านไม่ได้]`);
+                    }
+                  } catch (_) {
+                    contextParts.push(`- ${f.name} (${f.size} bytes, แก้ไขล่าสุด: ${f.modified}) [timeout]`);
+                  }
+                } else {
+                  const reason = !_TEXT_EXTS.has(ext) ? 'binary' : 'ไฟล์ใหญ่เกิน 50KB';
+                  contextParts.push(`- ${f.name} (${f.size} bytes, แก้ไขล่าสุด: ${f.modified}) [${reason} — แสดงเฉพาะ metadata]`);
+                }
+              }
+            }
+            reqBody.message = contextParts.join('\n') + `\n\nคำถาม/คำสั่งของ user: ${reqBody.message}`;
           }
         } catch (_) { /* ถ้า fetch ล้มเหลว ส่ง message เดิมโดยไม่มี context */ }
       }
