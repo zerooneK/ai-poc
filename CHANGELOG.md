@@ -1,5 +1,10 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.20.1] — 27 มีนาคม 2569 · fix
+- fix: `crypto.randomUUID is not a function` เมื่อเข้าผ่าน HTTP — เพิ่ม fallback UUID generator สำหรับ non-secure context (HTTP)
+
+---
+
 ## [v0.20.0] — 27 มีนาคม 2569 · deploy
 - deploy (D3): audit workspace global state risk — ผล: PM loop ปลอดภัยแล้ว เพราะ `workspace` ถูก capture ครั้งเดียวที่ต้น request (line 381) และส่งผ่าน parameter ตลอด ไม่มี agent ใดเรียก `get_workspace()` เอง — เพิ่ม guard comment ใน `core/shared.py` และ `app.py` ป้องกัน regression ในอนาคต
 - deploy (Nginx): สร้าง `nginx.conf` — reverse proxy หน้า gunicorn, แยก location สำหรับ SSE (`/api/chat`, `/api/files/stream`) ด้วย `proxy_buffering off` + `proxy_read_timeout 130s`, security headers, `client_max_body_size 1m`

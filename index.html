@@ -1083,7 +1083,7 @@
         <span class="material-symbols-outlined" style="font-size:13px">folder_open</span>
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
-      <span class="version-tag">v0.20.0</span>
+      <span class="version-tag">v0.20.1</span>
     </div>
   </header>
 
@@ -1350,7 +1350,15 @@
   function _getSessionId() {
     let sid = localStorage.getItem('ai_session_id');
     if (!sid) {
-      sid = crypto.randomUUID();
+      // crypto.randomUUID() requires HTTPS or localhost — fallback for plain HTTP
+      if (crypto && crypto.randomUUID) {
+        sid = crypto.randomUUID();
+      } else {
+        sid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+          const r = Math.random() * 16 | 0;
+          return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+      }
       localStorage.setItem('ai_session_id', sid);
     }
     return sid;
