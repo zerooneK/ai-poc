@@ -1385,6 +1385,11 @@
           badge.style.display = 'inline';
           badge.title = `Local Agent พร้อม — workspace: ${localAgentWorkspace}`;
         }
+        const pathEl = document.getElementById('workspacePath');
+        if (pathEl && localAgentWorkspace) {
+          pathEl.textContent = localAgentWorkspace;
+          pathEl.title = `💻 Local: ${localAgentWorkspace}`;
+        }
       }
     } catch (_) {
       localAgentActive = false;
