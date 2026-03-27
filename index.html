@@ -1390,10 +1390,33 @@
           pathEl.textContent = localAgentWorkspace;
           pathEl.title = `💻 Local: ${localAgentWorkspace}`;
         }
+        _startLocalFileStream();
       }
     } catch (_) {
       localAgentActive = false;
     }
+  }
+
+  let _localFileInterval = null;
+
+  async function _refreshLocalFiles() {
+    try {
+      const res = await fetch(`${LOCAL_AGENT_URL}/files`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'list' })
+      });
+      const d = await res.json();
+      if (d.ok) renderFileList(d.files, localAgentWorkspace);
+    } catch (_) { /* agent offline — keep showing last state */ }
+  }
+
+  function _startLocalFileStream() {
+    // หยุด SSE จาก server ก่อน แล้ว poll local agent แทน
+    if (_fileEventSource) { _fileEventSource.close(); _fileEventSource = null; }
+    if (_localFileInterval) clearInterval(_localFileInterval);
+    _refreshLocalFiles();
+    _localFileInterval = setInterval(_refreshLocalFiles, 3000);
   }
 
   async function _localSave(filename, content) {
@@ -2086,7 +2109,7 @@
   }
 
   function renderFileList(files, workspace) {
-    if (workspace) document.getElementById('workspacePath').textContent = workspace;
+    if (workspace && !localAgentActive) document.getElementById('workspacePath').textContent = workspace;
     const list = document.getElementById('fileList');
     const countEl = document.getElementById('fileCount');
     countEl.textContent = files.length + ' ไฟล์';
