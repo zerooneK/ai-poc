@@ -1,5 +1,13 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.25.1] — 30 มีนาคม 2569 · fix
+- fix (index.html): confirm bar ย้ายไปแสดงใน `aiBody` แทน outer container — ปรากฏถูกต้องที่ด้านล่างเนื้อหา ไม่ลอยที่มุมบน
+- fix (index.html): เพิ่ม edit hint "✏️ หรือพิมพ์ข้อความด้านล่างเพื่อแก้ไขเอกสาร" ใน confirm bar
+- fix (index.html): `modalSkipBtn` เรียก `cancelPending()` ก่อน `sendMessage` — ลบ confirm bar เก่าออกเมื่อ skip ไปทำงานใหม่
+- fix (index.html): `_appendSaveConfirmBar` ลบ confirm bar เก่าทั่วทั้งหน้าก่อนสร้างใหม่ (querySelectorAll แทน querySelector)
+
+---
+
 ## [v0.25.0] — 30 มีนาคม 2569 · feat
 - feat (index.html): หลัง AI สร้างเอกสาร Draft เสร็จ จะแสดง confirm bar "ต้องการสร้างไฟล์นี้ไหม?" พร้อมปุ่ม สร้างไฟล์ / ไม่ต้องการ ในตัว message แทนที่จะรอให้พิมพ์ "บันทึก"
 - feat (index.html): กดปุ่ม "สร้างไฟล์" → เปิด format popup เลือก .md / .txt / .docx / .xlsx / .pdf ก่อนบันทึก
