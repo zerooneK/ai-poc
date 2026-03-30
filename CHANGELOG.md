@@ -1,5 +1,11 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.25.5] — 30 มีนาคม 2569 · feat
+- feat (index.html): status bar เปลี่ยนเป็น pill ที่มองเห็นได้ชัด — 3 states: processing (purple pulsing dot), done (green, fade หลัง 4s), error (red)
+- feat (index.html): `_setStatus()` helper จัดการ class อัตโนมัติจากข้อความ — ไม่ต้องแก้ backend
+
+---
+
 ## [v0.25.4] — 30 มีนาคม 2569 · perf
 - perf (app.py): Orchestrator รับ history แค่ 3 messages ล่าสุด (ลดจาก 20) — ลด token ที่ส่งไป routing LLM call ให้ได้ first token เร็วขึ้น, agent ยังรับ history เต็ม 20 เหมือนเดิม
 

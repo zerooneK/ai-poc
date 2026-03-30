@@ -528,11 +528,44 @@
       min-height: 28px;
       background: var(--bg);
     }
+    @keyframes status-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
+    }
     #status {
-      font-size: 11px;
-      color: var(--on-surface-2);
-      opacity: 0.6;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      font-weight: 500;
       font-family: 'Inter', sans-serif;
+      padding: 5px 13px;
+      border-radius: 20px;
+      opacity: 0;
+      transition: opacity 0.35s ease;
+      pointer-events: none;
+    }
+    #status.status-visible { opacity: 1; }
+    #status.status-fade    { opacity: 0; }
+    #status.status-processing {
+      background: color-mix(in srgb, var(--primary) 10%, transparent);
+      color: var(--primary);
+    }
+    #status.status-processing::before {
+      content: '';
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--primary);
+      flex-shrink: 0;
+      animation: status-pulse 1.2s ease-in-out infinite;
+    }
+    #status.status-done {
+      background: color-mix(in srgb, #22c55e 12%, transparent);
+      color: #16a34a;
+    }
+    #status.status-error {
+      background: color-mix(in srgb, #ef4444 12%, transparent);
+      color: #dc2626;
     }
     .copy-btn {
       display: none;
@@ -1141,7 +1174,7 @@
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
       <span id="localAgentBadge" title="Local Agent ไม่พบ — ไฟล์จะบันทึกบน server" style="display:none;font-size:10px;padding:2px 7px;border-radius:10px;background:#22c55e;color:#fff;font-weight:600;cursor:default">💻 Local</span>
-      <span class="version-tag">v0.25.4</span>
+      <span class="version-tag">v0.25.5</span>
     </div>
   </header>
 
@@ -1569,6 +1602,25 @@
     if (!userScrolledUp) outputWrapEl.scrollTop = outputWrapEl.scrollHeight;
   }
 
+  let _statusFadeTimer = null;
+  function _setStatus(el, text) {
+    clearTimeout(_statusFadeTimer);
+    el.textContent = text;
+    el.className = '';
+    if (!text) return;
+    if (text.startsWith('✅')) {
+      el.classList.add('status-done', 'status-visible');
+      _statusFadeTimer = setTimeout(() => {
+        el.classList.add('status-fade');
+        setTimeout(() => { el.textContent = ''; el.className = ''; }, 400);
+      }, 4000);
+    } else if (text.startsWith('กรุณา') || text.includes('ไม่สำเร็จ') || text.includes('ผิดพลาด')) {
+      el.classList.add('status-error', 'status-visible');
+    } else {
+      el.classList.add('status-processing', 'status-visible');
+    }
+  }
+
   function _updateInputHint(isPending, fileCount) {
     const hint = document.getElementById('inputHint');
     const cancelBtn = document.getElementById('cancelPendingBtn');
@@ -1758,7 +1810,7 @@
     // Reset UI state
     startTime = Date.now();
     btn.disabled = true;
-    status.textContent = '⚙️ กำลังวิเคราะห์งาน...';
+    _setStatus(status, '⚙️ กำลังวิเคราะห์งาน...');
     badge.className = 'agent-badge agent-idle';
     badge.textContent = 'รอคำสั่งงาน...';
     copyBtn.style.display = 'none';
@@ -1973,7 +2025,7 @@
           try { data = JSON.parse(line.slice(6)); } catch { continue; }
 
           if (data.type === 'status') {
-            status.textContent = '⚙️ ' + data.message;
+            _setStatus(status, '⚙️ ' + data.message);
 
           } else if (data.type === 'agent') {
             lastAgent = data.agent;
@@ -2074,7 +2126,7 @@
           } else if (data.type === 'save_failed') {
             saveFailed = true;
             currentOutputEl.textContent = `❌ ${data.message}`;
-            status.textContent = 'บันทึกไฟล์ไม่สำเร็จ';
+            _setStatus(status, 'บันทึกไฟล์ไม่สำเร็จ');
             container.classList.remove('streaming');
             container.classList.remove('typing');
             typingIndicator.style.display = 'none';
@@ -2140,7 +2192,7 @@
             }
             const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
             const charCount = totalChars.toLocaleString('th-TH');
-            status.textContent = `✅ เสร็จสิ้น · ${elapsed} วินาที · ${charCount} ตัวอักษร`;
+            _setStatus(status, `✅ เสร็จสิ้น · ${elapsed} วินาที · ${charCount} ตัวอักษร`);
             container.classList.remove('streaming');
             container.classList.remove('typing');
             typingIndicator.style.display = 'none';
@@ -2181,7 +2233,7 @@
           } else if (data.type === 'error') {
             hadError = true;
             _setInlineError(currentOutputEl, `เกิดข้อผิดพลาด: ${data.message}`);
-            status.textContent = 'กรุณาลองใหม่อีกครั้ง';
+            _setStatus(status, 'กรุณาลองใหม่อีกครั้ง');
             container.classList.remove('streaming');
             container.classList.remove('typing');
             typingIndicator.style.display = 'none';
@@ -2205,7 +2257,7 @@
         reader.cancel().catch(() => {});
       }
       _setInlineError(currentOutputEl, `ไม่สามารถเชื่อมต่อ server ได้: ${err.message}`);
-      status.textContent = 'กรุณาตรวจสอบว่า Flask server รันอยู่ที่ port 5000';
+      _setStatus(status, 'กรุณาตรวจสอบว่า Flask server รันอยู่ที่ port 5000');
       container.classList.remove('streaming');
       container.classList.remove('typing');
       typingIndicator.style.display = 'none';
