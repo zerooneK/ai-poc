@@ -38,6 +38,17 @@ from pathlib import Path
 DEFAULT_PORT = 7000
 DEFAULT_WORKSPACE = os.path.join(os.path.expanduser("~"), "ai-workspace")
 
+# Origins allowed to call this agent.
+# Set LOCAL_AGENT_ALLOWED_ORIGINS env var to override (comma-separated).
+_ALLOWED_ORIGINS: set = {
+    o.strip()
+    for o in os.getenv(
+        "LOCAL_AGENT_ALLOWED_ORIGINS",
+        "http://localhost:5000,http://127.0.0.1:5000",
+    ).split(",")
+    if o.strip()
+}
+
 # ─── Sandbox + File Operations ────────────────────────────────────────────────
 
 def _validate_path(workspace: str, filename: str) -> str:
@@ -114,13 +125,25 @@ class AgentHandler(BaseHTTPRequestHandler):
 
     # ── CORS ──────────────────────────────────────────────────────────────────
 
+    def _origin_allowed(self) -> bool:
+        """Return True if request Origin is in the allowlist or absent (curl/scripts)."""
+        origin = self.headers.get("Origin", "")
+        return (not origin) or (origin in _ALLOWED_ORIGINS)
+
     def _add_cors_headers(self):
-        self.send_header("Access-Control-Allow-Origin", "*")
+        origin = self.headers.get("Origin", "")
+        if origin in _ALLOWED_ORIGINS:
+            self.send_header("Access-Control-Allow-Origin", origin)
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Vary", "Origin")
 
     def do_OPTIONS(self):
         """Preflight request สำหรับ CORS"""
+        if not self._origin_allowed():
+            self.send_response(403)
+            self.end_headers()
+            return
         self.send_response(200)
         self._add_cors_headers()
         self.end_headers()
@@ -143,6 +166,10 @@ class AgentHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         if self.path != "/files":
             self._send_json({"error": "Not found"}, 404)
+            return
+
+        if not self._origin_allowed():
+            self._send_json({"ok": False, "error": "Origin not allowed"}, 403)
             return
 
         # อ่าน body

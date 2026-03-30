@@ -271,13 +271,14 @@ def _cleanup_old_temp():
         logger.warning(f"[cleanup_old_temp] could not clean temp dir: {e}")
 
 def handle_save(pending_doc: str, pending_agent: str, workspace: str, job_id=None, output_format: str = 'md'):
+    """Yields raw event dicts (not pre-formatted SSE) so callers can inspect type."""
     try:
         filename = _suggest_filename(pending_agent, pending_doc, output_format)
-        yield format_sse({'type': 'status', 'message': f'กำลังบันทึกไฟล์ {filename}...'})
+        yield {'type': 'status', 'message': f'กำลังบันทึกไฟล์ {filename}...'}
         if output_format in ('md', 'txt'):
             result = execute_tool(workspace, 'create_file', {'filename': filename, 'content': pending_doc})
             if _tool_result_is_error(result):
-                yield format_sse({'type': 'save_failed', 'message': result})
+                yield {'type': 'save_failed', 'message': result}
                 return
         else:
             file_bytes = converter.convert(pending_doc, output_format)
@@ -286,11 +287,11 @@ def handle_save(pending_doc: str, pending_agent: str, workspace: str, job_id=Non
         size = len(pending_doc.encode('utf-8')) if output_format in ('md', 'txt') else os.path.getsize(os.path.join(workspace, filename))
         db.record_file(job_id, filename, pending_agent, size)
         _notify_workspace_changed(workspace)
-        yield format_sse({'type': 'text', 'content': f'✅ {result}'})
-        yield format_sse({'type': 'tool_result', 'tool': 'create_file', 'result': result})
+        yield {'type': 'text', 'content': f'✅ {result}'}
+        yield {'type': 'tool_result', 'tool': 'create_file', 'result': result}
     except Exception as e:
         logger.error(f"[handle_save] error: {e}", exc_info=True)
-        yield format_sse({'type': 'save_failed', 'message': 'ไม่สามารถบันทึกไฟล์ได้ กรุณาลองใหม่อีกครั้ง'})
+        yield {'type': 'save_failed', 'message': 'ไม่สามารถบันทึกไฟล์ได้ กรุณาลองใหม่อีกครั้ง'}
 
 def handle_revise(pending_doc: str, pending_agent: str, instruction: str, history=None):
     agent_instance = AgentFactory.get_agent(pending_agent)
@@ -315,6 +316,7 @@ def _is_safe_temp_path(path: str) -> bool:
         return False
 
 def handle_pm_save(temp_paths: list, workspace: str, job_id=None, output_format: str = 'md', output_formats: list = None, agent_types: list = None):
+    """Yields raw event dicts (not pre-formatted SSE) so callers can inspect type."""
     saved = []
     for i, temp_path in enumerate(temp_paths):
         fmt = (output_formats[i] if output_formats and i < len(output_formats) else output_format)
@@ -336,17 +338,16 @@ def handle_pm_save(temp_paths: list, workspace: str, job_id=None, output_format:
             agent_type = (agent_types[i] if agent_types and i < len(agent_types) else filename.split('_')[0])
             db.record_file(job_id, filename, agent_type, size)
             _notify_workspace_changed(workspace)
-            yield format_sse({'type': 'tool_result', 'tool': 'create_file', 'result': f'บันทึก {filename} เรียบร้อย'})
+            yield {'type': 'tool_result', 'tool': 'create_file', 'result': f'บันทึก {filename} เรียบร้อย'}
         except Exception as e:
             logger.error(f"[handle_pm_save] failed to save {os.path.basename(temp_path)}: {e}", exc_info=True)
-            yield format_sse({'type': 'error', 'message': f'ไม่สามารถบันทึก {os.path.basename(temp_path)} กรุณาลองใหม่'})
+            yield {'type': 'error', 'message': f'ไม่สามารถบันทึก {os.path.basename(temp_path)} กรุณาลองใหม่'}
 
     if saved:
         names_str = ", ".join(saved)
-        msg_text = f"✅ บันทึก {len(saved)} ไฟล์เรียบร้อย\n{names_str}"
-        yield format_sse({'type': 'text', 'content': msg_text})
+        yield {'type': 'text', 'content': f'✅ บันทึก {len(saved)} ไฟล์เรียบร้อย\n{names_str}'}
     else:
-        yield format_sse({'type': 'text', 'content': 'ไม่พบไฟล์ที่รอบันทึก'})
+        yield {'type': 'text', 'content': 'ไม่พบไฟล์ที่รอบันทึก'}
 
 # ─── Routes ──────────────────────────────────────────────────────────────────
 
@@ -409,8 +410,15 @@ def chat():
 
         if pending_temp_paths:
             if _is_save_intent(user_input):
-                for sse in handle_pm_save(pending_temp_paths, workspace, job_id, output_format, output_formats, pending_agent_types): yield sse
-                db.complete_job(job_id, '')
+                pm_save_ok = True
+                for event in handle_pm_save(pending_temp_paths, workspace, job_id, output_format, output_formats, pending_agent_types):
+                    yield format_sse(event)
+                    if event.get('type') == 'error':
+                        pm_save_ok = False
+                if pm_save_ok:
+                    db.complete_job(job_id, '')
+                else:
+                    db.fail_job(job_id)
                 yield format_sse({'type': 'done'})
                 return
             if _is_edit_intent(user_input) and not _is_discard_intent(user_input):
@@ -429,8 +437,15 @@ def chat():
 
         if pending_doc and pending_agent:
             if _is_save_intent(user_input):
-                for sse in handle_save(pending_doc, pending_agent, workspace, job_id, output_format): yield sse
-                db.complete_job(job_id, pending_doc)
+                save_ok = True
+                for event in handle_save(pending_doc, pending_agent, workspace, job_id, output_format):
+                    yield format_sse(event)
+                    if event.get('type') == 'save_failed':
+                        save_ok = False
+                if save_ok:
+                    db.complete_job(job_id, pending_doc)
+                else:
+                    db.fail_job(job_id)
                 yield format_sse({'type': 'done'})
                 return
             elif _is_discard_intent(user_input):
@@ -557,8 +572,17 @@ def list_workspaces():
 def create_workspace_folder():
     data = request.json or {}
     root, name = data.get('root', '').strip(), data.get('name', '').strip()
-    if not root or not name or not re.match(r'^[a-zA-Z0-9_-]{1,50}$', name): return jsonify({'error': 'Invalid request'}), 400
-    new_path = os.path.realpath(os.path.join(root, name))
+    if not root or not name or not re.match(r'^[a-zA-Z0-9_-]{1,50}$', name):
+        return jsonify({'error': 'Invalid request'}), 400
+    # Validate root is one of the configured allowed roots — never trust client-provided path
+    real_root = os.path.realpath(root)
+    if real_root not in {os.path.realpath(r) for r in _ALLOWED_ROOTS}:
+        logger.warning("[create_workspace_folder] rejected invalid root: %s", root)
+        return jsonify({'error': 'Invalid root'}), 400
+    new_path = os.path.realpath(os.path.join(real_root, name))
+    if not _is_allowed_workspace_path(new_path):
+        logger.warning("[create_workspace_folder] path escape attempt: %s", new_path)
+        return jsonify({'error': 'Invalid path'}), 400
     os.makedirs(new_path, exist_ok=True)
     set_workspace(new_path)
     return jsonify({'path': new_path, 'name': name})
