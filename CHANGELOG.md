@@ -1,5 +1,11 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.25.3] — 30 มีนาคม 2569 · fix
+- fix (index.html): ลบ popup ทั้งหมด (single-agent + PM multi-file) — ถ้าพิมพ์ข้อความใหม่ขณะมี draft/pending ค้างอยู่ ระบบ discard เงียบๆ แล้วดำเนินการต่อเลย
+- feat (setup.sh): เพิ่ม cron job ลบไฟล์ใน `temp/` ที่เก่ากว่า 60 นาที ทุก 30 นาที — ทำงานอัตโนมัติบน server แทน popup
+
+---
+
 ## [v0.25.2] — 30 มีนาคม 2569 · fix
 - fix (index.html): ลบ popup "มีเอกสารที่ยังไม่ได้บันทึก" สำหรับ single-agent draft — ถ้าพิมพ์ข้อความใหม่ขณะที่มี draft ค้างอยู่ ระบบจะ discard draft เงียบๆ แล้วดำเนินการต่อเลย ไม่ขัดจังหวะ
 - fix (index.html): popup ยังคงทำงานสำหรับ PM multi-file pending เท่านั้น (มีไฟล์จริงบน disk ที่ต้องจัดการ)

@@ -101,6 +101,21 @@ fi
 chmod +x start.sh
 echo "✅ start.sh พร้อมใช้งาน"
 
+# ─── 9. Cron job — auto-clean temp/ files older than 60 minutes ───────────────
+echo ""
+echo "⏰ ตั้งค่า cron job สำหรับล้างไฟล์ชั่วคราวใน temp/ ..."
+
+CRON_CMD="*/30 * * * * find $PROJECT_DIR/temp -type f -mmin +60 ! -name '.gitkeep' -delete"
+
+# Check if cron entry already exists
+if crontab -l 2>/dev/null | grep -qF "$PROJECT_DIR/temp"; then
+    echo "✅ cron job มีอยู่แล้ว"
+else
+    # Append to existing crontab (preserve existing entries)
+    (crontab -l 2>/dev/null; echo "$CRON_CMD") | crontab -
+    echo "✅ เพิ่ม cron job แล้ว: ลบไฟล์ใน temp/ ที่เก่ากว่า 60 นาที ทุก 30 นาที"
+fi
+
 echo ""
 echo "================================"
 echo "✅ Setup เสร็จแล้ว!"

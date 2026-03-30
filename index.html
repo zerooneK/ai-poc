@@ -1141,7 +1141,7 @@
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
       <span id="localAgentBadge" title="Local Agent ไม่พบ — ไฟล์จะบันทึกบน server" style="display:none;font-size:10px;padding:2px 7px;border-radius:10px;background:#22c55e;color:#fff;font-weight:600;cursor:default">💻 Local</span>
-      <span class="version-tag">v0.25.2</span>
+      <span class="version-tag">v0.25.3</span>
     </div>
   </header>
 
@@ -1750,15 +1750,8 @@
       }
     }
 
-    // Intercept: PM multi-file pending + new task → show modal (temp files on disk need cleanup)
-    if (pendingTempPaths.length > 0 && isPendingConfirmation && _isNewTask(message) && !overrideMessage) {
-      input.value = '';
-      input.style.height = 'auto';
-      _showPendingModal(message);
-      return;
-    }
-    // Single-agent draft pending + new task → silently discard draft and proceed
-    if (pendingDoc && isPendingConfirmation && !overrideMessage) {
+    // Any pending state + new message → silently discard and proceed (cron handles disk cleanup)
+    if (isPendingConfirmation && !overrideMessage) {
       cancelPending();
     }
 
