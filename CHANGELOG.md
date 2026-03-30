@@ -1,5 +1,10 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.24.3] — 30 มีนาคม 2569 · fix
+- fix (core/utils.py): `inject_date` เพิ่มปี ค.ศ. และ "Today is March 30, 2026" เป็นภาษาอังกฤษ — แก้ปัญหา AI ค้นหาข่าวปีเก่า เพราะ AI ไม่รู้ว่า พ.ศ. 2569 = ค.ศ. 2026
+
+---
+
 ## [v0.24.2] — 30 มีนาคม 2569 · fix
 - fix (core/utils.py): รวม `inject_date()` เป็นฟังก์ชันกลางที่เดียว — ย้ายออกจาก `base_agent.py` และ `orchestrator.py` (DRY) — ใช้ `ZoneInfo("Asia/Bangkok")` สำหรับ timezone ที่ถูกต้อง พร้อม fallback และ warning log
 - fix (core/utils.py): `_BANGKOK_TZ` คำนวณครั้งเดียวตอน module load แทนการ import ทุก call — ป้องกัน `ZoneInfoNotFoundError` แบบ silent

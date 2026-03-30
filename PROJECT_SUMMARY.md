@@ -8,10 +8,10 @@
 **Internal AI Assistant Platform** — ระบบ AI สำหรับพนักงานภายในบริษัทไทย
 พนักงานพิมพ์งานเป็นภาษาไทย → AI เลือก Agent ที่เหมาะสม → สร้างเอกสาร (Draft) → User ยืนยัน → บันทึกเป็นไฟล์จริงในระบบ
 
-- **Version ปัจจุบัน:** v0.24.2 (Date Injection Fix + DRY Refactor)
+- **Version ปัจจุบัน:** v0.24.3 (Fix AI searching old-year news)
 - **สถานะ:** Prototype Ready + Security Hardened + Demo Preparation
 - **Branch:** `wsl-experiment`
-- **Last Commit:** v0.24.2 — fix: consolidate inject_date to core/utils, timezone fix, prompt clarity
+- **Last Commit:** v0.24.3 — fix: inject CE year + English date so AI searches correct year
 
 ---
 

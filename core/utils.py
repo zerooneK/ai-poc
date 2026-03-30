@@ -21,10 +21,11 @@ except Exception:
     _BANGKOK_TZ = None
 
 def inject_date(prompt: str) -> str:
-    """Prepend today's date (Thai Buddhist calendar, Asia/Bangkok) to system prompt."""
+    """Prepend today's date (Thai Buddhist calendar + CE, Asia/Bangkok) to system prompt."""
     now = datetime.now(_BANGKOK_TZ) if _BANGKOK_TZ else datetime.now()
-    date_str = f"{now.day} {_THAI_MONTHS[now.month - 1]} พ.ศ. {now.year + 543}"
-    return f"วันที่ปัจจุบัน: {date_str}\n\n{prompt}"
+    thai_year = now.year + 543
+    date_str = f"{now.day} {_THAI_MONTHS[now.month - 1]} พ.ศ. {thai_year} (ค.ศ. {now.year})"
+    return f"วันที่ปัจจุบัน: {date_str}\nToday is {now.strftime('%B %d, %Y')}.\n\n{prompt}"
 
 def load_prompt(name: str) -> str:
     """Load Markdown content from a file in the 'prompts/' directory."""
