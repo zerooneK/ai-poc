@@ -1,5 +1,10 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.25.8] — 30 มีนาคม 2569 · fix
+- fix (index.html): `_looksLikeDraft()` เพิ่ม 2 เงื่อนไขเพิ่มเติม — detect `**bold heading**` บนบรรทัดเดียว และ 20+ บรรทัด — แก้ปัญหา confirm bar ไม่โผล่เมื่อเอกสาร Thai ใช้ bold แทน `#` heading
+
+---
+
 ## [v0.25.7] — 30 มีนาคม 2569 · fix
 - fix (index.html): confirm bar แสดงเฉพาะเมื่อ response เป็น draft จริงๆ — ต้องมี markdown heading (`# ...`) และยาวกว่า 300 ตัวอักษร — ป้องกันไม่ให้โผล่ตอน agent ถามคำถามกลับ
 
