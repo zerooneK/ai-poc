@@ -8,7 +8,7 @@
 **Internal AI Assistant Platform** — ระบบ AI สำหรับพนักงานภายในบริษัทไทย
 พนักงานพิมพ์งานเป็นภาษาไทย → AI เลือก Agent ที่เหมาะสม → สร้างเอกสาร (Draft) → User ยืนยัน → บันทึกเป็นไฟล์จริงในระบบ
 
-- **Version ปัจจุบัน:** v0.25.5 (Visual status pill with pulse animation)
+- **Version ปัจจุบัน:** v0.25.6 (Status done pill stays until next task)
 - **สถานะ:** Prototype Ready + Security Hardened + Demo Preparation
 - **Branch:** `wsl-experiment`
 - **Last Commit:** v0.24.3 — fix: inject CE year + English date so AI searches correct year

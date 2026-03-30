@@ -1,5 +1,10 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.25.6] — 30 มีนาคม 2569 · fix
+- fix (index.html): status pill ✅ เสร็จสิ้น ค้างอยู่จนกว่าจะมี task ใหม่ แทนที่จะ fade หายใน 4 วินาที
+
+---
+
 ## [v0.25.5] — 30 มีนาคม 2569 · feat
 - feat (index.html): status bar เปลี่ยนเป็น pill ที่มองเห็นได้ชัด — 3 states: processing (purple pulsing dot), done (green, fade หลัง 4s), error (red)
 - feat (index.html): `_setStatus()` helper จัดการ class อัตโนมัติจากข้อความ — ไม่ต้องแก้ backend
