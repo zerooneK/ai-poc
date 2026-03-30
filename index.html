@@ -85,8 +85,10 @@
       flex-direction: column;
       flex-shrink: 0;
       z-index: 40;
-      transition: background 0.3s;
+      overflow: hidden;
+      transition: width 0.25s ease, background 0.3s;
     }
+    body.sidebar-collapsed .sidebar { width: 0; }
 
     /* Brand */
     .brand {
@@ -272,6 +274,22 @@
       line-height: 1.5;
     }
 
+    /* ─── Sidebar Toggle ─────────────────────────────────────────── */
+    .sidebar-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--on-surface-2);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.2s, color 0.2s;
+    }
+    .sidebar-toggle:hover { background: var(--surface-hi); color: var(--on-surface); }
+
     /* ─── Main ───────────────────────────────────────────────────── */
     .main {
       flex: 1;
@@ -281,7 +299,9 @@
       height: 100vh;
       overflow: hidden;
       position: relative;
+      transition: margin-left 0.25s ease;
     }
+    body.sidebar-collapsed .main { margin-left: 0; }
 
     /* ─── Navbar ─────────────────────────────────────────────────── */
     .navbar {
@@ -289,6 +309,7 @@
       top: 0; left: 256px; right: 0;
       height: 60px;
       z-index: 50;
+      transition: left 0.25s ease, background 0.3s;
       background: color-mix(in srgb, var(--bg) 80%, transparent);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
@@ -298,9 +319,10 @@
       padding: 0 32px;
       transition: background 0.3s;
     }
+    body.sidebar-collapsed .navbar { left: 0; }
     .navbar-left {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       gap: 12px;
     }
     .app-title {
@@ -488,7 +510,9 @@
       position: fixed;
       bottom: 0; left: 256px; right: 0;
       pointer-events: none;
+      transition: left 0.25s ease;
     }
+    body.sidebar-collapsed .input-footer { left: 0; }
 
     .input-inner {
       max-width: 780px;
@@ -1075,6 +1099,9 @@
   <!-- Navbar -->
   <header class="navbar">
     <div class="navbar-left">
+      <button class="sidebar-toggle" id="sidebarToggleBtn" onclick="toggleSidebar()" title="ซ่อน/แสดง sidebar" aria-label="ซ่อน/แสดง sidebar">
+        <span class="material-symbols-outlined" style="font-size:20px">menu</span>
+      </button>
       <h1 class="app-title">AI Assistant</h1>
       <span class="app-desc">Orchestrator · PM · HR · Accounting · Manager</span>
     </div>
@@ -2374,8 +2401,16 @@
     localStorage.setItem('theme', isLight ? 'light' : 'dark');
   }
 
+  function toggleSidebar() {
+    const collapsed = document.body.classList.toggle('sidebar-collapsed');
+    localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0');
+  }
+
   if (localStorage.getItem('theme') === 'light') {
     document.body.classList.add('light-mode');
+  }
+  if (localStorage.getItem('sidebarCollapsed') === '1') {
+    document.body.classList.add('sidebar-collapsed');
   }
 </script>
 
