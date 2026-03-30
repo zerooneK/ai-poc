@@ -1,5 +1,10 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.25.4] — 30 มีนาคม 2569 · perf
+- perf (app.py): Orchestrator รับ history แค่ 3 messages ล่าสุด (ลดจาก 20) — ลด token ที่ส่งไป routing LLM call ให้ได้ first token เร็วขึ้น, agent ยังรับ history เต็ม 20 เหมือนเดิม
+
+---
+
 ## [v0.25.3] — 30 มีนาคม 2569 · fix
 - fix (index.html): ลบ popup ทั้งหมด (single-agent + PM multi-file) — ถ้าพิมพ์ข้อความใหม่ขณะมี draft/pending ค้างอยู่ ระบบ discard เงียบๆ แล้วดำเนินการต่อเลย
 - feat (setup.sh): เพิ่ม cron job ลบไฟล์ใน `temp/` ที่เก่ากว่า 60 นาที ทุก 30 นาที — ทำงานอัตโนมัติบน server แทน popup

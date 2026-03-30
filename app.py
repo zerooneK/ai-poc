@@ -478,7 +478,7 @@ def chat():
         try:
             yield format_sse({'type': 'status', 'message': 'กำลังวิเคราะห์งาน...'})
             orch = Orchestrator()
-            agent_type, reason = orch.route(user_input, conversation_history)
+            agent_type, reason = orch.route(user_input, conversation_history[-3:])
             db.update_job_agent(job_id, agent_type, reason)
             yield format_sse({'type': 'agent', 'agent': agent_type, 'reason': reason})
 
