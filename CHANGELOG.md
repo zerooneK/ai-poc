@@ -1,5 +1,10 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.25.7] — 30 มีนาคม 2569 · fix
+- fix (index.html): confirm bar แสดงเฉพาะเมื่อ response เป็น draft จริงๆ — ต้องมี markdown heading (`# ...`) และยาวกว่า 300 ตัวอักษร — ป้องกันไม่ให้โผล่ตอน agent ถามคำถามกลับ
+
+---
+
 ## [v0.25.6] — 30 มีนาคม 2569 · fix
 - fix (index.html): status pill ✅ เสร็จสิ้น ค้างอยู่จนกว่าจะมี task ใหม่ แทนที่จะ fade หายใน 4 วินาที
 

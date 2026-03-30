@@ -1174,7 +1174,7 @@
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
       <span id="localAgentBadge" title="Local Agent ไม่พบ — ไฟล์จะบันทึกบน server" style="display:none;font-size:10px;padding:2px 7px;border-radius:10px;background:#22c55e;color:#fff;font-weight:600;cursor:default">💻 Local</span>
-      <span class="version-tag">v0.25.6</span>
+      <span class="version-tag">v0.25.7</span>
     </div>
   </header>
 
@@ -1616,6 +1616,12 @@
     } else {
       el.classList.add('status-processing', 'status-visible');
     }
+  }
+
+  function _looksLikeDraft(text) {
+    if (!text || text.length < 300) return false;
+    // Must have at least one markdown heading — drafts always have structure
+    return /^#{1,3}\s+.+/m.test(text);
   }
 
   function _updateInputHint(isPending, fileCount) {
@@ -2202,7 +2208,7 @@
               // PM task: staged files waiting for confirm
               isPendingConfirmation = true;
               _updateInputHint(true, pendingTempPaths.length);
-            } else if (receivedAgentEvent && !wasPMTask && lastAgent && lastAgent !== 'chat' && outputText && !hadError) {
+            } else if (receivedAgentEvent && !wasPMTask && lastAgent && lastAgent !== 'chat' && outputText && !hadError && _looksLikeDraft(outputText)) {
               // Single-agent: new document generated, waiting for confirm (skip chat — no file saving)
               pendingDoc = outputText;
               pendingAgent = lastAgent;
