@@ -12,3 +12,4 @@ openpyxl
 weasyprint
 markdown
 ddgs
+tzdata

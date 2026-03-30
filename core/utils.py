@@ -2,10 +2,29 @@ import os
 import re
 import json
 import logging
+from datetime import datetime
 from urllib.parse import urlparse
 from mcp_server import fs_list_files, fs_create_file, fs_read_file, fs_update_file, fs_delete_file
 
 logger = logging.getLogger(__name__)
+
+_THAI_MONTHS = [
+    'มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+    'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'
+]
+
+try:
+    from zoneinfo import ZoneInfo
+    _BANGKOK_TZ = ZoneInfo("Asia/Bangkok")
+except Exception:
+    logger.warning("inject_date: ZoneInfo('Asia/Bangkok') unavailable — falling back to local system time. Install 'tzdata' to fix this.")
+    _BANGKOK_TZ = None
+
+def inject_date(prompt: str) -> str:
+    """Prepend today's date (Thai Buddhist calendar, Asia/Bangkok) to system prompt."""
+    now = datetime.now(_BANGKOK_TZ) if _BANGKOK_TZ else datetime.now()
+    date_str = f"{now.day} {_THAI_MONTHS[now.month - 1]} พ.ศ. {now.year + 543}"
+    return f"วันที่ปัจจุบัน: {date_str}\n\n{prompt}"
 
 def load_prompt(name: str) -> str:
     """Load Markdown content from a file in the 'prompts/' directory."""

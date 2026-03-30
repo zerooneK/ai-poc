@@ -2,7 +2,7 @@ import json
 import logging
 import re
 from core.shared import get_client, get_model
-from core.utils import execute_tool, format_sse, extract_web_sources
+from core.utils import execute_tool, format_sse, extract_web_sources, inject_date
 
 # Detect fake tool-call JSON that some models output as plain text instead of
 # using the structured tool_calls channel, e.g.:
@@ -31,7 +31,7 @@ class BaseAgent:
     def stream_response(self, message, history=None, max_tokens=8000):
         """Simple streaming without tools."""
         messages = [
-            {"role": "system", "content": self.system_prompt},
+            {"role": "system", "content": inject_date(self.system_prompt)},
             *(history or []),
             {"role": "user", "content": message}
         ]
@@ -54,7 +54,7 @@ class BaseAgent:
     def run_with_tools(self, user_message, workspace, tools, history=None, max_tokens=8000, max_iterations=5):
         """Agentic loop with tools (yields dicts for app.py to format as SSE)."""
         messages = [
-            {"role": "system", "content": self.system_prompt},
+            {"role": "system", "content": inject_date(self.system_prompt)},
             *(history or []),
             {"role": "user", "content": user_message}
         ]

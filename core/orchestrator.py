@@ -1,6 +1,6 @@
 import json
 from core.shared import get_client, get_model
-from core.utils import load_prompt
+from core.utils import load_prompt, inject_date
 
 class Orchestrator:
     def __init__(self):
@@ -11,7 +11,7 @@ class Orchestrator:
     def route(self, user_message, history=None):
         """Analyze user input and decide which agent to use."""
         messages = [
-            {"role": "system", "content": self.prompt},
+            {"role": "system", "content": inject_date(self.prompt)},
             *(history or []),
             {"role": "user", "content": user_message}
         ]

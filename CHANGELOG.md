@@ -1,5 +1,14 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.24.2] — 30 มีนาคม 2569 · fix
+- fix (core/utils.py): รวม `inject_date()` เป็นฟังก์ชันกลางที่เดียว — ย้ายออกจาก `base_agent.py` และ `orchestrator.py` (DRY) — ใช้ `ZoneInfo("Asia/Bangkok")` สำหรับ timezone ที่ถูกต้อง พร้อม fallback และ warning log
+- fix (core/utils.py): `_BANGKOK_TZ` คำนวณครั้งเดียวตอน module load แทนการ import ทุก call — ป้องกัน `ZoneInfoNotFoundError` แบบ silent
+- fix (agents/base_agent.py, core/orchestrator.py): ลบ `_inject_date` ที่ซ้ำซ้อน — import `inject_date` จาก `core.utils` แทน
+- fix (prompts/chat_agent.md): แก้การอ้างอิงวันที่ที่คลุมเครือ — ลบ "บรรทัดแรก" placeholder, ใช้ภาษาธรรมชาติที่ AI ตีความถูกต้อง
+- fix (requirements.txt): เพิ่ม `tzdata` เพื่อให้ `ZoneInfo("Asia/Bangkok")` ทำงานได้บน Alpine/minimal Linux
+
+---
+
 ## [v0.24.1] — 30 มีนาคม 2569 · fix
 - fix (local_agent.py): แทนที่ CORS wildcard `*` ด้วย origin allowlist — รับเฉพาะ `localhost:5000` และ `127.0.0.1:5000` (กำหนดค่าได้ผ่าน `LOCAL_AGENT_ALLOWED_ORIGINS`) — `OPTIONS` และ `POST /files` ส่ง 403 หาก Origin ไม่อยู่ใน allowlist
 - fix (app.py): `/api/workspace/new` ตรวจสอบ `root` ว่าอยู่ใน `_ALLOWED_ROOTS` ก่อนสร้าง folder (สองชั้น: root allowlist + `_is_allowed_workspace_path`) — ป้องกัน path traversal จาก client
