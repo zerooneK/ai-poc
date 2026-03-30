@@ -234,14 +234,22 @@ def _is_pure_discard(message: str) -> bool:
 def _is_edit_intent(message: str) -> bool:
     return any(kw in message.lower().strip() for kw in _EDIT_KEYWORDS)
 
-def _suggest_filename(agent: str, content: str, fmt: str = 'md') -> str:
+def _suggest_filename(agent: str, content: str, fmt: str = 'md', history: list = None) -> str:
     ext = fmt if fmt in converter.SUPPORTED_FORMATS else 'md'
     ts = datetime.now().strftime('%Y%m%d_%H%M%S')
+    # 1. Try heading from document content
     m = re.search(r'#\s*(.{3,60})', content)
     if m:
         ascii_only = re.sub(r'[^\x20-\x7E]', ' ', m.group(1).strip())
         slug = re.sub(r'[^a-zA-Z0-9]+', '_', ascii_only).strip('_')[:30]
         if len(slug) >= 3: return f"{agent}_{slug}_{ts}.{ext}"
+    # 2. Fallback: use last user message from history for context
+    if history:
+        for msg in reversed(history[-5:]):
+            if msg.get('role') == 'user' and msg.get('content'):
+                ascii_only = re.sub(r'[^\x20-\x7E]', ' ', str(msg['content'])[:80])
+                slug = re.sub(r'[^a-zA-Z0-9]+', '_', ascii_only).strip('_')[:30]
+                if len(slug) >= 3: return f"{agent}_{slug}_{ts}.{ext}"
     return f"{agent}_{ts}.{ext}"
 
 def _write_temp(content: str, agent: str) -> str:
@@ -270,10 +278,10 @@ def _cleanup_old_temp():
     except OSError as e:
         logger.warning(f"[cleanup_old_temp] could not clean temp dir: {e}")
 
-def handle_save(pending_doc: str, pending_agent: str, workspace: str, job_id=None, output_format: str = 'md'):
+def handle_save(pending_doc: str, pending_agent: str, workspace: str, job_id=None, output_format: str = 'md', history: list = None):
     """Yields raw event dicts (not pre-formatted SSE) so callers can inspect type."""
     try:
-        filename = _suggest_filename(pending_agent, pending_doc, output_format)
+        filename = _suggest_filename(pending_agent, pending_doc, output_format, history)
         yield {'type': 'status', 'message': f'กำลังบันทึกไฟล์ {filename}...'}
         if output_format in ('md', 'txt'):
             result = execute_tool(workspace, 'create_file', {'filename': filename, 'content': pending_doc})
@@ -438,7 +446,7 @@ def chat():
         if pending_doc and pending_agent:
             if _is_save_intent(user_input):
                 save_ok = True
-                for event in handle_save(pending_doc, pending_agent, workspace, job_id, output_format):
+                for event in handle_save(pending_doc, pending_agent, workspace, job_id, output_format, conversation_history[-5:]):
                     yield format_sse(event)
                     if event.get('type') == 'save_failed':
                         save_ok = False

@@ -1017,6 +1017,29 @@
     .workspace-new-root-sel { flex-shrink: 0; max-width: 150px; }
     .workspace-new-btn { padding: 7px 14px; font-size: 12px; flex-shrink: 0; }
     .workspace-new-error { font-size: 11px; color: var(--error); margin-top: 6px; min-height: 16px; }
+    .save-confirm-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 10px 14px;
+  background: var(--surface-2, #f3f4f6);
+  border-radius: 10px;
+  border: 1px solid var(--border, #e5e7eb);
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+.save-confirm-bar span { flex: 1; color: var(--on-surface, #374151); font-weight: 500; }
+.save-confirm-bar .btn-save-yes {
+  padding: 6px 16px; border-radius: 8px; border: none; cursor: pointer;
+  background: var(--primary, #6366f1); color: #fff; font-size: 13px; font-weight: 600;
+}
+.save-confirm-bar .btn-save-no {
+  padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border, #e5e7eb);
+  cursor: pointer; background: transparent; color: var(--on-surface-2, #6b7280); font-size: 13px;
+}
+.save-confirm-bar .btn-save-yes:hover { opacity: 0.88; }
+.save-confirm-bar .btn-save-no:hover { background: var(--surface-3, #e5e7eb); }
   </style>
 </head>
 <body>
@@ -1111,7 +1134,7 @@
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
       <span id="localAgentBadge" title="Local Agent ไม่พบ — ไฟล์จะบันทึกบน server" style="display:none;font-size:10px;padding:2px 7px;border-radius:10px;background:#22c55e;color:#fff;font-weight:600;cursor:default">💻 Local</span>
-      <span class="version-tag">v0.24.3</span>
+      <span class="version-tag">v0.25.0</span>
     </div>
   </header>
 
@@ -1292,6 +1315,25 @@
       ).map(s => s.value);
       sendMessage(originalMessage);
     };
+  }
+
+  function showSaveFormatModal() {
+    _showSingleFileFormatModal('บันทึก');
+  }
+
+  function _appendSaveConfirmBar(container) {
+    // Remove any existing confirm bar first
+    const old = container.querySelector('.save-confirm-bar');
+    if (old) old.remove();
+
+    const bar = document.createElement('div');
+    bar.className = 'save-confirm-bar';
+    bar.innerHTML = `
+      <span>📄 ต้องการสร้างไฟล์นี้ไหม?</span>
+      <button class="btn-save-yes" onclick="showSaveFormatModal()">💾 สร้างไฟล์</button>
+      <button class="btn-save-no" onclick="cancelPending()">✕ ไม่ต้องการ</button>
+    `;
+    container.appendChild(bar);
   }
 
   function _showSingleFileFormatModal(originalMessage) {
@@ -1523,7 +1565,7 @@
     if (isPending) {
       const msg = (fileCount > 0)
         ? `💾 พิมพ์ บันทึก เพื่อบันทึก ${fileCount} ไฟล์ หรือ ✏️ ระบุสิ่งที่แก้ไข`
-        : '💬 พิมพ์ บันทึก เพื่อบันทึกไฟล์ หรือ ✏️ ระบุสิ่งที่แก้ไข';
+        : '✏️ ระบุสิ่งที่ต้องการแก้ไข หรือกดปุ่มด้านบนเพื่อสร้างไฟล์';
       hint.textContent = msg;
       hint.style.color = 'var(--primary)';
       hint.style.opacity = '1';
@@ -1543,6 +1585,7 @@
     pendingFormat = 'md';
     pendingTempPaths = [];
     _updateInputHint(false, 0);
+    document.querySelectorAll('.save-confirm-bar').forEach(el => el.remove());
     // Temp files in temp/ will be auto-cleaned after 1hr by _cleanup_old_temp()
   }
 
@@ -2108,7 +2151,8 @@
               pendingAgent = lastAgent;
               pendingFormat = 'md';
               isPendingConfirmation = true;
-              _updateInputHint(true, 0);
+              _appendSaveConfirmBar(container);
+              _updateInputHint(false, 0);
             }
             // Push assistant turn to history so next request has full context
             const historyContent = pmOutputAccumulator.length > 0

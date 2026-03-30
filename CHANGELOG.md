@@ -1,5 +1,13 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.25.0] — 30 มีนาคม 2569 · feat
+- feat (index.html): หลัง AI สร้างเอกสาร Draft เสร็จ จะแสดง confirm bar "ต้องการสร้างไฟล์นี้ไหม?" พร้อมปุ่ม สร้างไฟล์ / ไม่ต้องการ ในตัว message แทนที่จะรอให้พิมพ์ "บันทึก"
+- feat (index.html): กดปุ่ม "สร้างไฟล์" → เปิด format popup เลือก .md / .txt / .docx / .xlsx / .pdf ก่อนบันทึก
+- feat (app.py): `_suggest_filename` ใช้ last 5 conversation history เป็น fallback ถ้าเอกสารไม่มี heading — ชื่อไฟล์สะท้อน context การสนทนา
+- feat (app.py): `handle_save` รับ `history` param และส่งต่อไปยัง `_suggest_filename`
+
+---
+
 ## [v0.24.3] — 30 มีนาคม 2569 · fix
 - fix (core/utils.py): `inject_date` เพิ่มปี ค.ศ. และ "Today is March 30, 2026" เป็นภาษาอังกฤษ — แก้ปัญหา AI ค้นหาข่าวปีเก่า เพราะ AI ไม่รู้ว่า พ.ศ. 2569 = ค.ศ. 2026
 
