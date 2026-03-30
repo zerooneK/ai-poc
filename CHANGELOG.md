@@ -1,5 +1,11 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.25.2] — 30 มีนาคม 2569 · fix
+- fix (index.html): ลบ popup "มีเอกสารที่ยังไม่ได้บันทึก" สำหรับ single-agent draft — ถ้าพิมพ์ข้อความใหม่ขณะที่มี draft ค้างอยู่ ระบบจะ discard draft เงียบๆ แล้วดำเนินการต่อเลย ไม่ขัดจังหวะ
+- fix (index.html): popup ยังคงทำงานสำหรับ PM multi-file pending เท่านั้น (มีไฟล์จริงบน disk ที่ต้องจัดการ)
+
+---
+
 ## [v0.25.1] — 30 มีนาคม 2569 · fix
 - fix (index.html): confirm bar ย้ายไปแสดงใน `aiBody` แทน outer container — ปรากฏถูกต้องที่ด้านล่างเนื้อหา ไม่ลอยที่มุมบน
 - fix (index.html): เพิ่ม edit hint "✏️ หรือพิมพ์ข้อความด้านล่างเพื่อแก้ไขเอกสาร" ใน confirm bar
