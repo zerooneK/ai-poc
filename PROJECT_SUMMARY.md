@@ -8,14 +8,14 @@
 **Internal AI Assistant Platform** — ระบบ AI สำหรับพนักงานภายในบริษัทไทย
 พนักงานพิมพ์งานเป็นภาษาไทย → AI เลือก Agent ที่เหมาะสม → สร้างเอกสาร (Draft) → User ยืนยัน → บันทึกเป็นไฟล์จริงในระบบ
 
-- **Version ปัจจุบัน:** v0.23.0 (Local Agent Mode — จัดการไฟล์บน Windows)
-- **สถานะ:** Prototype Ready + Local Agent Feature Active + GitHub Synced
-- **Branch:** `wsl-experiment` (synced กับ `origin/wsl-experiment`)
-- **Last Commit:** `d634fbe` — docs: update CHANGELOG and PROJECT_SUMMARY for v0.22.1–v0.23.0
+- **Version ปัจจุบัน:** v0.24.1 (Security Hardening + Collapsible Sidebar)
+- **สถานะ:** Prototype Ready + Security Hardened + Demo Preparation
+- **Branch:** `wsl-experiment`
+- **Last Commit:** `2e14a75` — fix: bump version tag to v0.24.1 in index.html
 
 ---
 
-## ฟีเจอร์ที่มีแล้ว (v0.23.0)
+## ฟีเจอร์ที่มีแล้ว (v0.24.1)
 
 | ฟีเจอร์ | สถานะ |
 |---|---|
@@ -25,12 +25,16 @@
 | บันทึกไฟล์ใน server workspace (WSL) | ✅ ทำงานได้ |
 | Local Agent Mode — ไฟล์บน Windows โดยตรง | ✅ ทำงานได้ |
 | Sidebar แสดงไฟล์ใน workspace (server + local) | ✅ ทำงานได้ |
+| Sidebar พับ/ขยายได้ (collapsible) | ✅ ทำงานได้ |
 | Context Injection — inject file list + content ก่อนส่ง AI | ✅ ทำงานได้ |
 | Web Search ในระหว่างตอบ | ✅ ทำงานได้ |
 | ประวัติการสนทนา (SQLite) | ✅ ทำงานได้ |
 | Export PDF/DOCX ผ่าน converter.py | ✅ ทำงานได้ |
 | History viewer (history.html) | ✅ ทำงานได้ |
 | Concurrency tests ผ่านทุก TC | ✅ ผ่านแล้ว |
+| CORS lockdown บน local_agent.py | ✅ ทำงานได้ |
+| Workspace path validation (defense-in-depth) | ✅ ทำงานได้ |
+| Job save status correctness (fail vs complete) | ✅ ทำงานได้ |
 
 ---
 

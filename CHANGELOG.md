@@ -1,5 +1,22 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.24.1] — 30 มีนาคม 2569 · fix
+- fix (local_agent.py): แทนที่ CORS wildcard `*` ด้วย origin allowlist — รับเฉพาะ `localhost:5000` และ `127.0.0.1:5000` (กำหนดค่าได้ผ่าน `LOCAL_AGENT_ALLOWED_ORIGINS`) — `OPTIONS` และ `POST /files` ส่ง 403 หาก Origin ไม่อยู่ใน allowlist
+- fix (app.py): `/api/workspace/new` ตรวจสอบ `root` ว่าอยู่ใน `_ALLOWED_ROOTS` ก่อนสร้าง folder (สองชั้น: root allowlist + `_is_allowed_workspace_path`) — ป้องกัน path traversal จาก client
+- fix (app.py): `handle_save` และ `handle_pm_save` yield raw dicts แทน pre-formatted SSE — caller ตรวจ `event['type']` แล้วค่อย `format_sse()` — `db.complete_job()` เรียกเฉพาะตอน save สำเร็จ, `db.fail_job()` เรียกตอนล้มเหลว
+- fix (index.html): bump version tag เป็น v0.24.1
+
+---
+
+## [v0.24.0] — 30 มีนาคม 2569 · feat
+- feat (index.html): Collapsible sidebar — ปุ่ม `☰` ที่ navbar-left พับ/ขยาย sidebar ด้วย animation 0.25s ease
+- feat (index.html): Sidebar, main content, navbar, และ input footer เคลื่อนที่พร้อมกันเมื่อพับ
+- feat (index.html): จำสถานะ sidebar ไว้ใน `localStorage` key `sidebarCollapsed` — reload แล้วยังคงสถานะเดิม
+- fix (index.html): แก้ `navbar-left align-items: baseline` → `center` ให้ปุ่ม toggle ตรงกลางแนวตั้ง
+- fix (index.html): เพิ่ม `aria-label` บนปุ่ม toggle สำหรับ accessibility
+
+---
+
 ## [v0.23.0] — 27 มีนาคม 2569 · feat
 - feat: **Local Agent Mode** — เมื่อ `local_agent_mode: true` ถูกส่งจาก browser, server จะใช้ `LOCAL_AGENT_TOOLS` (web_search + local_delete เท่านั้น) แทน `READ_ONLY_TOOLS` — ตัด `list_files`/`read_file`/`create_file`/`update_file` ออกทั้งหมด เพราะถูกแทนที่ด้วย browser context injection + save intercept
 - feat: `local_delete` tool ใหม่ใน `app.py` + `core/utils.py` — เมื่อ AI เรียก tool นี้ server คืน marker `__LOCAL_DELETE__:{filename}` แทนการลบจาก WSL; `app.py` แปลง marker เป็น SSE event `type: local_delete`
