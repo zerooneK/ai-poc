@@ -1,5 +1,12 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.29.4] — 31 มีนาคม 2569 · fix
+- fix (index.html): input footer ไม่เลื่อนเมื่อ preview เปิด — เพิ่ม `body.preview-open .input-footer { right: 420px }`
+- fix (index.html): navbar content เลื่อนมากลางจอ — ลบ `right: 420px` ออกจาก navbar (navbar z-index 50 อยู่เหนือ panel อยู่แล้ว)
+- fix (index.html): tab แสดงผล/ข้อความ ซ้อนทับกัน — ซ่อน tab สำหรับไฟล์ที่ไม่ใช่ .md (docx/xlsx/pdf/txt ใช้ raw text เท่านั้น)
+
+---
+
 ## [v0.29.3] — 31 มีนาคม 2569 · fix
 - fix (index.html): preview panel ทับ navbar — เลื่อน panel ลงมาที่ `top: 60px` + `height: calc(100vh - 60px)` ให้อยู่ใต้ navbar พอดี
 - fix (index.html): navbar ทับพื้นที่ panel — เพิ่ม `body.preview-open .navbar { right: 420px }` ให้ navbar หดออกจากพื้นที่ panel

@@ -306,6 +306,7 @@
     }
     body.sidebar-collapsed .main { margin-left: 0; }
     body.preview-open .main { margin-right: 420px; }
+    body.preview-open .input-footer { right: 420px; }
 
     /* ─── Preview Panel ──────────────────────────────────────────── */
     .preview-panel {
@@ -322,7 +323,6 @@
       transition: transform 0.25s ease, background 0.3s;
     }
     body.preview-open .preview-panel { transform: translateX(0); }
-    body.preview-open .navbar { right: 420px; }
     .preview-header {
       display: flex;
       flex-direction: column;
@@ -1321,7 +1321,7 @@
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
       <span id="localAgentBadge" title="Local Agent ไม่พบ — ไฟล์จะบันทึกบน server" style="display:none;font-size:10px;padding:2px 7px;border-radius:10px;background:#22c55e;color:#fff;font-weight:600;cursor:default">💻 Local</span>
-      <span class="version-tag">v0.29.3</span>
+      <span class="version-tag">v0.29.4</span>
     </div>
   </header>
 
@@ -1450,7 +1450,7 @@
       <span class="preview-filename" id="previewFilename">—</span>
       <button class="preview-close-btn" onclick="closePreview()" title="ปิด (Esc)">✕</button>
     </div>
-    <div class="preview-header-row2">
+    <div class="preview-header-row2" id="previewTabsRow">
       <div class="preview-header-tabs">
         <button class="preview-tab active" id="previewTabRender" onclick="setPreviewTab('render')">แสดงผล</button>
         <button class="preview-tab" id="previewTabRaw" onclick="setPreviewTab('raw')">ข้อความ</button>
@@ -2641,12 +2641,21 @@
   let _previewContent = '';
   let _previewTab = 'render';  // 'render' | 'raw'
 
+  function _isMarkdown(filename) {
+    return ['md', 'markdown'].includes((filename.split('.').pop() || '').toLowerCase());
+  }
+
   async function openPreview(filename) {
     _previewCurrentFile = filename;
     document.getElementById('previewFilename').textContent = filename;
     document.getElementById('previewFileIcon').textContent = _fileIcon(filename);
     document.getElementById('previewBody').innerHTML = '<div class="preview-loading">กำลังโหลด...</div>';
     document.body.classList.add('preview-open');
+
+    // Show tabs only for markdown files
+    const tabsRow = document.getElementById('previewTabsRow');
+    if (tabsRow) tabsRow.style.display = _isMarkdown(filename) ? 'flex' : 'none';
+    if (!_isMarkdown(filename)) _previewTab = 'raw';
 
     // Mark active item in sidebar
     document.querySelectorAll('.file-item').forEach(el => {
