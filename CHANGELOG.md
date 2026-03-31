@@ -1,5 +1,11 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.30.4] — 31 มีนาคม 2569 · ux
+- ux (index.html): ย้าย typing indicator (•••) ออกจาก chat bubble — ซ่อน `.typing-indicator` ด้วย `display: none !important`
+- ux (index.html): status bar เหนือ input เปลี่ยน pulsing dot เป็น CSS spinner (`status-spin` animation) เพื่อแสดงสถานะกำลังประมวลผลได้ชัดเจนขึ้น
+
+---
+
 ## [v0.30.3] — 31 มีนาคม 2569 · fix
 - fix (app.py): PDF serve เพิ่ม `conditional=True, max_age=60` — browser cache ETag/304 ทำให้เปิดครั้งที่ 2 ทันที
 - fix (index.html): PDF panel ว่างเปล่าระหว่างโหลด — เพิ่ม loading spinner พร้อม PDF icon ก่อน iframe พร้อม
