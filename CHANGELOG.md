@@ -1,5 +1,12 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.28.2] — 31 มีนาคม 2569 · fix
+- fix (mcp_server.py): จำกัด plain-text read ที่ 80,000 ตัวอักษร (~20K tokens) + แสดงคำเตือนเมื่อไฟล์ถูกตัด — ป้องกัน context window overflow
+- fix (agents/base_agent.py): เพิ่ม tool_result display จาก 200 → 500 ตัวอักษร + แสดง `…` เมื่อ preview ถูกตัด — แก้ปัญหา user เข้าใจผิดว่า agent ได้รับเนื้อหาไม่ครบ
+- note: `.docx` UnicodeDecodeError แก้แล้วใน v0.28.1 แต่ต้อง restart server เพื่อให้ Python module โหลดใหม่
+
+---
+
 ## [v0.28.1] — 31 มีนาคม 2569 · fix
 - fix (mcp_server.py): `fs_read_file` ไม่สามารถอ่านไฟล์ binary ได้ — เพิ่ม text extraction สำหรับ `.docx` (python-docx), `.xlsx` (openpyxl), `.pdf` (pdfplumber) แทนการเปิดเป็น UTF-8 ตรงๆ ซึ่งทำให้ได้รับ `UnicodeDecodeError`
 

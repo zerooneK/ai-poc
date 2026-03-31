@@ -173,9 +173,11 @@ class BaseAgent:
                     sources = extract_web_sources(result)
                     yield {"type": "web_search_sources", "query": args.get('query', ''), "sources": sources}
                 elif tool_name == 'read_file':
-                    yield {"type": "tool_result", "tool": tool_name, "result": result[:200], "filename": args.get('filename', '')}
+                    preview = result[:500] + ('…' if len(result) > 500 else '')
+                    yield {"type": "tool_result", "tool": tool_name, "result": preview, "filename": args.get('filename', '')}
                 else:
-                    yield {"type": "tool_result", "tool": tool_name, "result": result[:200]}
+                    preview = result[:500] + ('…' if len(result) > 500 else '')
+                    yield {"type": "tool_result", "tool": tool_name, "result": preview}
 
             # Do NOT return early just because text was streamed alongside tool calls.
             # Pattern: agent says "I'll research this" (text) + calls web_search (tool) →

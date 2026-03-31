@@ -98,8 +98,13 @@ def fs_read_file(workspace: str, filename: str) -> str:
             return '\n\n'.join(lines) or '(ไฟล์ว่างเปล่า)'
         except Exception as e:
             raise ValueError(f"ไม่สามารถอ่านไฟล์ .pdf ได้: {e}")
+    _MAX_CHARS = 80_000  # ~20K tokens — safe for most LLM context windows
     with open(path, 'r', encoding='utf-8') as f:
-        return f.read()
+        content = f.read(_MAX_CHARS + 1)
+    if len(content) > _MAX_CHARS:
+        content = content[:_MAX_CHARS]
+        content += f'\n\n[⚠️ ไฟล์ถูกตัดที่ {_MAX_CHARS:,} ตัวอักษร เนื่องจากไฟล์มีขนาดใหญ่เกินไป]'
+    return content
 
 
 def fs_update_file(workspace: str, filename: str, content: str) -> str:
