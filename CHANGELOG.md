@@ -1,5 +1,11 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.29.3] — 31 มีนาคม 2569 · fix
+- fix (index.html): preview panel ทับ navbar — เลื่อน panel ลงมาที่ `top: 60px` + `height: calc(100vh - 60px)` ให้อยู่ใต้ navbar พอดี
+- fix (index.html): navbar ทับพื้นที่ panel — เพิ่ม `body.preview-open .navbar { right: 420px }` ให้ navbar หดออกจากพื้นที่ panel
+
+---
+
 ## [v0.29.2] — 31 มีนาคม 2569 · fix
 - fix (index.html): ปุ่มปิด preview panel ถูก squeeze หายไป — restructure header เป็น 2 rows: row1 = icon+ชื่อไฟล์+ปุ่ม ✕, row2 = tabs+copy เพื่อรับประกันว่าปุ่มปิดแสดงผลเสมอ
 
