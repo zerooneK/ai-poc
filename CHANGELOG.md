@@ -1,5 +1,10 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.29.2] — 31 มีนาคม 2569 · fix
+- fix (index.html): ปุ่มปิด preview panel ถูก squeeze หายไป — restructure header เป็น 2 rows: row1 = icon+ชื่อไฟล์+ปุ่ม ✕, row2 = tabs+copy เพื่อรับประกันว่าปุ่มปิดแสดงผลเสมอ
+
+---
+
 ## [v0.29.1] — 31 มีนาคม 2569 · fix
 - fix (index.html): preview panel กระพริบทุก ms — เกิดจาก `renderFileList` เรียก `openPreview` ทุกครั้งที่ file SSE heartbeat มา แก้โดยเปลี่ยนเป็น `_silentRefreshPreview` ที่ trigger เฉพาะเมื่อ file size เปลี่ยน
 - fix (app.py): `/api/preview` return `size` เพิ่มเพื่อให้ frontend track การเปลี่ยนแปลงได้แม่นยำ
