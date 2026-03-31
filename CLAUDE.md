@@ -43,3 +43,16 @@
 ## 📝 รูปแบบการ Commit (Message Format)
 `vX.X.X — [fix/feature/refactor/docs]: <คำอธิบายภาษาไทยหรืออังกฤษ>`
 *(ห้ามลืม bump version และ commit ในขั้นตอนเดียวกัน)*
+
+## 🔒 กฎบังคับท้าย Session (End-of-Session Mandatory Rules)
+
+ทุกครั้งที่งานในรอบนั้นเสร็จสมบูรณ์ ต้องทำตามลำดับนี้ก่อนจบ session เสมอ — **ห้ามข้าม**:
+
+1. **Bump version** — อัปเดต `index.html` (`.version-tag`) + เพิ่ม entry ใหม่ใน `CHANGELOG.md`
+2. **Run reviewers** — รัน subagent ตามตาราง Mandatory Review Order ด้านบน
+3. **Git commit** — `git add` เฉพาะไฟล์ที่เปลี่ยน แล้ว commit ด้วย format `vX.X.X — ...`
+4. **ตรวจสอบ** — รัน `git status` หลัง commit เพื่อยืนยันว่าไม่มีไฟล์ค้างอยู่
+
+> **กฎ:** ถ้ายังไม่ได้ commit → ถือว่างานยังไม่เสร็จ
+> **กฎ:** ห้าม commit ไฟล์ที่ไม่เกี่ยวข้อง เช่น `server.log`, `*.zip`, `Screenshot.png`, `.env`
+> **กฎ:** `requirements.txt` ต้องอัปเดตทุกครั้งที่ `pip install` package ใหม่
