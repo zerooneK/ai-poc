@@ -1,5 +1,11 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.29.1] — 31 มีนาคม 2569 · fix
+- fix (index.html): preview panel กระพริบทุก ms — เกิดจาก `renderFileList` เรียก `openPreview` ทุกครั้งที่ file SSE heartbeat มา แก้โดยเปลี่ยนเป็น `_silentRefreshPreview` ที่ trigger เฉพาะเมื่อ file size เปลี่ยน
+- fix (app.py): `/api/preview` return `size` เพิ่มเพื่อให้ frontend track การเปลี่ยนแปลงได้แม่นยำ
+
+---
+
 ## [v0.29.0] — 31 มีนาคม 2569 · feat
 - feat (index.html): เพิ่ม File Preview Panel — คลิกไฟล์ใน sidebar เปิด panel ด้านขวา แสดง markdown rendered + raw text, copy ได้, ปิดด้วย Esc หรือ ✕
 - feat (index.html): file item ใน sidebar มี icon ตาม extension + active highlight เมื่อเปิด preview

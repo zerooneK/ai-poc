@@ -1299,7 +1299,7 @@
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
       <span id="localAgentBadge" title="Local Agent ไม่พบ — ไฟล์จะบันทึกบน server" style="display:none;font-size:10px;padding:2px 7px;border-radius:10px;background:#22c55e;color:#fff;font-weight:600;cursor:default">💻 Local</span>
-      <span class="version-tag">v0.29.0</span>
+      <span class="version-tag">v0.29.1</span>
     </div>
   </header>
 
@@ -2557,11 +2557,14 @@
     const list = document.getElementById('fileList');
     const countEl = document.getElementById('fileCount');
     countEl.textContent = files.length + ' ไฟล์';
-    // Refresh preview if the previewed file was updated
-    if (_previewCurrentFile && files.some(f => f.name === _previewCurrentFile)) {
-      openPreview(_previewCurrentFile);
-    } else if (_previewCurrentFile && !files.some(f => f.name === _previewCurrentFile)) {
-      closePreview();
+    // Auto-refresh preview only when file size changes (avoid blinking on every SSE heartbeat)
+    if (_previewCurrentFile) {
+      const f = files.find(f => f.name === _previewCurrentFile);
+      if (!f) {
+        closePreview();
+      } else if (f.size !== _previewFileSize) {
+        _silentRefreshPreview();
+      }
     }
     list.replaceChildren();
     if (files.length === 0) {
@@ -2612,6 +2615,7 @@
 
   // ─── Preview Panel ────────────────────────────────────────────────
   let _previewCurrentFile = '';
+  let _previewFileSize = -1;
   let _previewContent = '';
   let _previewTab = 'render';  // 'render' | 'raw'
 
@@ -2632,15 +2636,30 @@
       const data = await res.json();
       if (data.error) { _showPreviewError(data.error); return; }
       _previewContent = data.content || '';
+      _previewFileSize = data.size ?? -1;
       _renderPreview();
     } catch (e) {
       _showPreviewError('ไม่สามารถโหลดไฟล์ได้: ' + e.message);
     }
   }
 
+  async function _silentRefreshPreview() {
+    // Refresh content without showing loading spinner (used by auto-refresh on file change)
+    if (!_previewCurrentFile) return;
+    try {
+      const res = await fetch(`/api/preview?file=${encodeURIComponent(_previewCurrentFile)}`);
+      const data = await res.json();
+      if (data.error) return;
+      _previewContent = data.content || '';
+      _previewFileSize = data.size ?? -1;
+      _renderPreview();
+    } catch (_) {}
+  }
+
   function closePreview() {
     document.body.classList.remove('preview-open');
     _previewCurrentFile = '';
+    _previewFileSize = -1;
     document.querySelectorAll('.file-item').forEach(el => el.classList.remove('file-item-active'));
   }
 

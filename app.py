@@ -698,7 +698,8 @@ def preview_file():
     try:
         content = fs_read_file(workspace, filename)
         ext = os.path.splitext(filename)[1].lower()
-        return jsonify({'filename': filename, 'content': content, 'ext': ext})
+        size = os.path.getsize(filepath)
+        return jsonify({'filename': filename, 'content': content, 'ext': ext, 'size': size})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
