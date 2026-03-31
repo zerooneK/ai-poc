@@ -719,5 +719,18 @@ def delete_file_api():
     _notify_workspace_changed(workspace)
     return jsonify({'success': True, 'filename': filename})
 
+
+@app.route('/api/sessions')
+def list_sessions():
+    return jsonify({'sessions': db.get_sessions()})
+
+
+@app.route('/api/sessions/<session_id>')
+def get_session_api(session_id: str):
+    if not re.match(r'^[\w\-]{8,64}$', session_id):
+        return jsonify({'error': 'invalid session_id'}), 400
+    return jsonify({'jobs': db.get_session_jobs(session_id)})
+
+
 if __name__ == '__main__':
     app.run(debug=os.getenv('FLASK_DEBUG','').lower() in {'1','true'}, host=os.getenv('FLASK_HOST','0.0.0.0'), port=5000, threaded=True)

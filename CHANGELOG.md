@@ -1,5 +1,15 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.30.0] — 31 มีนาคม 2569 · feat
+- feat (db.py): เพิ่ม `get_sessions()` + `get_session_jobs()` — query sessions grouped by session_id พร้อม first message, last agent, job count
+- feat (app.py): เพิ่ม `GET /api/sessions` และ `GET /api/sessions/<session_id>` endpoints
+- feat (index.html): Session list ใน sidebar — แสดงประวัติ sessions พร้อม colored dot ตาม agent, วันที่, จำนวนงาน
+- feat (index.html): ปุ่ม "+ Session ใหม่" — เริ่ม session ใหม่ พร้อมล้าง chat และ conversation history
+- feat (index.html): คลิก session เดิม → โหลดประวัติบทสนทนา, restore conversation context, ต่อบทสนทนาได้ทันที
+- feat (index.html): Session list refresh อัตโนมัติหลังทุก response และตอน page load
+
+---
+
 ## [v0.29.4] — 31 มีนาคม 2569 · fix
 - fix (index.html): input footer ไม่เลื่อนเมื่อ preview เปิด — เพิ่ม `body.preview-open .input-footer { right: 420px }`
 - fix (index.html): navbar content เลื่อนมากลางจอ — ลบ `right: 420px` ออกจาก navbar (navbar z-index 50 อยู่เหนือ panel อยู่แล้ว)

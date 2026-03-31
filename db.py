@@ -271,6 +271,54 @@ def get_job(job_id: str) -> Optional[dict]:
         return None
 
 
+def get_sessions(limit: int = 20) -> list:
+    """Return sessions ordered by most recent activity."""
+    if not DB_AVAILABLE:
+        return []
+    try:
+        with _connect() as conn:
+            rows = conn.execute("""
+                SELECT
+                    j.session_id,
+                    (SELECT user_input FROM jobs
+                     WHERE session_id = j.session_id
+                     ORDER BY created_at ASC LIMIT 1) AS first_message,
+                    MAX(j.created_at) AS last_active,
+                    MIN(j.created_at) AS created_at,
+                    COUNT(*) AS job_count,
+                    (SELECT agent FROM jobs
+                     WHERE session_id = j.session_id AND agent IS NOT NULL
+                     ORDER BY created_at DESC LIMIT 1) AS last_agent
+                FROM jobs j
+                WHERE j.session_id IS NOT NULL
+                GROUP BY j.session_id
+                ORDER BY last_active DESC
+                LIMIT ?
+            """, (limit,)).fetchall()
+            return [dict(r) for r in rows]
+    except Exception as e:
+        logger.warning(f"[db] get_sessions failed: {e}")
+        return []
+
+
+def get_session_jobs(session_id: str) -> list:
+    """Return completed jobs for a session, oldest first."""
+    if not DB_AVAILABLE:
+        return []
+    try:
+        with _connect() as conn:
+            rows = conn.execute("""
+                SELECT id, created_at, user_input, agent, output_text
+                FROM jobs
+                WHERE session_id = ? AND status = 'completed'
+                ORDER BY created_at ASC
+            """, (session_id,)).fetchall()
+            return [dict(r) for r in rows]
+    except Exception as e:
+        logger.warning(f"[db] get_session_jobs failed: {e}")
+        return []
+
+
 def db_status() -> dict:
     """Return DB health info for /api/health endpoint."""
     return {
