@@ -1,5 +1,39 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.31.0] — 31 มีนาคม 2569 · fix/docs
+- fix (app.py): UTF-8 safe byte truncation สำหรับ `pending_doc` — ป้องกัน multi-byte character ถูกตัดกลางตัวอักษร
+- fix (app.py): เพิ่ม `try/finally` ใน SSE generator — เรียก `db.fail_job()` เมื่อ client disconnect ป้องกัน zombie jobs
+- fix (app.py): PM subtask failure cleanup — ลบ temp files ที่สร้างไว้เมื่อ subtask ล้มเหลว + yield error event
+- fix (app.py): `handle_pm_save` yield error event เมื่อ skip unsafe/missing temp path แทนที่จะเงียบ
+- fix (app.py): เพิ่ม `_truncate_at_word()` — ตัด conversation history ที่ word boundary แทน hard cut กลางคำ
+- fix (app.py): เพิ่ม 6 workspace/file management routes — `GET/POST /api/workspace`, `GET /api/files`, `GET /api/files/stream`, `GET /api/workspaces`, `POST /api/workspace/new`
+- fix (app.py): wire `get_session_workspace(session_id)` ใน `chat()` route — per-session workspace isolation
+- fix (app.py): `api_set_workspace` ใช้ `set_session_workspace()` เมื่อมี session_id — ป้องกัน global workspace race condition
+- fix (app.py): `handle_save` guard `local_agent_mode` — reject write operations เมื่อ Local Agent Mode เปิดอยู่
+- fix (app.py): ป้องกัน double `db.fail_job()` — เพิ่ม `_job_failed` flag ใน generator finally block
+- fix (app.py): CORS origins configurable ผ่าน env var `CORS_ORIGINS` แทน hardcoded localhost
+- fix (app.py): ลบ duplicate `import logging`
+- fix (core/shared.py): เพิ่ม per-session workspace state (`_session_workspaces` dict + lock) + `get_session_workspace()` / `set_session_workspace()`
+- fix (core/shared.py): Lazy-initialized OpenAI client — `get_client()` สร้าง client ครั้งแรกเมื่อเรียก + validate API key
+- fix (core/utils.py): `web_search` `max_results` cap เปลี่ยนจาก 10 → 5 ให้ตรงกับ tool definition
+- fix (db.py): เพิ่ม `_db_write_lock` (threading.Lock) ครอบทุก write operation — ป้องกัน SQLite concurrent write corruption
+- fix (db.py): ลบ duplicated `create_job` dead code (lines 139-151)
+- fix (converter.py): PDF input size limit 100K chars — ป้องกัน worker crash จาก input ขนาดใหญ่
+- fix (converter.py): Wrap PDF runtime errors ใน `try/except Exception` — catch weasyprint runtime failure
+- fix (converter.py): `_strip_inline` ใช้ iterative loop แทน single-pass regex — รองรับ nested markdown
+- fix (mcp_server.py): เพิ่ม `UnicodeDecodeError` handler ใน `fs_read_file` — ป้องกัน crash จาก binary file
+- fix (agents/base_agent.py): ย้าย tool authorization check ก่อน `messages.append()` — ป้องกัน conversation history pollution
+- fix (local_agent.py): เพิ่ม file read size limit 80K chars ใน `fs_read_file`
+- fix (local_agent.py): เพิ่ม `UnicodeDecodeError` handler ใน `fs_read_file`
+- fix (local_agent.py): `_ALLOWED_ORIGINS` เปลี่ยนเป็น function `_get_allowed_origins()` — อ่าน env var ทุกครั้งแทน import-time
+- fix (index.html): เพิ่ม `_sanitizeHtml()` ใน `loadSession()` — ป้องกัน XSS จาก session history
+- fix (index.html): bump version tag เป็น v0.31.0
+- fix (requirements.txt): เพิ่ม minimum version pins ทุก package (flask>=3.0, openai>=1.30, ฯลฯ)
+- docs: สร้าง Level 1 Standard documentation suite 7 ไฟล์ — README, ARCHITECTURE, BACKEND_MANUAL, FRONTEND_MANUAL, USER_GUIDE, CHANGELOG, EXECUTION_SUMMARY
+- docs: ขยาย AGENTS.md จาก 26 → 170 lines — เพิ่ม build/test commands, code style, architecture patterns, security guidelines
+
+---
+
 ## [v0.30.4] — 31 มีนาคม 2569 · ux
 - ux (index.html): ย้าย typing indicator (•••) ออกจาก chat bubble — ซ่อน `.typing-indicator` ด้วย `display: none !important`
 - ux (index.html): status bar เหนือ input เปลี่ยน pulsing dot เป็น CSS spinner (`status-spin` animation) เพื่อแสดงสถานะกำลังประมวลผลได้ชัดเจนขึ้น

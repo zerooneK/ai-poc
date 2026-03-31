@@ -74,7 +74,8 @@ The codebase is in good shape after 29 bug fixes across three rounds. All Critic
 ## Known Limitations
 
 - **No authentication** — The application has no login or role-based access control. Anyone with network access to port 5000 can use it.
-- **Global workspace state** — `WORKSPACE_PATH` is a process-level variable shared across all sessions. Per-session workspace isolation is partially implemented but the global fallback remains.
+- **Per-session workspace isolation** — Fully implemented in v0.31.0. Each session has its own isolated workspace via `set_session_workspace()` and `get_session_workspace()`. The `_session_workspaces` dict has no TTL eviction, which is minor and only matters at very high session counts.
+- **No CSRF protection** — The application does not include CSRF tokens on form submissions.
 - **Single LLM provider dependency** — The system depends entirely on OpenRouter. If the API is unavailable, all features stop working.
 - **No formal test framework** — Tests are script-based and require the server to be running. No pytest, unittest, or CI pipeline is configured.
 - **No linting or formatting tools** — No pylint, flake8, black, or mypy is configured. Code style relies on manual consistency.

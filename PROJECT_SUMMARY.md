@@ -8,33 +8,43 @@
 **Internal AI Assistant Platform** — ระบบ AI สำหรับพนักงานภายในบริษัทไทย
 พนักงานพิมพ์งานเป็นภาษาไทย → AI เลือก Agent ที่เหมาะสม → สร้างเอกสาร (Draft) → User ยืนยัน → บันทึกเป็นไฟล์จริงในระบบ
 
-- **Version ปัจจุบัน:** v0.25.8 (Fix draft detection for Thai bold headings)
-- **สถานะ:** Prototype Ready + Security Hardened + Demo Preparation
+- **Version ปัจจุบัน:** v0.31.0 (Per-session workspace isolation + 6 workspace/file management routes)
+- **สถานะ:** Production-Ready POC + Session Isolation + Multi-Format Export
 - **Branch:** `wsl-experiment`
-- **Last Commit:** v0.24.3 — fix: inject CE year + English date so AI searches correct year
+- **Last Commit:** v0.31.0 — feat: per-session workspace isolation and workspace management routes
 
 ---
 
-## ฟีเจอร์ที่มีแล้ว (v0.24.1)
+## ฟีเจอร์ที่มีแล้ว (v0.31.0)
 
-| ฟีเจอร์ | สถานะ |
-|---|---|
-| AI Agents 5 แผนก (HR, บัญชี, ผู้จัดการ, PM, Chat) | ✅ ทำงานได้ |
-| Orchestrator — เลือก Agent อัตโนมัติจากคำถาม | ✅ ทำงานได้ |
-| Streaming response ผ่าน SSE | ✅ ทำงานได้ |
-| บันทึกไฟล์ใน server workspace (WSL) | ✅ ทำงานได้ |
-| Local Agent Mode — ไฟล์บน Windows โดยตรง | ✅ ทำงานได้ |
-| Sidebar แสดงไฟล์ใน workspace (server + local) | ✅ ทำงานได้ |
-| Sidebar พับ/ขยายได้ (collapsible) | ✅ ทำงานได้ |
-| Context Injection — inject file list + content ก่อนส่ง AI | ✅ ทำงานได้ |
-| Web Search ในระหว่างตอบ | ✅ ทำงานได้ |
-| ประวัติการสนทนา (SQLite) | ✅ ทำงานได้ |
-| Export PDF/DOCX ผ่าน converter.py | ✅ ทำงานได้ |
-| History viewer (history.html) | ✅ ทำงานได้ |
-| Concurrency tests ผ่านทุก TC | ✅ ผ่านแล้ว |
-| CORS lockdown บน local_agent.py | ✅ ทำงานได้ |
-| Workspace path validation (defense-in-depth) | ✅ ทำงานได้ |
-| Job save status correctness (fail vs complete) | ✅ ทำงานได้ |
+| ฟีเจอร์ | สถานะ | หมายเหตุ |
+|---|---|---|
+| AI Agents 6 แผนก (HR, บัญชี, ผู้จัดการ, PM, Chat, Document) | ✅ ทำงานได้ | Document Agent เพิ่มใน v0.27.0 |
+| Orchestrator — เลือก Agent อัตโนมัติจากคำถาม | ✅ ทำงานได้ | |
+| Streaming response ผ่าน SSE | ✅ ทำงานได้ | |
+| บันทึกไฟล์ใน server workspace | ✅ ทำงานได้ | |
+| Per-session workspace isolation | ✅ ทำงานได้ | เพิ่มใน v0.31.0 — แต่ละ session มี workspace แยกกัน |
+| 6 workspace/file management routes | ✅ ทำงานได้ | เพิ่มใน v0.31.0 — create, rename, move, copy, upload, download |
+| Local Agent Mode — ไฟล์บน Windows โดยตรง | ✅ ทำงานได้ | เพิ่มใน v0.23.0 |
+| Sidebar แสดงไฟล์ใน workspace | ✅ ทำงานได้ | |
+| Sidebar พับ/ขยายได้ (collapsible) | ✅ ทำงานได้ | |
+| File Preview Panel | ✅ ทำงานได้ | เพิ่มใน v0.29.0 |
+| Session management API | ✅ ทำงานได้ | `GET /api/sessions`, `GET /api/sessions/<session_id>` |
+| Context Injection — inject file list + content ก่อนส่ง AI | ✅ ทำงานได้ | |
+| Web Search (DuckDuckGo) | ✅ ทำงานได้ | |
+| Multi-format export (md/txt/docx/xlsx/pdf) | ✅ ทำงานได้ | |
+| ประวัติการสนทนา (SQLite) | ✅ ทำงานได้ | |
+| History viewer (history.html) | ✅ ทำงานได้ | |
+| Rate limiting (per-IP) | ✅ ทำงานได้ | เพิ่มใน v0.19.0 |
+| Gunicorn + gevent deployment | ✅ ทำงานได้ | เพิ่มใน v0.18.0 |
+| Delete with human-in-the-loop confirmation | ✅ ทำงานได้ | |
+| File overwrite support | ✅ ทำงานได้ | |
+| Confirmation flow (save/discard/edit) | ✅ ทำงานได้ | |
+| Concurrency tests ผ่านทุก TC | ✅ ผ่านแล้ว | |
+| CORS lockdown บน local_agent.py | ✅ ทำงานได้ | |
+| Workspace path validation (defense-in-depth) | ✅ ทำงานได้ | |
+| Job save status correctness (fail vs complete) | ✅ ทำงานได้ | |
+| Bug fixes (29 fixes across 3 review rounds) | ✅ เสร็จแล้ว | Critical + High + Medium severity |
 
 ---
 
@@ -49,10 +59,10 @@ Browser (index.html)
     │                                    │  core/      │
     │                                    │  orchestrator → เลือก Agent
     │                                    │  agent_factory → สร้าง Agent
-    │                                    │  shared → state กลาง
+    │                                    │  shared → state กลาง + session workspace
     │                                    │  utils → execute_tool, format_sse
     │                                    └──────┬──────┘
-    │                                    agents/ (HR/บัญชี/PM/ผจก./Chat)
+    │                                    agents/ (HR/บัญชี/PM/ผจก./Chat/Document)
     │                                    └── base_agent.py (LLM loop + tools)
     │
     └── POST localhost:7000/files ──────→ local_agent.py (Windows)
@@ -61,29 +71,45 @@ Browser (index.html)
 ```
 
 **ไฟล์หลัก:**
-1. **`app.py`** — Flask Routes, SSE streaming, request/response flow
+1. **`app.py`** — Flask Routes, SSE streaming, request/response flow, confirmation flow
 2. **`core/orchestrator.py`** — วิเคราะห์งานและเลือก Agent
 3. **`core/agent_factory.py`** — สร้างและเรียกใช้ Agent objects
-4. **`core/shared.py`** — global state (client, workspace, event bus)
+4. **`core/shared.py`** — global state (client, workspace, event bus, session workspaces)
 5. **`core/utils.py`** — `load_prompt`, `execute_tool`, `format_sse`
 6. **`agents/base_agent.py`** — agentic loop (stream + tool calls)
-7. **`agents/`** — `hr_agent.py`, `accounting_agent.py`, `manager_agent.py`, `pm_agent.py`, `chat_agent.py`
+7. **`agents/`** — `hr_agent.py`, `accounting_agent.py`, `manager_agent.py`, `pm_agent.py`, `chat_agent.py`, `document_agent.py`
 8. **`prompts/`** — System prompts แยกเป็น `.md` ต่อ Agent
 9. **`local_agent.py`** — HTTP server (port 7000) บน Windows, stdlib only
-10. **`db.py`** — SQLite: sessions + conversation history
-11. **`converter.py`** — แปลง Markdown → PDF/DOCX
+10. **`db.py`** — SQLite: jobs + saved_files
+11. **`converter.py`** — แปลง Markdown → PDF/DOCX/XLSX/TXT
+12. **`mcp_server.py`** — Filesystem tools (Layer A: functions, Layer B: FastMCP)
+13. **`gunicorn.conf.py`** — Gunicorn config (gevent workers, SSE-compatible)
 
 ---
 
 ## เทคโนโลยีหลัก
 
-- **Backend:** Flask (Python 3.11)
-- **AI:** OpenRouter API (Claude 3.5 Sonnet / 4.5)
+- **Backend:** Flask (Python 3.11) + Gunicorn (gevent workers)
+- **AI:** OpenRouter API (Claude 4.5 Sonnet)
 - **Frontend:** Vanilla HTML/JS/CSS (Silent Concierge Design)
-- **Persistence:** SQLite (db.py) + Workspace Filesystem
+- **Persistence:** SQLite (db.py, WAL mode) + Workspace Filesystem
 - **Streaming:** SSE (Server-Sent Events) + `stream_with_context`
 - **Local Agent:** `local_agent.py` (stdlib only) + browser middleware
-- **Testing:** `smoke_test_phase0.py`, `test_cases.py`, `test_concurrency_pm.py`
+- **Testing:** `smoke_test_phase0.py`, `test_cases.py`, `test_concurrency_pm.py`, `quick-demo-check.py`
+- **Rate Limiting:** flask-limiter (per-IP on chat and delete endpoints)
+
+---
+
+## Known Limitations
+
+- **No authentication** — ไม่มีระบบ login หรือ role-based access control
+- **SQLite** — ไม่รองรับ concurrent writes สูง; ใช้ WAL mode เพื่อลดปัญหา
+- **No CSRF protection** — ไม่มี CSRF token validation
+- **No formal test framework** — ใช้ script-based integration tests, ไม่มี pytest/unittest
+- **No linting or formatting tools** — ไม่มี pylint, flake8, black, mypy
+- **PDF character limit** — PDF export จำกัดที่ 100,000 characters
+- **Local Agent mode is Windows-only** — `local_agent.py` ออกแบบสำหรับ Windows
+- **`_session_workspaces` dict has no TTL eviction** — memory grows with session count (minor, only matters at very high concurrency)
 
 ---
 

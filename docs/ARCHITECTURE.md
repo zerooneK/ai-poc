@@ -141,7 +141,8 @@ When an agent generates a document, the content is held in `pending_doc` (single
 ## Key Design Decisions
 
 - **Graceful degradation in db.py** — Every database function catches its own exceptions. If SQLite is unavailable, the chat still works; only history is lost.
-- **Workspace captured once per request** — `get_workspace()` is called at the start of `generate()` and passed as a parameter. This avoids a race condition where a concurrent workspace change would affect an in-flight request.
+- **Per-session workspace isolation (v0.31.0)** — `api_set_workspace` uses `set_session_workspace(session_id, path)` when a session_id is provided, and the `chat()` route uses `get_session_workspace(session_id)` instead of the global. The global fallback only applies when no session_id is present (backward compatibility).
+- **Workspace captured once per request** — The workspace path is captured at the start of `generate()` and passed as a parameter. This avoids a race condition where a concurrent workspace change would affect an in-flight request.
 - **Read-only tools for agents** — Agents receive `READ_ONLY_TOOLS` (list_files, read_file, web_search). Write operations (create_file, update_file, delete_file) are only available through the confirmation flow in `app.py`, ensuring user approval before any file modification.
 - **SSE event bus** — Workspace changes trigger notifications through a queue-based event bus (`_ws_change_queues`), allowing multiple SSE clients watching `/api/files/stream` to receive real-time updates.
 - **Double-checked locking in AgentFactory** — Agent instances are cached and created lazily with thread-safe double-checked locking, avoiding unnecessary lock contention on the fast path.
@@ -149,7 +150,7 @@ When an agent generates a document, the content is held in `pending_doc` (single
 ## Known Limitations
 
 - **No authentication** — The application has no login or role-based access control. Anyone with network access to port 5000 can use it.
-- **Global workspace state** — `WORKSPACE_PATH` is a process-level variable shared across all sessions. In a multi-user scenario, one user changing the workspace affects all concurrent users. Per-session workspace isolation is partially implemented via `set_session_workspace()` but the global fallback remains.
+- **Session workspace dict unbounded** — The `_session_workspaces` dictionary grows without TTL eviction. At very high session counts (thousands of concurrent sessions), memory usage could increase. In practice this is not an issue for POC-scale usage.
 - **Single LLM provider** — The system depends entirely on OpenRouter. If the API is unavailable, all features stop working. There is no fallback model or offline mode.
 - **No formal test framework** — Tests are script-based integration tests (`test_cases.py`, `smoke_test_phase0.py`) that require the server to be running. No pytest or unittest configuration exists.
 - **No linting or formatting tools** — No pylint, flake8, black, or mypy is configured. Code style relies on manual consistency.
