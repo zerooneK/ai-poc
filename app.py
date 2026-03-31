@@ -17,9 +17,9 @@ from datetime import datetime
 
 # New core imports
 from core.shared import (
-    client, MODEL, OPENROUTER_API_KEY, _ALLOWED_ROOTS,
+    MODEL, OPENROUTER_API_KEY, _ALLOWED_ROOTS,
     _DEFAULT_WORKSPACE, _workspace_lock, _ws_change_queues, _ws_change_lock,
-    TEMP_DIR, _notify_workspace_changed, get_workspace, set_workspace,
+    TEMP_DIR, _notify_workspace_changed, get_workspace, get_session_workspace, set_workspace, set_session_workspace,
     AGENT_MAX_TOKENS, CHAT_MAX_TOKENS
 )
 from core.utils import load_prompt, execute_tool, format_sse
@@ -31,6 +31,18 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 _MAX_PENDING_DOC_BYTES = int(os.getenv('MAX_PENDING_DOC_BYTES', str(200 * 1024)))  # 200KB default
+
+
+def _truncate_at_word(text: str, max_len: int) -> str:
+    """Truncate text at a word boundary to avoid cutting mid-sentence or mid-JSON."""
+    if len(text) <= max_len:
+        return text
+    truncated = text[:max_len]
+    last_space = truncated.rfind(' ')
+    if last_space > max_len * 0.8:
+        return truncated[:last_space] + '…'
+    return truncated + '…'
+
 
 # Suppress WeasyPrint's extremely verbose font subsetting logs
 logging.getLogger('fontTools').setLevel(logging.ERROR)
@@ -235,6 +247,8 @@ def _tool_result_is_error(result: str) -> bool:
 # Thai keywords: substring match is safe (Thai script has no ambiguous substring overlap)
 # English keywords that risk substring false-positives ('ok' in 'stock', 'save' in 'unsaved')
 # are handled via word-boundary regex instead.
+# NOTE: _is_save_intent is only called when pending_doc or pending_temp_paths exists
+# (guarded by outer if-blocks in chat()), so false positives are mitigated.
 _SAVE_KEYWORDS = {'บันทึก', 'เซฟ', 'ยืนยัน', 'ตกลง', 'ได้เลย', 'โอเค', 'บันทึกได้', 'บันทึกเลย', 'บันทึกได้เลย', 'ใช้ได้'}
 _SAVE_BOUNDARY_RE = re.compile(r'\b(?:ok|save)\b', re.IGNORECASE)
 _SAVE_NEGATIVE_PREFIX = {'ไม่ใช่', 'ไม่ใช้'}
@@ -299,9 +313,12 @@ def _cleanup_old_temp():
     except OSError as e:
         logger.warning(f"[cleanup_old_temp] could not clean temp dir: {e}")
 
-def handle_save(pending_doc: str, pending_agent: str, workspace: str, job_id=None, output_format: str = 'md', history: list = None, overwrite_filename: str = None):
+def handle_save(pending_doc: str, pending_agent: str, workspace: str, job_id=None, output_format: str = 'md', history: list = None, overwrite_filename: str = None, local_agent_mode: bool = False):
     """Yields raw event dicts (not pre-formatted SSE) so callers can inspect type.
     If overwrite_filename is set, update the existing file instead of creating a new one."""
+    if local_agent_mode:
+        yield {'type': 'save_failed', 'message': 'โหมด Local Agent ไม่รองรับการบันทึกไฟล์ — กรุณาปิดโหมด Local Agent ก่อน'}
+        return
     try:
         if overwrite_filename:
             filename = overwrite_filename
@@ -360,7 +377,10 @@ def handle_pm_save(temp_paths: list, workspace: str, job_id=None, output_format:
     saved = []
     for i, temp_path in enumerate(temp_paths):
         fmt = (output_formats[i] if output_formats and i < len(output_formats) else output_format)
-        if not _is_safe_temp_path(temp_path) or not os.path.isfile(temp_path): continue
+        if not _is_safe_temp_path(temp_path) or not os.path.isfile(temp_path):
+            logger.warning("[handle_pm_save] skipped unsafe or missing temp path: %s", temp_path)
+            yield {'type': 'error', 'message': f'ข้ามไฟล์ที่ไม่ปลอดภัยหรือไม่มีอยู่: {os.path.basename(temp_path)}'}
+            continue
         try:
             if fmt in ('md', 'txt'):
                 filename = _move_to_workspace(temp_path, workspace)
@@ -393,7 +413,8 @@ def handle_pm_save(temp_paths: list, workspace: str, job_id=None, output_format:
 
 app = Flask(__name__)
 app.json.ensure_ascii = False
-CORS(app, origins=["http://localhost:5000", "http://127.0.0.1:5000", "http://0.0.0.0:5000"])
+_cors_origins = os.getenv('CORS_ORIGINS', 'http://localhost:5000,http://127.0.0.1:5000,http://0.0.0.0:5000')
+CORS(app, origins=[o.strip() for o in _cors_origins.split(',') if o.strip()])
 db.init_db()
 
 from flask_limiter import Limiter
@@ -424,7 +445,8 @@ def chat():
     user_input = request.json.get('message', '').strip()
     if not user_input: return jsonify({'error': 'ไม่มีข้อความ'}), 400
     
-    pending_doc = request.json.get('pending_doc', '').strip()[:_MAX_PENDING_DOC_BYTES]
+    _raw_doc = request.json.get('pending_doc', '').strip()
+    pending_doc = _raw_doc.encode('utf-8')[:_MAX_PENDING_DOC_BYTES].decode('utf-8', errors='ignore')
     pending_agent = request.json.get('pending_agent', '').strip()
     pending_temp_paths = request.json.get('pending_temp_paths', [])
     pending_agent_types = request.json.get('agent_types') or []
@@ -439,16 +461,18 @@ def chat():
     raw_history = request.json.get('conversation_history', [])
 
     conversation_history = [
-        {'role': m['role'], 'content': str(m['content'])[:3000]}
+        {'role': m['role'], 'content': _truncate_at_word(str(m['content']), 3000)}
         for m in (raw_history[-20:] if isinstance(raw_history, list) else [])
         if isinstance(m, dict) and m.get('role') in ('user', 'assistant') and m.get('content')
     ]
 
     def generate():
         job_id = db.create_job(user_input, session_id)
+        _job_completed = False
+        _job_failed = False
         # Capture workspace once at request start — do NOT call get_workspace() again
         # inside the PM loop or sub-agent calls (D3: global state risk).
-        workspace = get_workspace()
+        workspace = get_session_workspace(session_id) if session_id else get_workspace()
         os.makedirs(workspace, exist_ok=True)
         _cleanup_old_temp()
 
@@ -461,12 +485,14 @@ def chat():
                         pm_save_ok = False
                 if pm_save_ok:
                     db.complete_job(job_id, '')
+                    _job_completed = True
                 else:
                     db.fail_job(job_id)
                 yield format_sse({'type': 'done'})
                 return
             if _is_edit_intent(user_input) and not _is_discard_intent(user_input):
                 db.discard_job(job_id)
+                _job_completed = True
                 yield format_sse({'type': 'text', 'content': 'คุณมีไฟล์รอบันทึกอยู่ กรุณาพิมพ์ **บันทึก** เพื่อบันทึกไฟล์ก่อน หรือ **ยกเลิก** เพื่อยกเลิกแล้วส่งคำสั่งใหม่'})
                 yield format_sse({'type': 'done'})
                 return
@@ -474,6 +500,7 @@ def chat():
                 if _is_safe_temp_path(tp) and os.path.isfile(tp): os.remove(tp)
             if _is_pure_discard(user_input):
                 db.discard_job(job_id)
+                _job_completed = True
                 yield format_sse({'type': 'text', 'content': '🗑️ ยกเลิกการบันทึกไฟล์เรียบร้อย'})
                 yield format_sse({'type': 'done'})
                 return
@@ -482,12 +509,13 @@ def chat():
         if pending_doc and pending_agent:
             if _is_save_intent(user_input):
                 save_ok = True
-                for event in handle_save(pending_doc, pending_agent, workspace, job_id, output_format, conversation_history[-5:], overwrite_filename):
+                for event in handle_save(pending_doc, pending_agent, workspace, job_id, output_format, conversation_history[-5:], overwrite_filename, local_agent_mode=local_agent_mode):
                     yield format_sse(event)
                     if event.get('type') == 'save_failed':
                         save_ok = False
                 if save_ok:
                     db.complete_job(job_id, pending_doc)
+                    _job_completed = True
                 else:
                     db.fail_job(job_id)
                 yield format_sse({'type': 'done'})
@@ -495,6 +523,7 @@ def chat():
             elif _is_discard_intent(user_input):
                 if _is_pure_discard(user_input):
                     db.discard_job(job_id)
+                    _job_completed = True
                     yield format_sse({'type': 'text', 'content': '🗑️ ยกเลิกเอกสารแล้ว สามารถส่งคำสั่งใหม่ได้เลย'})
                     yield format_sse({'type': 'done'})
                     return
@@ -506,6 +535,7 @@ def chat():
                     if event.get('type') == 'text':
                         text_chunks.append(event.get('content', ''))
                 db.complete_job(job_id, ''.join(text_chunks))
+                _job_completed = True
                 yield format_sse({'type': 'done'})
                 return
             else:
@@ -527,16 +557,17 @@ def chat():
                     yield format_sse({'type': 'error', 'message': 'PM Agent ไม่สามารถแบ่งงานได้'})
                     return
                 yield format_sse({'type': 'pm_plan', 'subtasks': subtasks})
-                
+
                 all_pm_chunks = []
+                pm_temp_paths = []
                 for i, subtask in enumerate(subtasks):
                     sub_agent_type = subtask.get('agent', 'hr')
                     sub_task_desc = subtask.get('task', user_input)
                     sub_agent = AgentFactory.get_agent(sub_agent_type)
-                    
+
                     yield format_sse({'type': 'agent', 'agent': sub_agent_type, 'reason': f'Subtask {i+1}/{len(subtasks)}', 'task': sub_task_desc[:80]})
                     yield format_sse({'type': 'status', 'message': f'{sub_agent.name} กำลังสร้างเอกสาร...'})
-                    
+
                     subtask_chunks = []
                     try:
                         for chunk in sub_agent.stream_response(f"[PM_SUBTASK]\n{sub_task_desc}", max_tokens=AGENT_MAX_TOKENS):
@@ -546,7 +577,11 @@ def chat():
                         logger.error("[PM subtask %d] stream_response failed: %s", i + 1, sub_e, exc_info=True)
                         yield format_sse({'type': 'error', 'message': f'Subtask {i + 1} ({sub_agent.name}) เกิดข้อผิดพลาด: กรุณาลองใหม่อีกครั้ง'})
                         yield format_sse({'type': 'subtask_done', 'agent': sub_agent_type, 'index': i, 'total': len(subtasks)})
-                        continue
+                        for tp in pm_temp_paths:
+                            try:
+                                if os.path.isfile(tp): os.remove(tp)
+                            except OSError: pass
+                        break
 
                     # Strip sentinel echo and save-footer in case LLM ignores prompt rule
                     _SAVE_FOOTER = '💬 ต้องการแก้ไขส่วนไหนไหม? หรือพิมพ์ **บันทึก** เพื่อบันทึกไฟล์'
@@ -554,10 +589,12 @@ def chat():
                     all_pm_chunks.append(full_content)
                     if full_content.strip():
                         temp_path = _write_temp(full_content, sub_agent_type)
+                        pm_temp_paths.append(temp_path)
                         yield format_sse({'type': 'pending_file', 'temp_path': temp_path, 'filename': os.path.basename(temp_path), 'agent': sub_agent_type})
                     yield format_sse({'type': 'subtask_done', 'agent': sub_agent_type, 'index': i, 'total': len(subtasks)})
-                
+
                 db.complete_job(job_id, '\n\n---\n\n'.join(all_pm_chunks))
+                _job_completed = True
             else:
                 yield format_sse({'type': 'status', 'message': f'{agent_instance.name} กำลังตรวจสอบ workspace...'})
                 active_tools = LOCAL_AGENT_TOOLS if local_agent_mode else READ_ONLY_TOOLS
@@ -583,97 +620,19 @@ def chat():
                         yield format_sse(sse_data)
                     if sse_data.get('type') == 'text': text_chunks.append(sse_data.get('content', ''))
                 db.complete_job(job_id, ''.join(text_chunks))
+                _job_completed = True
 
             yield format_sse({'type': 'done'})
         except Exception as e:
             db.fail_job(job_id)
+            _job_failed = True
             logger.error(f"[generate] unhandled error: {e}", exc_info=True)
             yield format_sse({'type': 'error', 'message': 'เกิดข้อผิดพลาดจากระบบ กรุณาลองใหม่อีกครั้ง'})
             yield format_sse({'type': 'done'})
-
-    return Response(stream_with_context(generate()), mimetype='text/event-stream; charset=utf-8', headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no', 'Connection': 'keep-alive'})
-
-@app.route('/api/workspace', methods=['GET'])
-def get_workspace_api():
-    wp = get_workspace()
-    return jsonify({'path': wp, 'exists': os.path.isdir(wp), 'files': len(fs_list_files(wp))})
-
-@app.route('/api/workspace', methods=['POST'])
-def set_workspace_api():
-    new_path = (request.json or {}).get('path', '').strip()
-    abs_path = _normalize_workspace_path(new_path)
-    if len(abs_path) <= 3 or not _is_allowed_workspace_path(abs_path): return jsonify({'error': 'Invalid path'}), 400
-    os.makedirs(abs_path, exist_ok=True)
-    set_workspace(abs_path)
-    return jsonify({'path': abs_path, 'exists': True})
-
-@app.route('/api/workspaces', methods=['GET'])
-def list_workspaces():
-    current = os.path.realpath(get_workspace())
-    result = {'current': current, 'roots': []}
-    for root in _ALLOWED_ROOTS:
-        workspaces = []
-        try:
-            for entry in sorted(os.scandir(root), key=lambda e: e.name.lower()):
-                if entry.is_dir() and not entry.name.startswith('.'):
-                    workspaces.append({'path': entry.path, 'name': entry.name, 'active': os.path.realpath(entry.path) == current})
-        except OSError as e:
-            logger.warning(f"[list_workspaces] cannot scan root {root}: {e}")
-        result['roots'].append({'root': root, 'label': os.path.basename(root) or root, 'workspaces': workspaces})
-    return jsonify(result)
-
-@app.route('/api/workspace/new', methods=['POST'])
-def create_workspace_folder():
-    data = request.json or {}
-    root, name = data.get('root', '').strip(), data.get('name', '').strip()
-    if not root or not name or not re.match(r'^[a-zA-Z0-9_-]{1,50}$', name):
-        return jsonify({'error': 'Invalid request'}), 400
-    # Validate root is one of the configured allowed roots — never trust client-provided path
-    real_root = os.path.realpath(root)
-    if real_root not in {os.path.realpath(r) for r in _ALLOWED_ROOTS}:
-        logger.warning("[create_workspace_folder] rejected invalid root: %s", root)
-        return jsonify({'error': 'Invalid root'}), 400
-    new_path = os.path.realpath(os.path.join(real_root, name))
-    if not _is_allowed_workspace_path(new_path):
-        logger.warning("[create_workspace_folder] path escape attempt: %s", new_path)
-        return jsonify({'error': 'Invalid path'}), 400
-    os.makedirs(new_path, exist_ok=True)
-    set_workspace(new_path)
-    return jsonify({'path': new_path, 'name': name})
-
-@app.route('/api/files')
-def list_files_snapshot():
-    wp = get_workspace()
-    return jsonify({'workspace': wp, 'files': fs_list_files(wp)})
-
-@app.route('/api/files/stream')
-def files_stream():
-    def generate():
-        wp = get_workspace()
-        event_queue = queue.Queue(maxsize=20)
-        with _ws_change_lock: _ws_change_queues.setdefault(wp, []).append(event_queue)
-        class Handler(FileSystemEventHandler):
-            def on_any_event(self, event):
-                if not event.is_directory:
-                    try: event_queue.put_nowait('changed')
-                    except queue.Full: pass
-        observer = Observer()
-        observer.schedule(Handler(), wp, recursive=False)
-        observer.start()
-        try:
-            yield format_sse({'type': 'files', 'files': fs_list_files(wp), 'workspace': wp})
-            while True:
-                try: event_queue.get(timeout=25)
-                except queue.Empty:
-                    yield format_sse({'type': 'heartbeat'})
-                    continue
-                yield format_sse({'type': 'files', 'files': fs_list_files(wp), 'workspace': wp})
         finally:
-            observer.stop()
-            observer.join(timeout=2)
-            with _ws_change_lock:
-                bucket = _ws_change_queues.get(wp, [])
-                if event_queue in bucket: bucket.remove(event_queue)
+            if not _job_completed and not _job_failed:
+                db.fail_job(job_id)
+
     return Response(stream_with_context(generate()), mimetype='text/event-stream; charset=utf-8', headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no', 'Connection': 'keep-alive'})
 
 @app.route('/api/health')
@@ -696,7 +655,9 @@ def serve_workspace_file(filename: str):
         return jsonify({'error': 'invalid filename'}), 400
     workspace = get_workspace()
     filepath = os.path.join(workspace, filename)
-    if not os.path.realpath(filepath).startswith(os.path.realpath(workspace)):
+    real_workspace = os.path.realpath(workspace)
+    real_filepath = os.path.realpath(filepath)
+    if not real_filepath.startswith(real_workspace + os.sep) and real_filepath != real_workspace:
         return jsonify({'error': 'access denied'}), 403
     if not os.path.isfile(filepath):
         return jsonify({'error': 'not found'}), 404
@@ -749,6 +710,102 @@ def get_session_api(session_id: str):
     if not re.match(r'^[\w\-]{8,64}$', session_id):
         return jsonify({'error': 'invalid session_id'}), 400
     return jsonify({'jobs': db.get_session_jobs(session_id)})
+
+
+# ─── Workspace & File Management Routes ──────────────────────────────────────
+
+@app.route('/api/files')
+def api_list_files():
+    """Return list of files in the current workspace."""
+    workspace = get_workspace()
+    files = fs_list_files(workspace)
+    return jsonify({'files': files})
+
+
+@app.route('/api/files/stream')
+def api_stream_files():
+    """SSE endpoint — subscribe to workspace change notifications."""
+    workspace = get_workspace()
+
+    def generate():
+        q = queue.Queue()
+        with _ws_change_lock:
+            _ws_change_queues.setdefault(workspace, []).append(q)
+        try:
+            while True:
+                q.get()  # blocks until notified
+                yield format_sse({'type': 'files_changed'})
+        except GeneratorExit:
+            raise
+        finally:
+            with _ws_change_lock:
+                queues = _ws_change_queues.get(workspace, [])
+                if q in queues:
+                    queues.remove(q)
+
+    return Response(stream_with_context(generate()), mimetype='text/event-stream; charset=utf-8', headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no', 'Connection': 'keep-alive'})
+
+
+@app.route('/api/workspace')
+def api_get_workspace():
+    """Return the current workspace path."""
+    return jsonify({'workspace': get_workspace()})
+
+
+@app.route('/api/workspace', methods=['POST'])
+def api_set_workspace():
+    """Set the workspace path. Validates against allowed roots."""
+    if not request.json:
+        return jsonify({'error': 'Invalid request'}), 400
+    path = request.json.get('path', '').strip()
+    if not path:
+        return jsonify({'error': 'ต้องระบุ path'}), 400
+    normalized = _normalize_workspace_path(path)
+    if not _is_allowed_workspace_path(normalized):
+        return jsonify({'error': f'ไม่อนุญาต: path อยู่นอก allowed roots'}), 400
+    os.makedirs(normalized, exist_ok=True)
+    session_id = request.json.get('session_id')
+    if session_id:
+        set_session_workspace(session_id, normalized)
+    else:
+        logger.warning("[api_set_workspace] no session_id provided — falling back to global workspace")
+        set_workspace(normalized)
+    return jsonify({'workspace': normalized}), 200
+
+
+@app.route('/api/workspaces')
+def api_list_workspaces():
+    """List available workspace directories under allowed roots."""
+    workspaces = []
+    for root in _ALLOWED_ROOTS:
+        if os.path.isdir(root):
+            try:
+                for entry in sorted(os.scandir(root), key=lambda e: e.name):
+                    if entry.is_dir():
+                        workspaces.append({
+                            'name': entry.name,
+                            'path': os.path.realpath(entry.path),
+                        })
+            except OSError:
+                pass
+    return jsonify({'workspaces': workspaces})
+
+
+@app.route('/api/workspace/new', methods=['POST'])
+def api_create_workspace():
+    """Create a new workspace directory and set it as current."""
+    if not request.json:
+        return jsonify({'error': 'Invalid request'}), 400
+    name = request.json.get('name', '').strip()
+    if not name or not re.match(r'^[\w]{1,60}$', name):
+        return jsonify({'error': 'ชื่อ workspace ต้องเป็นตัวอักษร a-z, 0-9 หรือ _ เท่านั้น (สูงสุด 60 ตัวอักษร)'}), 400
+    base = os.path.dirname(_DEFAULT_WORKSPACE)
+    new_path = os.path.join(base, name)
+    if not _is_allowed_workspace_path(new_path):
+        return jsonify({'error': f'ไม่อนุญาต: path อยู่นอก allowed roots'}), 400
+    os.makedirs(new_path, exist_ok=True)
+    set_workspace(new_path)
+    return jsonify({'workspace': new_path}), 201
 
 
 if __name__ == '__main__':

@@ -3013,7 +3013,7 @@
           aiBody.className = 'msg-ai-body';
           const outputArea = document.createElement('div');
           outputArea.className = 'output-area';
-          outputArea.innerHTML = marked.parse(job.output_text);
+          outputArea.innerHTML = _sanitizeHtml(marked.parse(job.output_text));
           aiBody.appendChild(outputArea);
           container.appendChild(accentLine);
           container.appendChild(aiBody);

@@ -100,7 +100,7 @@ def execute_tool(workspace: str, tool_name: str, tool_args: dict) -> str:
             return f"__LOCAL_DELETE__:{filename}"
         elif tool_name == 'web_search':
             query = tool_args.get('query', '')
-            max_results = min(int(tool_args.get('max_results', 5)), 10)
+            max_results = min(int(tool_args.get('max_results', 5)), 5)
             return _web_search(query, max_results)
         else:
             return f"❌ ไม่รู้จัก tool: {tool_name}"

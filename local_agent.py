@@ -40,14 +40,15 @@ DEFAULT_WORKSPACE = os.path.join(os.path.expanduser("~"), "ai-workspace")
 
 # Origins allowed to call this agent.
 # Set LOCAL_AGENT_ALLOWED_ORIGINS env var to override (comma-separated).
-_ALLOWED_ORIGINS: set = {
-    o.strip()
-    for o in os.getenv(
-        "LOCAL_AGENT_ALLOWED_ORIGINS",
-        "http://localhost:5000,http://127.0.0.1:5000",
-    ).split(",")
-    if o.strip()
-}
+def _get_allowed_origins() -> set:
+    return {
+        o.strip()
+        for o in os.getenv(
+            "LOCAL_AGENT_ALLOWED_ORIGINS",
+            "http://localhost:5000,http://127.0.0.1:5000",
+        ).split(",")
+        if o.strip()
+    }
 
 # ─── Sandbox + File Operations ────────────────────────────────────────────────
 
@@ -98,8 +99,16 @@ def fs_read_file(workspace: str, filename: str) -> str:
     path = _validate_path(workspace, filename)
     if not os.path.exists(path):
         raise FileNotFoundError(f"ไม่พบไฟล์ '{filename}'")
-    with open(path, "r", encoding="utf-8") as f:
-        return f.read()
+    _MAX_CHARS = 80_000
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            content = f.read(_MAX_CHARS + 1)
+    except UnicodeDecodeError:
+        raise ValueError(f"ไม่สามารถอ่านไฟล์ '{filename}' ได้ — ไฟล์อาจเป็นไฟล์ไบนารีที่ไม่รองรับ")
+    if len(content) > _MAX_CHARS:
+        content = content[:_MAX_CHARS]
+        content += f'\n\n[⚠️ ไฟล์ถูกตัดที่ {_MAX_CHARS:,} ตัวอักษร เนื่องจากไฟล์มีขนาดใหญ่เกินไป]'
+    return content
 
 
 def fs_update_file(workspace: str, filename: str, content: str) -> str:
@@ -128,11 +137,11 @@ class AgentHandler(BaseHTTPRequestHandler):
     def _origin_allowed(self) -> bool:
         """Return True if request Origin is in the allowlist or absent (curl/scripts)."""
         origin = self.headers.get("Origin", "")
-        return (not origin) or (origin in _ALLOWED_ORIGINS)
+        return (not origin) or (origin in _get_allowed_origins())
 
     def _add_cors_headers(self):
         origin = self.headers.get("Origin", "")
-        if origin in _ALLOWED_ORIGINS:
+        if origin in _get_allowed_origins():
             self.send_header("Access-Control-Allow-Origin", origin)
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")

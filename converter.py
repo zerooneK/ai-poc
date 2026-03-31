@@ -113,9 +113,12 @@ def to_docx(text: str) -> bytes:
 
 def _strip_inline(text: str) -> str:
     """Remove markdown inline markers for plain text contexts."""
-    text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)
-    text = re.sub(r'\*(.+?)\*', r'\1', text)
-    text = re.sub(r'`(.+?)`', r'\1', text)
+    prev = None
+    while prev != text:
+        prev = text
+        text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)
+        text = re.sub(r'\*(.+?)\*', r'\1', text)
+        text = re.sub(r'`(.+?)`', r'\1', text)
     return text
 
 
@@ -185,17 +188,21 @@ def to_xlsx(text: str) -> bytes:
 
 def to_pdf(text: str) -> bytes:
     try:
+        _MAX_PDF_CHARS = 100_000  # ~100K characters
+        if len(text) > _MAX_PDF_CHARS:
+            text = text[:_MAX_PDF_CHARS] + '\n\n[⚠️ เอกสารถูกตัดเนื่องจากมีขนาดใหญ่เกินไป]'
         import markdown as md_lib
         from weasyprint import HTML
     except ImportError as e:
         raise RuntimeError(f"PDF export ต้องการ weasyprint และ markdown: {e}")
 
-    html_body = md_lib.markdown(
-        text,
-        extensions=['tables', 'fenced_code', 'nl2br']
-    )
+    try:
+        html_body = md_lib.markdown(
+            text,
+            extensions=['tables', 'fenced_code', 'nl2br']
+        )
 
-    html = f"""<!DOCTYPE html>
+        html = f"""<!DOCTYPE html>
 <html lang="th">
 <head>
 <meta charset="UTF-8">
@@ -230,4 +237,6 @@ def to_pdf(text: str) -> bytes:
 <body>{html_body}</body>
 </html>"""
 
-    return HTML(string=html).write_pdf()
+        return HTML(string=html).write_pdf()
+    except Exception as e:
+        raise RuntimeError(f"ไม่สามารถสร้าง PDF ได้: {e}")

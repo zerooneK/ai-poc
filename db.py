@@ -13,10 +13,14 @@ import sqlite3
 import uuid
 import logging
 import os
+import threading
 from datetime import datetime, timezone
 from typing import Optional
 
 logger = logging.getLogger(__name__)
+
+# Module-level write lock for thread-safe SQLite writes
+_db_write_lock = threading.Lock()
 
 _DB_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), 'data', 'assistant.db'
@@ -121,12 +125,13 @@ def create_job(user_input: str, session_id: Optional[str] = None) -> Optional[st
         return None
     try:
         job_id = str(uuid.uuid4())
-        with _connect() as conn:
-            conn.execute(
-                "INSERT INTO jobs (id, created_at, session_id, user_input, status)"
-                " VALUES (?, ?, ?, ?, 'pending')",
-                (job_id, _now(), session_id, user_input)
-            )
+        with _db_write_lock:
+            with _connect() as conn:
+                conn.execute(
+                    "INSERT INTO jobs (id, created_at, session_id, user_input, status)"
+                    " VALUES (?, ?, ?, ?, 'pending')",
+                    (job_id, _now(), session_id, user_input)
+                )
         return job_id
     except Exception as e:
         logger.warning(f"[db] create_job failed: {e}")
@@ -138,11 +143,12 @@ def update_job_agent(job_id: Optional[str], agent: str, reason: str) -> None:
     if not DB_AVAILABLE or not job_id:
         return
     try:
-        with _connect() as conn:
-            conn.execute(
-                "UPDATE jobs SET agent = ?, reason = ? WHERE id = ?",
-                (agent, reason, job_id)
-            )
+        with _db_write_lock:
+            with _connect() as conn:
+                conn.execute(
+                    "UPDATE jobs SET agent = ?, reason = ? WHERE id = ?",
+                    (agent, reason, job_id)
+                )
     except Exception as e:
         logger.warning(f"[db] update_job_agent failed: {e}")
 
@@ -152,11 +158,12 @@ def complete_job(job_id: Optional[str], output_text: str) -> None:
     if not DB_AVAILABLE or not job_id:
         return
     try:
-        with _connect() as conn:
-            conn.execute(
-                "UPDATE jobs SET status = 'completed', output_text = ? WHERE id = ?",
-                (output_text, job_id)
-            )
+        with _db_write_lock:
+            with _connect() as conn:
+                conn.execute(
+                    "UPDATE jobs SET status = 'completed', output_text = ? WHERE id = ?",
+                    (output_text, job_id)
+                )
     except Exception as e:
         logger.warning(f"[db] complete_job failed: {e}")
 
@@ -166,11 +173,12 @@ def fail_job(job_id: Optional[str]) -> None:
     if not DB_AVAILABLE or not job_id:
         return
     try:
-        with _connect() as conn:
-            conn.execute(
-                "UPDATE jobs SET status = 'error' WHERE id = ?",
-                (job_id,)
-            )
+        with _db_write_lock:
+            with _connect() as conn:
+                conn.execute(
+                    "UPDATE jobs SET status = 'error' WHERE id = ?",
+                    (job_id,)
+                )
     except Exception as e:
         logger.warning(f"[db] fail_job failed: {e}")
 
@@ -180,11 +188,12 @@ def discard_job(job_id: Optional[str]) -> None:
     if not DB_AVAILABLE or not job_id:
         return
     try:
-        with _connect() as conn:
-            conn.execute(
-                "UPDATE jobs SET status = 'discarded' WHERE id = ?",
-                (job_id,)
-            )
+        with _db_write_lock:
+            with _connect() as conn:
+                conn.execute(
+                    "UPDATE jobs SET status = 'discarded' WHERE id = ?",
+                    (job_id,)
+                )
     except Exception as e:
         logger.warning(f"[db] discard_job failed: {e}")
 
@@ -195,12 +204,13 @@ def record_file(job_id: Optional[str], filename: str,
     if not DB_AVAILABLE or not job_id:
         return
     try:
-        with _connect() as conn:
-            conn.execute(
-                "INSERT INTO saved_files (id, job_id, created_at, filename, agent, size_bytes)"
-                " VALUES (?, ?, ?, ?, ?, ?)",
-                (str(uuid.uuid4()), job_id, _now(), filename, agent, size_bytes)
-            )
+        with _db_write_lock:
+            with _connect() as conn:
+                conn.execute(
+                    "INSERT INTO saved_files (id, job_id, created_at, filename, agent, size_bytes)"
+                    " VALUES (?, ?, ?, ?, ?, ?)",
+                    (str(uuid.uuid4()), job_id, _now(), filename, agent, size_bytes)
+                )
     except Exception as e:
         logger.warning(f"[db] record_file failed: {e}")
 

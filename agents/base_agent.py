@@ -150,14 +150,18 @@ class BaseAgent:
                 for i in sorted(tool_calls_acc.keys())
             ]
 
-            messages.append({"role": "assistant", "content": text_streamed or "", "tool_calls": tool_calls_list})
-
+            # Authorization check BEFORE appending to messages
             allowed_names = {t['function']['name'] for t in tools}
             for tc in tool_calls_list:
                 tool_name = tc["function"]["name"]
                 if tool_name not in allowed_names:
                     yield {"type": "error", "message": f"Blocked disallowed tool: {tool_name}"}
                     return
+
+            messages.append({"role": "assistant", "content": text_streamed or "", "tool_calls": tool_calls_list})
+
+            for tc in tool_calls_list:
+                tool_name = tc["function"]["name"]
                 
                 try:
                     args = json.loads(tc["function"]["arguments"])

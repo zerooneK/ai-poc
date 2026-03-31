@@ -99,8 +99,11 @@ def fs_read_file(workspace: str, filename: str) -> str:
         except Exception as e:
             raise ValueError(f"ไม่สามารถอ่านไฟล์ .pdf ได้: {e}")
     _MAX_CHARS = 80_000  # ~20K tokens — safe for most LLM context windows
-    with open(path, 'r', encoding='utf-8') as f:
-        content = f.read(_MAX_CHARS + 1)
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            content = f.read(_MAX_CHARS + 1)
+    except UnicodeDecodeError:
+        raise ValueError(f"ไม่สามารถอ่านไฟล์ '{filename}' ได้ — ไฟล์อาจเป็นไฟล์ไบนารีที่ไม่รองรับ")
     if len(content) > _MAX_CHARS:
         content = content[:_MAX_CHARS]
         content += f'\n\n[⚠️ ไฟล์ถูกตัดที่ {_MAX_CHARS:,} ตัวอักษร เนื่องจากไฟล์มีขนาดใหญ่เกินไป]'

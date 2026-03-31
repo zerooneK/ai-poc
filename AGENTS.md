@@ -1,25 +1,157 @@
-# Repository Guidelines
+# AGENTS.md — Repository Guidelines for AI Coding Agents
 
-## Project Structure & Module Organization
-`app.py` is the Flask entry point and wires API routes, SSE streaming, and confirmation flows. Core orchestration logic lives in `core/` (`orchestrator.py`, `agent_factory.py`, `shared.py`, `utils.py`). Agent implementations live in `agents/`, and their system prompts live in `prompts/`. Frontend assets are the root-level `index.html` and `history.html`. Persistent and generated data go to `data/`, `workspace/`, and `temp/`. Design notes and implementation plans live in `docs/` and `plans/`.
+This document describes the structure, conventions, and workflows for this Python/Flask internal AI assistant POC. Read it fully before making changes.
+
+## Project Structure
+
+```
+ai-poc/
+├── app.py                    # Flask app + SSE streaming + all routes
+├── db.py                     # SQLite persistence (jobs + saved_files tables)
+├── converter.py              # Multi-format export (md/txt/docx/xlsx/pdf)
+├── mcp_server.py             # MCP filesystem tools (Layer A: functions, Layer B: FastMCP)
+├── local_agent.py            # Standalone HTTP server for local workspace (port 7000)
+├── gunicorn.conf.py          # Gunicorn config (gevent workers, SSE-compatible)
+├── setup.sh                  # First-time environment setup
+├── start.sh                  # Server startup script
+├── requirements.txt          # 16 packages, unpinned versions
+├── .env.example              # Environment variable template (Thai + English)
+├── .gitignore                # Standard Python + project-specific ignores
+├── index.html                # Frontend SPA (Vanilla HTML/JS/CSS)
+├── history.html              # Job history page
+│
+├── core/                     # Orchestration layer
+│   ├── orchestrator.py       # LLM-based routing to specialized agents
+│   ├── agent_factory.py      # Thread-safe singleton-ish agent factory
+│   ├── shared.py             # Shared state: client, model, workspace, token limits
+│   └── utils.py              # Helpers: load_prompt, execute_tool, web_search, format_sse
+│
+├── agents/                   # Specialized agent implementations
+│   ├── base_agent.py         # BaseAgent — streaming + tool-calling agentic loop
+│   ├── hr_agent.py           # HRAgent (delegates to BaseAgent)
+│   ├── accounting_agent.py   # AccountingAgent (delegates to BaseAgent)
+│   ├── manager_agent.py      # ManagerAgent (delegates to BaseAgent)
+│   ├── pm_agent.py           # PMAgent — has plan() for subtask decomposition
+│   ├── chat_agent.py         # ChatAgent (delegates to BaseAgent)
+│   └── document_agent.py     # DocumentAgent (delegates to BaseAgent)
+│
+├── prompts/                  # System prompts as .md files (one per agent + orchestrator)
+├── workspace/                # Saved output files (git-tracked via .gitkeep)
+├── temp/                     # Temporary draft files (cleaned by cron)
+├── data/                     # SQLite database (assistant.db)
+├── docs/                     # Design documentation
+├── plans/                    # Feature/bug fix plans
+├── backup/                   # Demo backup files
+├── .claude/agents/           # Claude Code subagent definitions (12 agents)
+└── .opencode/                # OpenCode AI agent/skill definitions
+```
 
 ## Build, Test, and Development Commands
-Use the provided shell scripts instead of ad hoc setup.
 
-- `bash setup.sh`: installs system packages, creates `venv`, installs Python dependencies, and initializes local directories.
-- `./start.sh`: activates `venv`, refreshes dependencies, and starts Gunicorn on `http://localhost:5000`.
-- `python smoke_test_phase0.py`: runs a fast smoke test against a running local server.
-- `python test_cases.py`: exercises routed agent flows and PM save behavior.
-- `python test_concurrency_pm.py --tc 1 2 3 4`: runs concurrency and workspace-switch scenarios.
+Always use the existing shell scripts — do not create ad hoc setup commands. The server must be running on `localhost:5000` for tests.
 
-## Coding Style & Naming Conventions
-Follow existing Python style: 4-space indentation, `snake_case` for functions and variables, `PascalCase` for classes, and uppercase constants such as `BASE_URL`. Keep modules focused by responsibility and place shared runtime logic in `core/` rather than duplicating it across agents. Prefer short docstrings on non-obvious helpers. There is no configured formatter in the repo, so match surrounding code closely and keep imports and logging consistent with existing files.
+| Command | Description |
+|---|---|
+| `bash setup.sh` | Install system packages, create venv, install pip deps, scaffold `.env`, setup cron |
+| `./start.sh` | Activate venv, refresh deps, run Gunicorn with gevent workers on `http://localhost:5000` |
+| `python smoke_test_phase0.py` | Basic health check (no external deps, uses urllib) |
+| `python test_cases.py` | Full routed-agent flow checks (uses requests, parses SSE events) |
+| `python test_concurrency_pm.py --tc 1 2 3 4` | PM concurrency scenarios (4 test cases) |
+| `python quick-demo-check.py` | Fast demo-readiness validation (uses requests) |
+
+**No formal linting or formatting tools configured** — no pylint, flake8, ruff, mypy, black, or editorconfig.
+
+**Testing:** Script-based integration tests (no pytest/unittest). Tests require server running on `localhost:5000`. Tests parse SSE events manually. Exit code `0` = all pass, `1` = any failure.
+
+## Code Style & Naming Conventions
+
+- **Indentation:** 4 spaces
+- **Functions and modules:** `snake_case`
+- **Classes:** `PascalCase` (e.g., `Orchestrator`, `BaseAgent`)
+- **Constants:** `UPPER_SNAKE_CASE`
+- **Module-private items:** prefix with underscore (e.g., `_THAI_MONTHS`, `_extract_json`)
+- **Imports:** grouped cleanly — stdlib, third-party, local
+- **Type hints:** used sparingly (only in `db.py` and `smoke_test_phase0.py`)
+- **Docstrings:** triple-quoted strings
+- **Logging:** `logger.error/warning/info` with `%s`-style or f-string formatting
+- **Comments:** sparse and useful; Thai comments are common
+- **Section separators:** Unicode box-drawing characters, e.g., `# ─── Routes ───`
+- **Helpers:** prefer small helper functions in `core/` over duplicating logic in routes or agents
+- **No formatter configured** — match surrounding style
+
+## Architecture Patterns
+
+- **Modular Flask:** `app.py` contains routes only; business logic lives in `core/` and `agents/`
+- **Factory pattern:** `AgentFactory.get_agent()` with thread-safe double-checked locking
+- **Singleton-ish agents:** agent instances are cached in the factory
+- **Graceful degradation:** `db.py` catches all exceptions and returns safe defaults; DB failures never propagate to SSE flow
+- **SSE streaming:** all chat responses use Server-Sent Events with `stream_with_context`
+- **MCP tools:** filesystem operations abstracted in `mcp_server.py` with path validation
+
+## Error Handling
+
+- **User-facing errors:** always in Thai
+- **Server-side errors:** `logger.error/warning` with `exc_info=True`
+- **Streaming contexts:** `GeneratorExit` is re-raised
+- **Exception ordering:** specific exceptions caught before bare `except` (e.g., `OSError`, `ValueError`, `FileNotFoundError`)
+- **Database layer:** catches all exceptions and returns safe defaults
+
+## Security
+
+- **Path traversal prevention:** `os.path.commonpath` checks
+- **Filename validation:** regex `r'^[\w.\-]{1,200}$'`
+- **Workspace root allowlisting:** `ALLOWED_WORKSPACE_ROOTS`
+- **Rate limiting:** via `flask-limiter`
+- **Secrets:** never commit `.env` or real API keys; load from environment via `python-dotenv`
 
 ## Testing Guidelines
-This repository uses script-based integration tests rather than a dedicated `pytest` suite. Add new checks near the relevant script, and name standalone test files `test_*.py`. Before opening a PR, start the server with `./start.sh`, then run at least `python smoke_test_phase0.py` and the most relevant scenario test for your change. Changes touching routing, workspace handling, or PM flows should include a concurrency or end-to-end check.
+
+This project uses **script-based integration tests** (no pytest/unittest). Tests require the server running on `localhost:5000` and parse SSE events manually.
+
+- Add or extend top-level `test_*.py` scripts when behavior changes
+- Name files after the scenario, e.g., `test_concurrency_pm.py`
+- Exit code `0` = all pass, `1` = any failure
+- Before opening a PR, run the smoke test plus the most relevant scenario scripts for the files you changed
 
 ## Commit & Pull Request Guidelines
-Recent history follows a version-prefixed conventional style such as `v0.23.0 — feat: ...` or `v0.23.0 — fix: ...`. Keep commit subjects short and action-oriented. PRs should state the user-visible impact, list the commands used for verification, link any related plan or issue, and include screenshots when `index.html` or `history.html` behavior changes.
+
+- **Prefixes:** `fix:`, `feat:`, version tags like `v0.30.4`
+- **Messages:** imperative, scoped to one change
+- **PRs should include:** short summary, affected user flow, test commands run, screenshots for UI changes in `index.html` or browser behavior
+
+## Adding New Agents
+
+When adding a new specialized agent:
+1. Create `agents/<name>_agent.py` — keep it minimal (6 lines if delegating to BaseAgent)
+2. Add a system prompt at `prompts/<name>_agent.md`
+3. Register the agent in `core/orchestrator.py` routing logic
+4. Update `core/agent_factory.py` with a factory method
+5. Add the agent prompt to `core/utils.py` `load_prompt()` if needed
+6. Update the orchestrator prompt (`prompts/orchestrator.md`) to recognize the new agent
+
+## Frontend Notes
+
+- `index.html` is a single-page application using vanilla HTML/JS/CSS (no framework)
+- `history.html` provides job history browsing
+- Both files are self-contained — avoid introducing build tools or bundlers
+- UI changes should be tested across both files for consistency
+
+## MCP Server Architecture
+
+- `mcp_server.py` has two layers:
+  - **Layer A:** Plain Python functions for filesystem operations
+  - **Layer B:** FastMCP server that exposes these functions as MCP tools
+- All file operations include path validation against allowed workspace roots
+- The MCP server can run standalone or be imported by other components
 
 ## Security & Configuration Tips
-Do not commit `.env`, API keys, or generated SQLite data. Keep writes inside `workspace/` or configured allowed roots, and validate any new file operations against the workspace guard behavior already used by the app.
+
+- Do not commit `.env` or real API keys
+- Start from `.env.example`, keep `OPENROUTER_API_KEY` local
+- Verify timeout-related settings when changing network or streaming behavior
+- Treat files in `workspace/` and `data/` as user-facing state; avoid destructive changes without a clear migration path
+
+## Python Version & Dependencies
+
+- **Python 3.11+** (uses `zoneinfo`, `dict | None` type hints)
+- **Dependencies** (all unpinned in `requirements.txt`): flask, flask-cors, flask-limiter, gunicorn, gevent, openai, python-dotenv, mcp, watchdog, python-docx, openpyxl, weasyprint, markdown, ddgs, tzdata, pdfplumber
