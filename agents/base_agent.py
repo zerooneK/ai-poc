@@ -61,6 +61,8 @@ class BaseAgent:
 
         web_search_calls = 0
         MAX_WEB_SEARCH_CALLS = 3
+        empty_retries = 0       # retry budget for empty-response iterations
+        MAX_EMPTY_RETRIES = 1
 
         for iteration in range(max_iterations):
             text_streamed = ""
@@ -118,10 +120,20 @@ class BaseAgent:
             # consumed the entire response — that also triggers the fallback below (intentional).
             if not tool_calls_acc:
                 if not text_streamed:
-                    # Model returned empty response (no text, no tool calls) — yield fallback
+                    # Model returned empty response — retry once before giving up.
+                    # Common causes: free-tier rate limits, Qwen3 thinking-mode producing
+                    # only reasoning tokens with no final answer, or transient API glitches.
+                    if empty_retries < MAX_EMPTY_RETRIES:
+                        empty_retries += 1
+                        logger.warning(
+                            "[%s] Empty response at iteration %d (finish_reason=%s) — retrying (%d/%d)",
+                            self.name, iteration, finish_reason, empty_retries, MAX_EMPTY_RETRIES
+                        )
+                        yield {"type": "status", "message": f"{self.name} กำลังประมวลผลใหม่..."}
+                        continue
                     logger.warning(
-                        "[%s] Model returned empty response at iteration %d (finish_reason=%s)",
-                        self.name, iteration, finish_reason
+                        "[%s] Empty response at iteration %d after %d retries — giving up",
+                        self.name, iteration, empty_retries
                     )
                     yield {"type": "text", "content": "ขออภัย ระบบไม่ได้รับคำตอบจาก AI กรุณาลองใหม่หรือระบุรายละเอียดเพิ่มเติม"}
                 return

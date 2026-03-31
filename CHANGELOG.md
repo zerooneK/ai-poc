@@ -1,5 +1,10 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.28.4] — 31 มีนาคม 2569 · fix
+- fix (agents/base_agent.py): เพิ่ม retry 1 ครั้งเมื่อ model return empty response หลัง tool call — แก้ปัญหา Qwen3 thinking-mode, free-tier rate limit glitch และ transient API error ทำให้แสดง "ขออภัย ระบบไม่ได้รับคำตอบ" แม้ agent อ่านไฟล์สำเร็จแล้ว
+
+---
+
 ## [v0.28.3] — 31 มีนาคม 2569 · feat
 - feat (core/shared.py): เพิ่ม `AGENT_MAX_TOKENS`, `CHAT_MAX_TOKENS`, `ORCHESTRATOR_MAX_TOKENS` — configure ผ่าน `.env` แทน hardcode
 - feat (app.py): wire token limits per agent type — document agents ใช้ `AGENT_MAX_TOKENS`, chat ใช้ `CHAT_MAX_TOKENS`
