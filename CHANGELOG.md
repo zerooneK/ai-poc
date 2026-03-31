@@ -1,5 +1,10 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.27.1] — 31 มีนาคม 2569 · fix
+- fix (agents/base_agent.py): ลบ `if text_streamed: return` ออก — แก้ปัญหา agent ค้นเว็บแล้วไม่สร้างเอกสาร เพราะ early return ตัดการทำงาน iteration ถัดไปที่จะ generate เอกสารจริง
+
+---
+
 ## [v0.27.0] — 31 มีนาคม 2569 · feat
 - feat: เพิ่ม Document Agent — รองรับเอกสารทั่วไปที่ไม่ใช่งาน HR/บัญชี/manager advisory
   - ครอบคลุม: รายงานการประชุม, คู่มือ/SOP, แผนธุรกิจ, ใบเสนอราคา, รายงานโครงการ, Executive Summary ฯลฯ

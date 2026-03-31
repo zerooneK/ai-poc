@@ -175,8 +175,10 @@ class BaseAgent:
                 else:
                     yield {"type": "tool_result", "tool": tool_name, "result": result[:200]}
 
-            if text_streamed:
-                return
+            # Do NOT return early just because text was streamed alongside tool calls.
+            # Pattern: agent says "I'll research this" (text) + calls web_search (tool) →
+            # next iteration produces the actual document with search results.
+            # Early return here would kill that next iteration.
 
         # I1: loop exhausted without a final text response
         logger.warning("[%s] run_with_tools exhausted max_iterations=%d without finishing", self.name, max_iterations)
