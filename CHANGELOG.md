@@ -1,5 +1,13 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.29.0] — 31 มีนาคม 2569 · feat
+- feat (index.html): เพิ่ม File Preview Panel — คลิกไฟล์ใน sidebar เปิด panel ด้านขวา แสดง markdown rendered + raw text, copy ได้, ปิดด้วย Esc หรือ ✕
+- feat (index.html): file item ใน sidebar มี icon ตาม extension + active highlight เมื่อเปิด preview
+- feat (index.html): preview panel auto-refresh เมื่อไฟล์ถูก update, auto-close เมื่อถูกลบ
+- feat (app.py): เพิ่ม `GET /api/preview?file=` endpoint — อ่านเนื้อหาไฟล์ใน workspace รองรับ .docx/.xlsx/.pdf เช่นเดียวกับ fs_read_file
+
+---
+
 ## [v0.28.4] — 31 มีนาคม 2569 · fix
 - fix (agents/base_agent.py): เพิ่ม retry 1 ครั้งเมื่อ model return empty response หลัง tool call — แก้ปัญหา Qwen3 thinking-mode, free-tier rate limit glitch และ transient API error ทำให้แสดง "ขออภัย ระบบไม่ได้รับคำตอบ" แม้ agent อ่านไฟล์สำเร็จแล้ว
 

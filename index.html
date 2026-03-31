@@ -305,6 +305,121 @@
       transition: margin-left 0.25s ease;
     }
     body.sidebar-collapsed .main { margin-left: 0; }
+    body.preview-open .main { margin-right: 420px; }
+
+    /* ─── Preview Panel ──────────────────────────────────────────── */
+    .preview-panel {
+      width: 420px;
+      height: 100vh;
+      position: fixed;
+      right: 0; top: 0;
+      background: var(--surface);
+      border-left: 1px solid var(--outline-var);
+      display: flex;
+      flex-direction: column;
+      z-index: 35;
+      transform: translateX(100%);
+      transition: transform 0.25s ease, background 0.3s;
+    }
+    body.preview-open .preview-panel { transform: translateX(0); }
+    .preview-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid var(--outline-var);
+      flex-shrink: 0;
+    }
+    .preview-header-tabs {
+      display: flex;
+      gap: 4px;
+      margin-right: auto;
+    }
+    .preview-tab {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: var(--on-surface-2);
+      transition: background 0.15s, color 0.15s;
+    }
+    .preview-tab.active {
+      background: var(--surface-hi);
+      color: var(--on-surface);
+    }
+    .preview-filename {
+      flex: 1;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--on-surface);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: 'Inter', monospace;
+    }
+    .preview-actions {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .preview-action-btn {
+      width: 30px; height: 30px;
+      border: none;
+      background: transparent;
+      color: var(--on-surface-2);
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, color 0.15s;
+    }
+    .preview-action-btn:hover { background: var(--surface-hi); color: var(--on-surface); }
+    .preview-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+    .preview-body::-webkit-scrollbar { width: 4px; }
+    .preview-body::-webkit-scrollbar-track { background: transparent; }
+    .preview-body::-webkit-scrollbar-thumb { background: var(--outline-var); border-radius: 4px; }
+    .preview-rendered { line-height: 1.7; font-size: 13px; }
+    .preview-rendered h1, .preview-rendered h2, .preview-rendered h3 {
+      color: var(--on-surface); margin: 1em 0 0.4em; font-weight: 600;
+    }
+    .preview-rendered h1 { font-size: 18px; }
+    .preview-rendered h2 { font-size: 15px; }
+    .preview-rendered h3 { font-size: 13px; }
+    .preview-rendered p { margin-bottom: 0.8em; color: var(--on-surface-2); }
+    .preview-rendered ul, .preview-rendered ol { padding-left: 1.4em; margin-bottom: 0.8em; color: var(--on-surface-2); }
+    .preview-rendered li { margin-bottom: 0.2em; }
+    .preview-rendered strong { color: var(--on-surface); }
+    .preview-rendered hr { border: none; border-top: 1px solid var(--outline-var); margin: 1em 0; }
+    .preview-rendered code { font-family: monospace; font-size: 12px; background: var(--surface-hi); padding: 1px 5px; border-radius: 4px; }
+    .preview-rendered pre { background: var(--surface-hi); padding: 12px; border-radius: 8px; overflow-x: auto; margin-bottom: 0.8em; }
+    .preview-rendered pre code { background: none; padding: 0; }
+    .preview-raw {
+      font-family: 'Inter', monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: var(--on-surface-2);
+      line-height: 1.6;
+    }
+    .preview-loading {
+      display: flex; align-items: center; justify-content: center;
+      height: 100%;
+      color: var(--on-surface-2);
+      font-size: 13px;
+      opacity: 0.5;
+    }
+    .preview-error {
+      color: var(--error);
+      font-size: 12px;
+      text-align: center;
+      padding: 20px;
+    }
 
     /* ─── Navbar ─────────────────────────────────────────────────── */
     .navbar {
@@ -756,6 +871,8 @@
       cursor: default;
     }
     .file-item:hover { background: var(--surface-hi); color: var(--on-surface); }
+    .file-item.file-item-active { background: var(--primary); color: var(--on-primary); opacity: 1; }
+    .file-item.file-item-active:hover { background: var(--primary-dim); }
     .file-item-name {
       flex: 1;
       overflow: hidden;
@@ -1182,7 +1299,7 @@
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
       <span id="localAgentBadge" title="Local Agent ไม่พบ — ไฟล์จะบันทึกบน server" style="display:none;font-size:10px;padding:2px 7px;border-radius:10px;background:#22c55e;color:#fff;font-weight:600;cursor:default">💻 Local</span>
-      <span class="version-tag">v0.28.4</span>
+      <span class="version-tag">v0.29.0</span>
     </div>
   </header>
 
@@ -1300,6 +1417,29 @@
       <button class="modal-btn modal-btn-danger" id="deleteConfirmYes">🗑️ ลบไฟล์</button>
       <button class="modal-btn modal-btn-cancel" id="deleteConfirmNo">✕ ยกเลิก</button>
     </div>
+  </div>
+</div>
+
+<!-- ─── Preview Panel ───────────────────────────────────────────── -->
+<div class="preview-panel" id="previewPanel" role="complementary" aria-label="ตัวอย่างไฟล์">
+  <div class="preview-header">
+    <span class="material-symbols-outlined" style="font-size:15px;opacity:0.5;flex-shrink:0" id="previewFileIcon">description</span>
+    <span class="preview-filename" id="previewFilename">—</span>
+    <div class="preview-header-tabs">
+      <button class="preview-tab active" id="previewTabRender" onclick="setPreviewTab('render')">แสดงผล</button>
+      <button class="preview-tab" id="previewTabRaw" onclick="setPreviewTab('raw')">ข้อความ</button>
+    </div>
+    <div class="preview-actions">
+      <button class="preview-action-btn" onclick="copyPreviewContent()" title="คัดลอก">
+        <span class="material-symbols-outlined" style="font-size:16px">content_copy</span>
+      </button>
+      <button class="preview-action-btn" onclick="closePreview()" title="ปิด (Esc)">
+        <span class="material-symbols-outlined" style="font-size:16px">close</span>
+      </button>
+    </div>
+  </div>
+  <div class="preview-body" id="previewBody">
+    <div class="preview-loading">คลิกไฟล์เพื่อดูตัวอย่าง</div>
   </div>
 </div>
 
@@ -2417,6 +2557,12 @@
     const list = document.getElementById('fileList');
     const countEl = document.getElementById('fileCount');
     countEl.textContent = files.length + ' ไฟล์';
+    // Refresh preview if the previewed file was updated
+    if (_previewCurrentFile && files.some(f => f.name === _previewCurrentFile)) {
+      openPreview(_previewCurrentFile);
+    } else if (_previewCurrentFile && !files.some(f => f.name === _previewCurrentFile)) {
+      closePreview();
+    }
     list.replaceChildren();
     if (files.length === 0) {
       const empty = document.createElement('div');
@@ -2428,12 +2574,15 @@
     files.forEach(f => {
       const item = document.createElement('div');
       item.className = 'file-item';
+      item.style.cursor = 'pointer';
+      item.title = 'คลิกเพื่อดูตัวอย่าง';
+      item.onclick = () => openPreview(f.name);
       const icon = document.createElement('span');
       icon.className = 'material-symbols-outlined';
       icon.style.fontSize = '13px';
       icon.style.opacity = '0.45';
       icon.style.flexShrink = '0';
-      icon.textContent = 'description';
+      icon.textContent = _fileIcon(f.name);
       const name = document.createElement('span');
       name.className = 'file-item-name';
       name.textContent = f.name;
@@ -2452,6 +2601,89 @@
     if (b < 1048576) return (b / 1024).toFixed(1) + 'KB';
     return (b / 1048576).toFixed(1) + 'MB';
   }
+
+  function _fileIcon(name) {
+    const ext = (name.split('.').pop() || '').toLowerCase();
+    const map = { pdf: 'picture_as_pdf', docx: 'article', xlsx: 'table_chart', doc: 'article',
+                  xls: 'table_chart', md: 'edit_note', txt: 'text_snippet', json: 'data_object',
+                  png: 'image', jpg: 'image', jpeg: 'image', gif: 'image', csv: 'table_chart' };
+    return map[ext] || 'description';
+  }
+
+  // ─── Preview Panel ────────────────────────────────────────────────
+  let _previewCurrentFile = '';
+  let _previewContent = '';
+  let _previewTab = 'render';  // 'render' | 'raw'
+
+  async function openPreview(filename) {
+    _previewCurrentFile = filename;
+    document.getElementById('previewFilename').textContent = filename;
+    document.getElementById('previewFileIcon').textContent = _fileIcon(filename);
+    document.getElementById('previewBody').innerHTML = '<div class="preview-loading">กำลังโหลด...</div>';
+    document.body.classList.add('preview-open');
+
+    // Mark active item in sidebar
+    document.querySelectorAll('.file-item').forEach(el => {
+      el.classList.toggle('file-item-active', el.querySelector('.file-item-name')?.textContent === filename);
+    });
+
+    try {
+      const res = await fetch(`/api/preview?file=${encodeURIComponent(filename)}`);
+      const data = await res.json();
+      if (data.error) { _showPreviewError(data.error); return; }
+      _previewContent = data.content || '';
+      _renderPreview();
+    } catch (e) {
+      _showPreviewError('ไม่สามารถโหลดไฟล์ได้: ' + e.message);
+    }
+  }
+
+  function closePreview() {
+    document.body.classList.remove('preview-open');
+    _previewCurrentFile = '';
+    document.querySelectorAll('.file-item').forEach(el => el.classList.remove('file-item-active'));
+  }
+
+  function setPreviewTab(tab) {
+    _previewTab = tab;
+    document.getElementById('previewTabRender').classList.toggle('active', tab === 'render');
+    document.getElementById('previewTabRaw').classList.toggle('active', tab === 'raw');
+    _renderPreview();
+  }
+
+  function _renderPreview() {
+    const body = document.getElementById('previewBody');
+    if (!_previewContent) { body.innerHTML = '<div class="preview-loading">ไม่มีเนื้อหา</div>'; return; }
+    const ext = (_previewCurrentFile.split('.').pop() || '').toLowerCase();
+    const isMarkdown = ['md', 'markdown'].includes(ext);
+
+    if (_previewTab === 'render' && isMarkdown) {
+      const div = document.createElement('div');
+      div.className = 'preview-rendered';
+      div.innerHTML = marked.parse(_previewContent);
+      body.replaceChildren(div);
+    } else {
+      const pre = document.createElement('pre');
+      pre.className = 'preview-raw';
+      pre.textContent = _previewContent;
+      body.replaceChildren(pre);
+    }
+  }
+
+  function _showPreviewError(msg) {
+    const body = document.getElementById('previewBody');
+    body.innerHTML = `<div class="preview-error">❌ ${msg}</div>`;
+  }
+
+  function copyPreviewContent() {
+    if (!_previewContent) return;
+    navigator.clipboard.writeText(_previewContent).catch(() => {});
+    const btn = document.querySelector('.preview-action-btn[onclick="copyPreviewContent()"]');
+    if (btn) { const ic = btn.querySelector('.material-symbols-outlined'); ic.textContent = 'check'; setTimeout(() => { ic.textContent = 'content_copy'; }, 1500); }
+  }
+
+  // Close preview on Esc
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && _previewCurrentFile) closePreview(); });
 
   async function changeWorkspace() {
     const modal    = document.getElementById('workspaceModal');
