@@ -306,6 +306,11 @@ def handle_save(pending_doc: str, pending_agent: str, workspace: str, job_id=Non
         if overwrite_filename:
             filename = overwrite_filename
             tool_name = 'update_file'
+            # When overwriting, infer format from the existing file's extension
+            # so a .docx is re-converted properly instead of receiving raw markdown text
+            _ext = os.path.splitext(filename)[1].lower().lstrip('.')
+            if _ext in ('docx', 'pdf'):
+                output_format = _ext
         else:
             filename = _suggest_filename(pending_agent, pending_doc, output_format, history)
             tool_name = 'create_file'

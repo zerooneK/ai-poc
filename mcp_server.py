@@ -69,8 +69,8 @@ def fs_read_file(workspace: str, filename: str) -> str:
             doc = Document(path)
             text = '\n'.join(p.text for p in doc.paragraphs if p.text.strip())
             return text or '(ไฟล์ว่างเปล่า)'
-        except Exception as e:
-            raise ValueError(f"ไม่สามารถอ่านไฟล์ .docx ได้: {e}")
+        except Exception:
+            pass  # not a valid OOXML package — fall through to plain-text read
     if ext == '.xlsx':
         try:
             import openpyxl

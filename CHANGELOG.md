@@ -1,5 +1,11 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.30.1] — 31 มีนาคม 2569 · fix
+- fix (app.py): เขียนทับไฟล์ .docx ด้วย plain text — `handle_save` ตอนนี้ detect extension ของ `overwrite_filename` และ re-convert ด้วย converter ให้ถูก format
+- fix (mcp_server.py): preview แสดง "Package not found" — เพิ่ม fallback อ่าน plain text เมื่อ python-docx parse ไม่ได้ (รองรับไฟล์ที่ถูก corrupt หรือ format ไม่ถูกต้อง)
+
+---
+
 ## [v0.30.0] — 31 มีนาคม 2569 · feat
 - feat (db.py): เพิ่ม `get_sessions()` + `get_session_jobs()` — query sessions grouped by session_id พร้อม first message, last agent, job count
 - feat (app.py): เพิ่ม `GET /api/sessions` และ `GET /api/sessions/<session_id>` endpoints
