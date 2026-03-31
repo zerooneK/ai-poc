@@ -105,18 +105,6 @@ def init_db() -> None:
         logger.warning(f"[db] Unavailable — history disabled. Reason: {e}")
 
 
-def _handle_corrupt_db(e: Exception) -> None:
-    """Last-resort: rename broken DB file and let next init_db() create a fresh one."""
-    global DB_AVAILABLE
-    DB_AVAILABLE = False
-    try:
-        broken = _DB_PATH + f".broken_{int(datetime.now().timestamp())}"
-        os.rename(_DB_PATH, broken)
-        logger.error(f"[db] Renamed corrupted DB to {broken}. History reset.")
-    except Exception:
-        pass
-
-
 # ─── Write operations ─────────────────────────────────────────────────────────
 
 def create_job(user_input: str, session_id: Optional[str] = None) -> Optional[str]:

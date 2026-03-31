@@ -2015,6 +2015,10 @@
           el.removeAttribute(attr.name);
           return;
         }
+        if ((name === 'href' || name === 'src') && /^(data:)/i.test(value)) {
+          el.removeAttribute(attr.name);
+          return;
+        }
         if ((name === 'href' || name === 'src') && value && !/^(https?:|mailto:|tel:|#)/i.test(value)) {
           el.removeAttribute(attr.name);
         }
@@ -2852,7 +2856,8 @@
 
   function _showPreviewError(msg) {
     const body = document.getElementById('previewBody');
-    body.innerHTML = `<div class="preview-error">❌ ${msg}</div>`;
+    body.textContent = `❌ ${msg}`;
+    body.className = 'preview-error';
   }
 
   function copyPreviewContent() {
@@ -3120,7 +3125,9 @@
       });
 
     } catch (e) {
-      listEl.innerHTML = `<div class="file-empty" style="color:var(--error)">โหลดล้มเหลว: ${e.message}</div>`;
+      listEl.textContent = `โหลดล้มเหลว: ${e.message}`;
+      listEl.className = 'file-empty';
+      listEl.style.color = 'var(--error)';
     }
   }
 
