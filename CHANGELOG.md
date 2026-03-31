@@ -1,5 +1,11 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.26.0] — 31 มีนาคม 2569 · fix
+- fix (index.html): หลัง save สำเร็จ force-poll `/api/files` เพื่อ refresh sidebar — ป้องกัน "false save" จาก SSE workspace desync
+- fix (core/shared.py): persist workspace path ไปยัง `data/.workspace_state` — หลัง server restart workspace จะ restore กลับ path เดิมแทนที่จะ reset เป็น default
+
+---
+
 ## [v0.25.9] — 31 มีนาคม 2569 · fix
 - fix (agents/base_agent.py): เพิ่ม fallback text เมื่อ model return empty response (ไม่มี text และไม่มี tool_calls) — แทนที่จะ silent return ที่ทำให้หน้าจอว่างเปล่า
 - fix (index.html): `done` handler แสดง inline error เมื่อ agent ตอบ 0 ตัวอักษร แทนที่จะแสดง status "0 ตัวอักษร" โดยไม่มีอะไรในกล่องคำตอบ

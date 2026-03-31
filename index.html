@@ -1174,7 +1174,7 @@
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
       <span id="localAgentBadge" title="Local Agent ไม่พบ — ไฟล์จะบันทึกบน server" style="display:none;font-size:10px;padding:2px 7px;border-radius:10px;background:#22c55e;color:#fff;font-weight:600;cursor:default">💻 Local</span>
-      <span class="version-tag">v0.25.9</span>
+      <span class="version-tag">v0.26.0</span>
     </div>
   </header>
 
@@ -2230,6 +2230,14 @@
               conversationHistory.push({ role: 'assistant', content: historyContent });
             }
             wasPMTask = false;
+
+            // Force-refresh file list after any save action (receivedAgentEvent=false = save/discard)
+            // This is a safety net against SSE workspace desync (e.g. after server restart)
+            if (!receivedAgentEvent && !hadError) {
+              fetch('/api/files').then(r => r.json()).then(d => {
+                if (d.files !== undefined) renderFileList(d.files, d.workspace);
+              }).catch(() => {});
+            }
 
             // Auto-send queued task if user chose "save first" in modal
             if (queuedMessage && !isPendingConfirmation) {
