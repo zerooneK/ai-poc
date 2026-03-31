@@ -689,6 +689,20 @@ def history_job(job_id: str):
     job = db.get_job(job_id)
     return jsonify(job) if job else (jsonify({'error': 'Not found'}), 404)
 
+@app.route('/api/serve/<filename>')
+def serve_workspace_file(filename: str):
+    """Serve a raw file from the current workspace (used for PDF/image inline preview)."""
+    if not re.match(r'^[\w.\-]{1,200}$', filename):
+        return jsonify({'error': 'invalid filename'}), 400
+    workspace = get_workspace()
+    filepath = os.path.join(workspace, filename)
+    if not os.path.realpath(filepath).startswith(os.path.realpath(workspace)):
+        return jsonify({'error': 'access denied'}), 403
+    if not os.path.isfile(filepath):
+        return jsonify({'error': 'not found'}), 404
+    return send_file(filepath)
+
+
 @app.route('/api/preview')
 def preview_file():
     filename = (request.args.get('file') or '').strip()

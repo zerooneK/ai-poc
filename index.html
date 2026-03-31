@@ -532,6 +532,16 @@
       font-size: 13px;
       opacity: 0.5;
     }
+    .preview-pdf-wrap {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      padding: 0;
+    }
+    .preview-pdf-wrap iframe {
+      width: 100%; height: 100%;
+      border: none;
+    }
     .preview-error {
       color: var(--error);
       font-size: 12px;
@@ -1426,7 +1436,7 @@
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
       <span id="localAgentBadge" title="Local Agent ไม่พบ — ไฟล์จะบันทึกบน server" style="display:none;font-size:10px;padding:2px 7px;border-radius:10px;background:#22c55e;color:#fff;font-weight:600;cursor:default">💻 Local</span>
-      <span class="version-tag">v0.30.1</span>
+      <span class="version-tag">v0.30.2</span>
     </div>
   </header>
 
@@ -1567,6 +1577,9 @@
   </div>
   <div class="preview-body" id="previewBody">
     <div class="preview-loading">คลิกไฟล์เพื่อดูตัวอย่าง</div>
+  </div>
+  <div class="preview-pdf-wrap" id="previewPdfWrap" style="display:none">
+    <iframe id="previewPdfFrame" title="PDF Preview"></iframe>
   </div>
 </div>
 
@@ -2750,23 +2763,44 @@
   function _isMarkdown(filename) {
     return ['md', 'markdown'].includes((filename.split('.').pop() || '').toLowerCase());
   }
+  function _isPdf(filename) {
+    return (filename.split('.').pop() || '').toLowerCase() === 'pdf';
+  }
+
+  function _setPdfMode(on) {
+    document.getElementById('previewBody').style.display = on ? 'none' : '';
+    document.getElementById('previewPdfWrap').style.display = on ? 'flex' : 'none';
+  }
 
   async function openPreview(filename) {
     _previewCurrentFile = filename;
     document.getElementById('previewFilename').textContent = filename;
     document.getElementById('previewFileIcon').textContent = _fileIcon(filename);
-    document.getElementById('previewBody').innerHTML = '<div class="preview-loading">กำลังโหลด...</div>';
     document.body.classList.add('preview-open');
 
-    // Show tabs only for markdown files
+    // Show tabs only for markdown files; hide for pdf/binary
     const tabsRow = document.getElementById('previewTabsRow');
-    if (tabsRow) tabsRow.style.display = _isMarkdown(filename) ? 'flex' : 'none';
-    if (!_isMarkdown(filename)) _previewTab = 'raw';
+    const isPdf = _isPdf(filename);
+    const isMd  = _isMarkdown(filename);
+    if (tabsRow) tabsRow.style.display = isMd ? 'flex' : 'none';
+    if (!isMd) _previewTab = 'raw';
 
     // Mark active item in sidebar
     document.querySelectorAll('.file-item').forEach(el => {
       el.classList.toggle('file-item-active', el.querySelector('.file-item-name')?.textContent === filename);
     });
+
+    if (isPdf) {
+      // Use browser's built-in PDF viewer via iframe
+      _setPdfMode(true);
+      document.getElementById('previewPdfFrame').src = `/api/serve/${encodeURIComponent(filename)}`;
+      _previewContent = '';
+      _previewFileSize = -1;
+      return;
+    }
+
+    _setPdfMode(false);
+    document.getElementById('previewBody').innerHTML = '<div class="preview-loading">กำลังโหลด...</div>';
 
     try {
       const res = await fetch(`/api/preview?file=${encodeURIComponent(filename)}`);
@@ -2781,8 +2815,13 @@
   }
 
   async function _silentRefreshPreview() {
-    // Refresh content without showing loading spinner (used by auto-refresh on file change)
     if (!_previewCurrentFile) return;
+    if (_isPdf(_previewCurrentFile)) {
+      // Reload iframe src to pick up updated PDF
+      const frame = document.getElementById('previewPdfFrame');
+      frame.src = `/api/serve/${encodeURIComponent(_previewCurrentFile)}?t=${Date.now()}`;
+      return;
+    }
     try {
       const res = await fetch(`/api/preview?file=${encodeURIComponent(_previewCurrentFile)}`);
       const data = await res.json();
@@ -2797,6 +2836,8 @@
     document.body.classList.remove('preview-open');
     _previewCurrentFile = '';
     _previewFileSize = -1;
+    _setPdfMode(false);
+    document.getElementById('previewPdfFrame').src = '';
     document.querySelectorAll('.file-item').forEach(el => el.classList.remove('file-item-active'));
   }
 

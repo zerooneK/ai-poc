@@ -1,5 +1,12 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.30.2] — 31 มีนาคม 2569 · feat/fix
+- feat (app.py): เพิ่ม `GET /api/serve/<filename>` — serve raw file จาก workspace ใช้สำหรับ PDF/image inline preview
+- fix (index.html): PDF preview แสดงข้อความ garbled จาก pdfplumber — เปลี่ยนเป็นใช้ browser PDF viewer ผ่าน `<iframe src="/api/serve/file.pdf">` แทน
+- fix (index.html): ซ่อน tabs แสดงผล/ข้อความ สำหรับ PDF เช่นเดียวกับ docx/xlsx
+
+---
+
 ## [v0.30.1] — 31 มีนาคม 2569 · fix
 - fix (app.py): เขียนทับไฟล์ .docx ด้วย plain text — `handle_save` ตอนนี้ detect extension ของ `overwrite_filename` และ re-convert ด้วย converter ให้ถูก format
 - fix (mcp_server.py): preview แสดง "Package not found" — เพิ่ม fallback อ่าน plain text เมื่อ python-docx parse ไม่ได้ (รองรับไฟล์ที่ถูก corrupt หรือ format ไม่ถูกต้อง)
