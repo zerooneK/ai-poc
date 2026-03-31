@@ -9,3 +9,5 @@ workspace/*
 !workspace/.gitkeep
 temp/*
 !temp/.gitkeep
+data/*
+!data/.gitkeep

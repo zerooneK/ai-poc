@@ -1,6 +1,16 @@
 flask
 flask-cors
+flask-limiter
+gunicorn
+gevent
 openai
 python-dotenv
 mcp
 watchdog
+python-docx
+openpyxl
+weasyprint
+markdown
+ddgs
+tzdata
+pdfplumber

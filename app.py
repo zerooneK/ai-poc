@@ -1,10 +1,12 @@
-from flask import Flask, request, jsonify, Response, send_file
+from flask import Flask, request, jsonify, Response, send_file, stream_with_context
 from flask_cors import CORS
 from openai import OpenAI, RateLimitError, APITimeoutError, APIError
 from dotenv import load_dotenv
 from mcp_server import fs_list_files, fs_create_file, fs_read_file, fs_update_file, fs_delete_file
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+import db
+import converter
 import json
 import logging
 import os
@@ -13,54 +15,38 @@ import threading
 import queue
 from datetime import datetime
 
+# New core imports
+from core.shared import (
+    client, MODEL, OPENROUTER_API_KEY, _ALLOWED_ROOTS,
+    _DEFAULT_WORKSPACE, _workspace_lock, _ws_change_queues, _ws_change_lock,
+    TEMP_DIR, _notify_workspace_changed, get_workspace, set_workspace,
+    AGENT_MAX_TOKENS, CHAT_MAX_TOKENS
+)
+from core.utils import load_prompt, execute_tool, format_sse
+from core.orchestrator import Orchestrator
+from core.agent_factory import AgentFactory
+
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+_MAX_PENDING_DOC_BYTES = int(os.getenv('MAX_PENDING_DOC_BYTES', str(200 * 1024)))  # 200KB default
+
+# Suppress WeasyPrint's extremely verbose font subsetting logs
+logging.getLogger('fontTools').setLevel(logging.ERROR)
+logging.getLogger('weasyprint').setLevel(logging.WARNING)
+
 
 def _extract_json(raw: str) -> str:
-    """Extract JSON from LLM output that may have markdown fences or surrounding prose.
-    Strips ```...``` fences (any language tag), then slices from first { to last }.
-    Raises ValueError if no JSON object found."""
-    # Remove all code fence variants: ```json, ```JSON, ```javascript, ``` etc.
+    """Extract JSON from LLM output that may have markdown fences or surrounding prose."""
     cleaned = re.sub(r'```[^\n]*\n?', '', raw)
     cleaned = cleaned.replace('```', '').strip()
-    # Slice to outermost braces
     start = cleaned.find('{')
     end = cleaned.rfind('}')
     if start == -1 or end == -1:
         raise ValueError(f"No JSON object found in LLM output: {raw[:200]!r}")
     return cleaned[start:end + 1]
 
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-if not OPENROUTER_API_KEY:
-    raise ValueError(
-        "❌ ไม่พบ OPENROUTER_API_KEY ใน environment variables\n"
-        "กรุณาสร้างไฟล์ .env และใส่ API key (ดูตัวอย่างใน .env.example)"
-    )
-
-MODEL = os.getenv("OPENROUTER_MODEL", "anthropic/claude-sonnet-4-5")
-_PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
-
-# Workspace state — mutable at runtime via /api/workspace
-_DEFAULT_WORKSPACE = os.path.abspath(
-    os.getenv("WORKSPACE_PATH", os.path.join(_PROJECT_ROOT, "workspace"))
-)
-WORKSPACE_PATH = _DEFAULT_WORKSPACE
-_workspace_lock = threading.Lock()
-
-# Temp staging directory — files wait here until user confirms save
-TEMP_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'temp'))
-os.makedirs(TEMP_DIR, exist_ok=True)
-
-app = Flask(__name__)
-CORS(app, origins=["http://localhost:5000", "http://127.0.0.1:5000"])
-client = OpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=OPENROUTER_API_KEY,
-)
-
-# ─── System Prompts ───────────────────────────────────────────────────────────
 
 def _normalize_workspace_path(path: str) -> str:
     """Normalize a workspace path relative to the current process."""
@@ -68,146 +54,15 @@ def _normalize_workspace_path(path: str) -> str:
 
 
 def _is_allowed_workspace_path(path: str) -> bool:
-    """Allow runtime workspace changes only under the repository root."""
+    """Allow runtime workspace changes only under configured allowed roots."""
     try:
-        return os.path.commonpath([_PROJECT_ROOT, path]) == _PROJECT_ROOT and path != _PROJECT_ROOT
+        real = os.path.realpath(path)
+        return any(
+            os.path.commonpath([root, real]) == root
+            for root in _ALLOWED_ROOTS
+        )
     except ValueError:
         return False
-
-
-ORCHESTRATOR_PROMPT = """
-คุณคือ AI Orchestrator ของระบบ Internal AI Assistant ภายในบริษัท
-หน้าที่ของคุณคือวิเคราะห์งานที่ได้รับและตัดสินใจว่าควรส่งให้ Agent ไหน
-
-ตอบกลับด้วย JSON เท่านั้น ห้ามมีข้อความอื่น:
-{"agent": "hr", "reason": "เหตุผลสั้นๆ"}
-หรือ
-{"agent": "accounting", "reason": "เหตุผลสั้นๆ"}
-หรือ
-{"agent": "manager", "reason": "เหตุผลสั้นๆ"}
-หรือ
-{"agent": "pm", "reason": "เหตุผลสั้นๆ"}
-
-HR Agent เหมาะกับ:
-- งานเกี่ยวกับพนักงาน สัญญาจ้าง การเลิกจ้าง
-- Job Description และการสรรหาบุคลากร
-- นโยบายบริษัท กฎระเบียบ สวัสดิการ
-- อีเมลแจ้งพนักงาน การลา การประเมิน
-
-Accounting Agent เหมาะกับ:
-- Invoice ใบเสร็จ ใบแจ้งหนี้
-- งบประมาณ รายรับรายจ่าย
-- รายงานการเงิน การวิเคราะห์ตัวเลข
-- ค่าใช้จ่าย การเบิกจ่าย
-
-Manager Advisor เหมาะกับ:
-- การให้ Feedback และการจัดการผลการทำงานของทีม
-- การจัดสรรงบประมาณและทรัพยากรของทีม
-- การตัดสินใจจัดลำดับความสำคัญของงาน
-- ความขัดแย้งในทีม ขวัญกำลังใจ
-- การขอเพิ่มอัตรากำลังคน (Headcount Request)
-
-PM Agent เหมาะกับ:
-- งานที่ครอบคลุมหลาย domain พร้อมกัน เช่น ต้องทำทั้งสัญญาจ้าง (HR) และ Invoice (Accounting)
-- Request ที่ต้องการเอกสารหลายประเภทในคราวเดียว
-- งาน onboarding พนักงานใหม่ที่ต้องการทั้งเอกสาร HR และการเงิน
-"""
-
-PM_PROMPT = """OUTPUT FORMAT — CRITICAL:
-ตอบกลับด้วย JSON เท่านั้น ห้ามมีข้อความอื่นนอกจาก JSON ด้านล่าง
-ห้ามมี markdown code fences ห้ามมีคำอธิบาย ห้ามมี prose ใดๆ ทั้งสิ้น
-
-{"subtasks": [{"agent": "hr", "task": "รายละเอียด task"}, {"agent": "accounting", "task": "รายละเอียด task"}]}
-
-คุณคือ PM Agent (Project Manager) ของระบบ AI Assistant
-หน้าที่ของคุณคือวิเคราะห์งานที่ได้รับและแบ่งออกเป็น subtasks พร้อมกำหนดว่าแต่ละ subtask ควรใช้ Agent ไหน
-
-กฎสำคัญ:
-1. แต่ละ task ต้องเป็น self-contained — คัดลอกข้อมูลสำคัญจาก request มาใส่โดยตรง (ชื่อ, ตัวเลข, วันที่, เงื่อนไข) ห้ามอ้างอิงว่า "ดูจากบริบทด้านบน"
-2. Agent ที่ใช้ได้: "hr", "accounting", "manager" เท่านั้น — ห้ามใส่ "pm"
-3. กำหนดให้แต่ละ Agent บันทึกผลลัพธ์เป็นไฟล์ด้วย เช่น "...และบันทึกผลลัพธ์เป็นไฟล์ชื่อ contract_somchai.md ใน workspace"
-4. ใช้ Agent เดียวเมื่องานนั้นเป็นของ domain เดียวชัดเจน ใช้หลาย Agent เฉพาะเมื่อ request ครอบคลุมหลายด้านจริงๆ
-
-HR Agent: สัญญาจ้าง, JD, นโยบาย HR, อีเมลพนักงาน, การลา, การเลิกจ้าง
-Accounting Agent: Invoice, ใบเสร็จ, รายงานการเงิน, งบประมาณ, ค่าใช้จ่าย
-Manager Advisor: คำแนะนำการบริหารทีม, Feedback, ขวัญกำลังใจ, Headcount Request
-
-ย้ำอีกครั้ง: ตอบกลับด้วย JSON เท่านั้น ไม่มีข้อความอื่น ไม่มี code fence ไม่มีคำนำ ไม่มีคำลงท้าย
-"""
-
-HR_PROMPT = """
-คุณคือ HR Agent ผู้เชี่ยวชาญด้านทรัพยากรมนุษย์ของบริษัทไทย
-สร้างเอกสาร HR ที่ถูกต้อง เป็นมืออาชีพ และเหมาะสมกับบริบทของบริษัทไทย
-
-แนวทางการทำงาน:
-- ใช้ภาษาไทยที่เป็นทางการและสุภาพ
-- ระบุวันที่เป็น พ.ศ.
-- ใส่ช่องว่างให้กรอกข้อมูลที่ยังไม่ทราบ เช่น [วันที่] [ลายมือชื่อ]
-- ครอบคลุมประเด็นสำคัญตามกฎหมายแรงงานไทย
-
-สำคัญ: ระบุที่ท้ายเอกสารทุกครั้งว่า
-"⚠️ เอกสารฉบับร่างนี้จัดทำโดย AI — กรุณาตรวจสอบความถูกต้องก่อนนำไปใช้งานจริง"
-
-หลังแสดงเอกสารแล้ว ให้ลงท้ายด้วยบรรทัดนี้เสมอ:
-"💬 ต้องการแก้ไขส่วนไหนไหม? หรือพิมพ์ **บันทึก** เพื่อบันทึกไฟล์"
-"""
-
-ACCOUNTING_PROMPT = """
-คุณคือ Accounting Agent ผู้เชี่ยวชาญด้านบัญชีและการเงินของบริษัทไทย
-สร้างเอกสารการเงินที่ถูกต้อง เป็นมืออาชีพ และเหมาะสมกับระบบบัญชีไทย
-
-ข้อมูลปัจจุบัน:
-- ปัจจุบันคือ พ.ศ. 2569 (ค.ศ. 2026)
-- ใช้วันที่ปัจจุบันเป็นค่าเริ่มต้นในเอกสาร เว้นแต่จะระบุเป็นอย่างอื่น
-
-แนวทางการทำงาน:
-- ใช้ภาษาไทยที่เป็นทางการ
-- ใช้รูปแบบตัวเลขที่ถูกต้อง เช่น 35,000.00 บาท
-- ระบุวันที่เป็น พ.ศ. (ตัวอย่าง: 23 มีนาคม พ.ศ. 2569)
-- ใส่เลขที่เอกสาร [XXX-YYYY-NNNN] เผื่อให้แก้ไข
-- ระบุเงื่อนไขการชำระเงินให้ชัดเจน
-
-กฎสำหรับ VAT 7%:
-- ใช้ VAT เฉพาะกับ Invoice / ใบกำกับภาษี / ใบแจ้งหนี้เท่านั้น
-- ห้ามใช้ VAT กับรายงานค่าใช้จ่ายภายใน (Expense Report) หรือเอกสารงบประมาณ
-- สำหรับ Invoice ให้คำนวณ: ยอดก่อน VAT + VAT 7% = ยอดรวมทั้งสิ้น
-
-กฎสำหรับข้อมูลภาษี (ใช้กับ Invoice/ใบกำกับภาษีเท่านั้น):
-- ใส่ placeholder เลขประจำตัวผู้เสียภาษี 13 หลัก ทั้งฝ่ายผู้ออกและผู้รับ
-  ตัวอย่าง: เลขประจำตัวผู้เสียภาษี: [X-XXXX-XXXXX-XX-X]
-- ใส่ข้อมูลสาขา ตัวอย่าง: สาขา: [สำนักงานใหญ่] หรือ [สาขาที่ XXXXX]
-- ระบุที่อยู่เต็มของทั้งสองฝ่าย
-
-สำคัญ: ระบุที่ท้ายเอกสารทุกครั้งว่า
-"⚠️ เอกสารฉบับร่างนี้จัดทำโดย AI — กรุณาตรวจสอบความถูกต้องก่อนนำไปใช้งานจริง"
-
-หลังแสดงเอกสารแล้ว ให้ลงท้ายด้วยบรรทัดนี้เสมอ:
-"💬 ต้องการแก้ไขส่วนไหนไหม? หรือพิมพ์ **บันทึก** เพื่อบันทึกไฟล์"
-"""
-
-MANAGER_PROMPT = """
-คุณคือ Manager Advisor ผู้เชี่ยวชาญด้านการบริหารทีมสำหรับ Team Lead และผู้จัดการในองค์กรไทย
-ให้คำแนะนำที่นำไปปฏิบัติได้จริงภายใน 48 ชั่วโมง
-
-ความเชี่ยวชาญ:
-- การให้ Feedback และการประเมินผลการทำงาน
-- การจัดสรรงบประมาณและทรัพยากรของทีม
-- การตัดสินใจจัดลำดับความสำคัญของงาน
-- การจัดการสถานการณ์คนในทีม เช่น ความขัดแย้ง ขวัญกำลังใจ
-- การขอเพิ่มอัตรากำลังคน (Headcount Request)
-
-แนวทางการตอบ:
-- ระบุขั้นตอนที่ทำได้ทันทีอย่างชัดเจน
-- เมื่อแนะนำการให้ Feedback ให้เขียน Script คำพูดจริงที่ผู้จัดการสามารถนำไปพูดได้เลย
-- คำนึงถึงบริบทวัฒนธรรมการทำงานแบบไทย
-- ใช้ภาษาที่กระชับ ตรงประเด็น ไม่อ้อมค้อม
-
-สำคัญ: ระบุที่ท้ายเอกสารทุกครั้งว่า
-"⚠️ เอกสารฉบับร่างนี้จัดทำโดย AI — กรุณาตรวจสอบความถูกต้องก่อนนำไปใช้งานจริง"
-
-หลังแสดงเอกสารแล้ว ให้ลงท้ายด้วยบรรทัดนี้เสมอ:
-"💬 ต้องการแก้ไขส่วนไหนไหม? หรือพิมพ์ **บันทึก** เพื่อบันทึกไฟล์"
-"""
 
 # ─── MCP Tool Definitions (OpenAI function calling format) ────────────────────
 
@@ -299,753 +154,602 @@ MCP_TOOLS = [
                 "required": []
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "web_search",
+            "description": (
+                "ค้นหาข้อมูลจากอินเทอร์เน็ต ใช้เมื่อผู้ใช้ถามเกี่ยวกับข้อมูลปัจจุบัน "
+                "เช่น กฎหมายล่าสุด อัตราภาษี แนวโน้มตลาด ข่าวสาร หรือข้อมูลที่อาจเปลี่ยนแปลงบ่อย"
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "คำค้นหาภาษาไทยหรือภาษาอังกฤษ"
+                    },
+                    "max_results": {
+                        "type": "integer",
+                        "description": "จำนวนผลลัพธ์สูงสุด ระบุ 3-5 เท่านั้น"
+                    }
+                },
+                "required": ["query"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "request_delete",
+            "description": (
+                "ส่งคำขอลบไฟล์จาก workspace โดยต้องรอให้ผู้ใช้ยืนยันก่อน "
+                "ห้ามใช้ delete_file โดยตรง — ใช้ request_delete เสมอเมื่อต้องการลบไฟล์"
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "filename": {
+                        "type": "string",
+                        "description": "ชื่อไฟล์ที่ต้องการลบ"
+                    }
+                },
+                "required": ["filename"]
+            }
+        }
     }
 ]
 
-# ─── MCP Tool Executor ────────────────────────────────────────────────────────
+READ_ONLY_TOOLS = [t for t in MCP_TOOLS if t['function']['name'] in ('list_files', 'read_file', 'web_search', 'request_delete')]
 
+_LOCAL_DELETE_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "local_delete",
+        "description": "ลบไฟล์จาก Local Workspace บนเครื่อง user (ใช้เมื่ออยู่ใน Local Agent Mode เท่านั้น)",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "filename": {
+                    "type": "string",
+                    "description": "ชื่อไฟล์ที่ต้องการลบ"
+                }
+            },
+            "required": ["filename"]
+        }
+    }
+}
 
-def _execute_tool(workspace: str, tool_name: str, tool_args: dict) -> str:
-    """Execute a named MCP filesystem tool and return result string."""
-    try:
-        if tool_name == 'create_file':
-            return fs_create_file(workspace, tool_args['filename'], tool_args['content'])
-        elif tool_name == 'read_file':
-            return fs_read_file(workspace, tool_args['filename'])
-        elif tool_name == 'update_file':
-            return fs_update_file(workspace, tool_args['filename'], tool_args['content'])
-        elif tool_name == 'delete_file':
-            return fs_delete_file(workspace, tool_args['filename'])
-        elif tool_name == 'list_files':
-            files = fs_list_files(workspace)
-            if not files:
-                return "workspace ว่างเปล่า ยังไม่มีไฟล์"
-            return "\n".join(
-                f"- {f['name']} ({f['size']} bytes, แก้ไขล่าสุด: {f['modified']})"
-                for f in files
-            )
-        else:
-            return f"❌ ไม่รู้จัก tool: {tool_name}"
-    except (ValueError, FileNotFoundError, FileExistsError) as e:
-        return f"❌ {str(e)}"
-    except Exception as e:
-        logger.error(f"Tool execution error ({tool_name}): {e}")
-        return f"❌ เกิดข้อผิดพลาด: {str(e)}"
-
+LOCAL_AGENT_TOOLS = [
+    t for t in MCP_TOOLS if t['function']['name'] == 'web_search'
+] + [_LOCAL_DELETE_TOOL]
 
 def _tool_result_is_error(result: str) -> bool:
     """Return True when a tool result string represents a failure."""
     return result.strip().startswith('❌')
 
 
-# ─── Agentic Tool-Calling Loop ────────────────────────────────────────────────
+# ─── Confirmation Flow Helpers ───────────────────────
 
-
-def run_agent_with_tools(system_prompt: str, user_message: str, workspace: str,
-                         agent_label: str, max_tokens: int = 8000, max_iterations: int = 5):
-    """Agentic loop with true streaming:
-    - Text chunks stream to user as they arrive (delta.content)
-    - Tool calls accumulate silently in background (delta.tool_calls)
-    - After stream ends: execute tools if any, then continue loop if needed
-    Generator that yields SSE data strings."""
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_message}
-    ]
-
-    for iteration in range(max_iterations):
-        text_streamed = ""
-        tool_calls_acc = {}   # index → {"id", "name", "arguments"}
-
-        try:
-            stream = client.chat.completions.create(
-                model=MODEL,
-                max_tokens=max_tokens,
-                messages=messages,
-                tools=MCP_TOOLS,
-                tool_choice="auto",
-                stream=True
-            )
-        except RateLimitError:
-            yield f"data: {json.dumps({'type': 'error', 'message': 'API ถูกใช้งานเกิน limit กรุณารอสักครู่แล้วลองใหม่'})}\n\n"
-            return
-        except APITimeoutError:
-            yield f"data: {json.dumps({'type': 'error', 'message': 'API ใช้เวลานานเกินไป กรุณาลองใหม่'})}\n\n"
-            return
-        except APIError as e:
-            yield f"data: {json.dumps({'type': 'error', 'message': f'เกิดข้อผิดพลาดจาก API: {str(e)}'})}\n\n"
-            return
-
-        try:
-            for chunk in stream:
-                if not chunk.choices:
-                    continue
-                delta = chunk.choices[0].delta
-
-                # Stream text to user immediately
-                if delta and delta.content:
-                    text_streamed += delta.content
-                    yield f"data: {json.dumps({'type': 'text', 'content': delta.content})}\n\n"
-
-                # Accumulate tool_calls silently
-                if delta and delta.tool_calls:
-                    for tc_delta in delta.tool_calls:
-                        idx = tc_delta.index
-                        if idx not in tool_calls_acc:
-                            tool_calls_acc[idx] = {"id": "", "name": "", "arguments": ""}
-                        if tc_delta.id:
-                            tool_calls_acc[idx]["id"] = tc_delta.id
-                        if tc_delta.function:
-                            if tc_delta.function.name:
-                                tool_calls_acc[idx]["name"] += tc_delta.function.name
-                            if tc_delta.function.arguments:
-                                tool_calls_acc[idx]["arguments"] += tc_delta.function.arguments
-        except Exception as stream_err:
-            logger.error(f"[{agent_label}] Streaming error: {stream_err}")
-            yield f"data: {json.dumps({'type': 'error', 'message': 'เกิดข้อผิดพลาดระหว่าง streaming กรุณาลองใหม่'})}\n\n"
-            return
-
-        # No tool calls → text was streamed, done
-        if not tool_calls_acc:
-            return
-
-        # Build tool_calls list for messages history
-        tool_calls_list = [
-            {
-                "id": tool_calls_acc[i]["id"],
-                "type": "function",
-                "function": {
-                    "name": tool_calls_acc[i]["name"],
-                    "arguments": tool_calls_acc[i]["arguments"]
-                }
-            }
-            for i in sorted(tool_calls_acc.keys())
-        ]
-
-        messages.append({
-            "role": "assistant",
-            "content": text_streamed or None,
-            "tool_calls": tool_calls_list
-        })
-
-        # Execute each tool
-        for tc in tool_calls_list:
-            tool_name = tc["function"]["name"]
-            try:
-                tool_args = json.loads(tc["function"]["arguments"])
-            except json.JSONDecodeError:
-                logger.error(f"[{agent_label}] Invalid tool args for {tool_name}")
-                yield f"data: {json.dumps({'type': 'error', 'message': f'{agent_label} ส่ง tool arguments ผิดรูปแบบ'})}\n\n"
-                return
-
-            yield f"data: {json.dumps({'type': 'status', 'message': f'{agent_label} กำลังบันทึก: {tool_name}...'})}\n\n"
-            logger.info(f"[{agent_label}] tool_call: {tool_name}({list(tool_args.keys())})")
-
-            result = _execute_tool(workspace, tool_name, tool_args)
-            logger.info(f"[{agent_label}] tool_result: {result[:80]}")
-
-            messages.append({
-                "role": "tool",
-                "tool_call_id": tc["id"],
-                "content": result
-            })
-
-            yield f"data: {json.dumps({'type': 'tool_result', 'tool': tool_name, 'result': result[:200]})}\n\n"
-
-        # If text was already streamed before tools → done (no need for another LLM call)
-        if text_streamed:
-            return
-        # Otherwise continue loop so LLM can generate response text after tool results
-
-    yield f"data: {json.dumps({'type': 'error', 'message': f'{agent_label} ทำงานเกินจำนวนรอบที่กำหนด กรุณาลองใหม่'})}\n\n"
-
-
-# ─── Confirmation Flow Helpers ───────────────────────────────────────────────
-
-_SAVE_KEYWORDS = {
-    'บันทึก', 'save', 'เซฟ', 'ยืนยัน', 'ตกลง', 'ได้เลย', 'ok', 'โอเค',
-    'บันทึกได้', 'บันทึกเลย', 'บันทึกได้เลย', 'ใช้ได้'
-    # นำ 'ใช่' ออก — เป็น substring ของ 'ไม่ใช่', 'ใช่ไหม' ฯลฯ ทำให้ false positive สูง
-}
-
+# Thai keywords: substring match is safe (Thai script has no ambiguous substring overlap)
+# English keywords that risk substring false-positives ('ok' in 'stock', 'save' in 'unsaved')
+# are handled via word-boundary regex instead.
+_SAVE_KEYWORDS = {'บันทึก', 'เซฟ', 'ยืนยัน', 'ตกลง', 'ได้เลย', 'โอเค', 'บันทึกได้', 'บันทึกเลย', 'บันทึกได้เลย', 'ใช้ได้'}
+_SAVE_BOUNDARY_RE = re.compile(r'\b(?:ok|save)\b', re.IGNORECASE)
 _SAVE_NEGATIVE_PREFIX = {'ไม่ใช่', 'ไม่ใช้'}
-
-_DISCARD_KEYWORDS = {
-    'ยกเลิก', 'cancel', 'ไม่เอา', 'ไม่บันทึก', 'ไม่ต้องการ',
-    'ข้ามไป', 'ลบทิ้ง', 'discard'
-    # นำ 'งานใหม่' และ 'เริ่มใหม่' ออก — เป็นวลีที่ใช้ในงานจริง ไม่ใช่ cancel signal
-}
-
-_EDIT_KEYWORDS = {
-    'แก้ไข', 'แก้', 'ปรับ', 'ปรับปรุง', 'ปรับแก้', 'เพิ่ม', 'ลบ',
-    'เปลี่ยน', 'แทนที่', 'เพิ่มเติม', 'ตัดออก', 'แก้ตรง', 'ปรับตรง',
-    'edit', 'modify', 'update', 'change', 'fix', 'adjust', 'add', 'remove',
-    'delete', 'replace', 'revise'
-}
-
+_DISCARD_KEYWORDS = {'ยกเลิก', 'cancel', 'ไม่เอา', 'ไม่บันทึก', 'ไม่ต้องการ', 'ข้ามไป', 'ลบทิ้ง', 'discard'}
+_EDIT_KEYWORDS = {'แก้ไข', 'แก้', 'ปรับ', 'ปรับปรุง', 'ปรับแก้', 'เพิ่ม', 'ลบ', 'เปลี่ยน', 'แทนที่', 'เพิ่มเติม', 'ตัดออก', 'แก้ตรง', 'ปรับตรง', 'edit', 'modify', 'update', 'change', 'fix', 'adjust', 'add', 'remove', 'delete', 'replace', 'revise'}
 
 def _is_save_intent(message: str) -> bool:
-    """Return True if user message signals intent to save the document."""
     msg = message.lower().strip()
-    if any(neg in msg for neg in _SAVE_NEGATIVE_PREFIX):
-        return False
-    return any(kw in msg for kw in _SAVE_KEYWORDS)
-
+    if any(neg in msg for neg in _SAVE_NEGATIVE_PREFIX): return False
+    return any(kw in msg for kw in _SAVE_KEYWORDS) or bool(_SAVE_BOUNDARY_RE.search(msg))
 
 def _is_discard_intent(message: str) -> bool:
-    """Return True if user message signals intent to discard the pending document."""
-    msg = message.lower().strip()
-    return any(kw in msg for kw in _DISCARD_KEYWORDS)
-
+    return any(kw in message.lower().strip() for kw in _DISCARD_KEYWORDS)
 
 def _is_pure_discard(message: str) -> bool:
-    """Return True if message is ONLY a discard keyword — no additional task content."""
-    msg = message.lower().strip()
-    return msg in _DISCARD_KEYWORDS
-
+    return message.lower().strip() in _DISCARD_KEYWORDS
 
 def _is_edit_intent(message: str) -> bool:
-    """Return True if user message is an edit instruction for the current pending doc."""
-    msg = message.lower().strip()
-    return any(kw in msg for kw in _EDIT_KEYWORDS)
+    return any(kw in message.lower().strip() for kw in _EDIT_KEYWORDS)
 
-
-def _suggest_filename(agent: str, content: str) -> str:
-    """Generate a meaningful filename from agent type and document content."""
+def _suggest_filename(agent: str, content: str, fmt: str = 'md', history: list = None) -> str:
+    ext = fmt if fmt in converter.SUPPORTED_FORMATS else 'md'
     ts = datetime.now().strftime('%Y%m%d_%H%M%S')
-    m = re.search(r'#\s*(.{3,30})', content)
+    # 1. Try heading from document content
+    m = re.search(r'#\s*(.{3,60})', content)
     if m:
-        slug = re.sub(r'[^\w]', '_', m.group(1).strip())
-        slug = re.sub(r'_+', '_', slug)[:22].strip('_')
-        if len(slug) >= 3:
-            return f"{agent}_{slug}_{ts}.md"
-    return f"{agent}_{ts}.md"
-
+        ascii_only = re.sub(r'[^\x20-\x7E]', ' ', m.group(1).strip())
+        slug = re.sub(r'[^a-zA-Z0-9]+', '_', ascii_only).strip('_')[:30]
+        if len(slug) >= 3: return f"{agent}_{slug}_{ts}.{ext}"
+    # 2. Fallback: use last user message from history for context
+    if history:
+        for msg in reversed(history[-5:]):
+            if msg.get('role') == 'user' and msg.get('content'):
+                ascii_only = re.sub(r'[^\x20-\x7E]', ' ', str(msg['content'])[:80])
+                slug = re.sub(r'[^a-zA-Z0-9]+', '_', ascii_only).strip('_')[:30]
+                if len(slug) >= 3: return f"{agent}_{slug}_{ts}.{ext}"
+    return f"{agent}_{ts}.{ext}"
 
 def _write_temp(content: str, agent: str) -> str:
-    """Write document content to temp staging dir. Returns absolute temp file path."""
     filename = _suggest_filename(agent, content)
     temp_path = os.path.join(TEMP_DIR, filename)
     with open(temp_path, 'w', encoding='utf-8') as f:
         f.write(content)
-    logger.info(f"Staged to temp: {filename}")
     return temp_path
 
-
 def _move_to_workspace(temp_path: str, workspace: str) -> str:
-    """Move staged file from temp to workspace. Returns filename.
-    Uses os.replace (atomic) on same drive, falls back to shutil.move for cross-drive."""
     import shutil
     filename = os.path.basename(temp_path)
     dest = os.path.join(workspace, filename)
-    try:
-        os.replace(temp_path, dest)  # Atomic on same drive
-    except OSError:
-        shutil.move(temp_path, dest)  # Fallback: cross-drive (copy + delete)
-    logger.info(f"Moved to workspace: {filename}")
+    try: os.replace(temp_path, dest)
+    except OSError: shutil.move(temp_path, dest)
     return filename
 
-
 def _cleanup_old_temp():
-    """Remove temp files older than 1 hour to prevent accumulation."""
     cutoff = datetime.now().timestamp() - 3600
     try:
         for fname in os.listdir(TEMP_DIR):
+            if fname == '.gitkeep': continue
             fpath = os.path.join(TEMP_DIR, fname)
             if os.path.isfile(fpath) and os.path.getmtime(fpath) < cutoff:
                 os.remove(fpath)
-                logger.info(f"Cleaned old temp file: {fname}")
-    except Exception as e:
-        logger.warning(f"Temp cleanup error: {e}")
+    except OSError as e:
+        logger.warning(f"[cleanup_old_temp] could not clean temp dir: {e}")
 
-
-def stream_agent(system_prompt: str, message: str, agent_label: str, max_tokens: int = 8000):
-    """Stream agent response without MCP tools — for initial document generation.
-    Generator that yields SSE data strings."""
+def handle_save(pending_doc: str, pending_agent: str, workspace: str, job_id=None, output_format: str = 'md', history: list = None, overwrite_filename: str = None):
+    """Yields raw event dicts (not pre-formatted SSE) so callers can inspect type.
+    If overwrite_filename is set, update the existing file instead of creating a new one."""
     try:
-        stream = client.chat.completions.create(
-            model=MODEL,
-            max_tokens=max_tokens,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": message}
-            ],
-            stream=True
-        )
-    except RateLimitError:
-        yield f"data: {json.dumps({'type': 'error', 'message': 'API ถูกใช้งานเกิน limit กรุณารอสักครู่แล้วลองใหม่'})}\n\n"
-        return
-    except APITimeoutError:
-        yield f"data: {json.dumps({'type': 'error', 'message': 'API ใช้เวลานานเกินไป กรุณาลองใหม่'})}\n\n"
-        return
-    except APIError as e:
-        yield f"data: {json.dumps({'type': 'error', 'message': f'เกิดข้อผิดพลาดจาก API: {str(e)}'})}\n\n"
-        return
-    try:
-        for chunk in stream:
-            if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
-                yield f"data: {json.dumps({'type': 'text', 'content': chunk.choices[0].delta.content})}\n\n"
+        if overwrite_filename:
+            filename = overwrite_filename
+            tool_name = 'update_file'
+            # When overwriting, infer format from the existing file's extension
+            # so a .docx is re-converted properly instead of receiving raw markdown text
+            _ext = os.path.splitext(filename)[1].lower().lstrip('.')
+            if _ext in ('docx', 'pdf'):
+                output_format = _ext
+        else:
+            filename = _suggest_filename(pending_agent, pending_doc, output_format, history)
+            tool_name = 'create_file'
+        yield {'type': 'status', 'message': f'กำลังบันทึกไฟล์ {filename}...'}
+        if output_format in ('md', 'txt'):
+            result = execute_tool(workspace, tool_name, {'filename': filename, 'content': pending_doc})
+            if _tool_result_is_error(result):
+                yield {'type': 'save_failed', 'message': result}
+                return
+        else:
+            file_bytes = converter.convert(pending_doc, output_format)
+            with open(os.path.join(workspace, filename), 'wb') as f: f.write(file_bytes)
+            result = f"บันทึก {filename} เรียบร้อย"
+        size = len(pending_doc.encode('utf-8')) if output_format in ('md', 'txt') else os.path.getsize(os.path.join(workspace, filename))
+        db.record_file(job_id, filename, pending_agent, size)
+        _notify_workspace_changed(workspace)
+        yield {'type': 'text', 'content': f'✅ {result}'}
+        yield {'type': 'tool_result', 'tool': tool_name, 'result': result}
     except Exception as e:
-        logger.error(f"[{agent_label}] Streaming error: {e}")
-        yield f"data: {json.dumps({'type': 'error', 'message': 'เกิดข้อผิดพลาดระหว่าง streaming กรุณาลองใหม่'})}\n\n"
+        logger.error(f"[handle_save] error: {e}", exc_info=True)
+        yield {'type': 'save_failed', 'message': 'ไม่สามารถบันทึกไฟล์ได้ กรุณาลองใหม่อีกครั้ง'}
 
-
-def handle_save(pending_doc: str, pending_agent: str, workspace: str):
-    """Save the pending document to workspace without another LLM call.
-    Generator that yields SSE data strings."""
-    try:
-        filename = _suggest_filename(pending_agent, pending_doc)
-        yield f"data: {json.dumps({'type': 'status', 'message': f'กำลังบันทึกไฟล์ {filename}...'})}\n\n"
-        result = _execute_tool(workspace, 'create_file', {
-            'filename': filename,
-            'content': pending_doc
-        })
-        if _tool_result_is_error(result):
-            logger.warning(f"Save failed for {filename}: {result}")
-            yield f"data: {json.dumps({'type': 'save_failed', 'message': result, 'filename': filename})}\n\n"
-            yield f"data: {json.dumps({'type': 'tool_result', 'tool': 'create_file', 'result': result})}\n\n"
-            return
-        yield f"data: {json.dumps({'type': 'text', 'content': f'✅ {result}'})}\n\n"
-        yield f"data: {json.dumps({'type': 'tool_result', 'tool': 'create_file', 'result': result})}\n\n"
-    except Exception as e:
-        message = f'ไม่สามารถบันทึกไฟล์ได้: {str(e)}'
-        logger.error(f"Unexpected save error: {e}")
-        yield f"data: {json.dumps({'type': 'save_failed', 'message': message})}\n\n"
-
-
-def handle_revise(pending_doc: str, pending_agent: str, instruction: str, workspace: str):
-    """Revise the pending document based on user instruction.
-    Generator that yields SSE data strings."""
-    if pending_agent == 'hr':
-        system_prompt = HR_PROMPT
-        agent_label = 'HR Agent'
-        max_tokens = 7500
-    elif pending_agent == 'manager':
-        system_prompt = MANAGER_PROMPT
-        agent_label = 'Manager Advisor'
-        max_tokens = 8000
-    else:
-        system_prompt = ACCOUNTING_PROMPT
-        agent_label = 'Accounting Agent'
-        max_tokens = 6000
-
-    yield f"data: {json.dumps({'type': 'agent', 'agent': pending_agent, 'reason': 'แก้ไขเอกสาร'})}\n\n"
-    yield f"data: {json.dumps({'type': 'status', 'message': f'{agent_label} กำลังแก้ไขเอกสาร...'})}\n\n"
-
+def handle_revise(pending_doc: str, pending_agent: str, instruction: str, history=None):
+    agent_instance = AgentFactory.get_agent(pending_agent)
+    yield {'type': 'agent', 'agent': pending_agent, 'reason': 'แก้ไขเอกสาร'}
+    yield {'type': 'status', 'message': f'{agent_instance.name} กำลังแก้ไขเอกสาร...'}
     revise_message = (
         f"แก้ไขเอกสารต่อไปนี้ตามคำสั่งที่ได้รับ\n\n"
-        f"คำสั่งแก้ไข: {instruction}\n\n"
-        f"เอกสารเดิม:\n{pending_doc}"
+        f"คำสั่งแก้ไข: {instruction}\n\nเอกสารเดิม:\n{pending_doc}"
     )
-    for sse in stream_agent(system_prompt, revise_message, agent_label, max_tokens):
-        yield sse
-
+    try:
+        for chunk in agent_instance.stream_response(revise_message, history=history, max_tokens=AGENT_MAX_TOKENS):
+            yield {'type': 'text', 'content': chunk}
+    except Exception as e:
+        logger.error(f"[handle_revise] stream_response error: {e}", exc_info=True)
+        yield {'type': 'error', 'message': 'ไม่สามารถแก้ไขเอกสารได้ กรุณาลองใหม่อีกครั้ง'}
 
 def _is_safe_temp_path(path: str) -> bool:
-    """Validate that a path is inside TEMP_DIR to prevent path traversal attacks."""
     try:
         resolved = os.path.realpath(os.path.abspath(path))
         return os.path.commonpath([resolved, TEMP_DIR]) == TEMP_DIR
-    except Exception:
+    except (ValueError, TypeError):
         return False
 
-
-def handle_pm_save(temp_paths: list, workspace: str):
-    """Move all PM staged temp files to workspace. Generator that yields SSE data strings."""
+def handle_pm_save(temp_paths: list, workspace: str, job_id=None, output_format: str = 'md', output_formats: list = None, agent_types: list = None):
+    """Yields raw event dicts (not pre-formatted SSE) so callers can inspect type."""
     saved = []
-    for temp_path in temp_paths:
-        # Security: reject paths outside TEMP_DIR
-        if not _is_safe_temp_path(temp_path):
-            logger.warning(f"Rejected unsafe temp path: {temp_path}")
-            continue
-        if not os.path.isfile(temp_path):
-            logger.warning(f"Temp file not found (expired?): {temp_path}")
-            continue
+    for i, temp_path in enumerate(temp_paths):
+        fmt = (output_formats[i] if output_formats and i < len(output_formats) else output_format)
+        if not _is_safe_temp_path(temp_path) or not os.path.isfile(temp_path): continue
         try:
-            filename = _move_to_workspace(temp_path, workspace)
+            if fmt in ('md', 'txt'):
+                filename = _move_to_workspace(temp_path, workspace)
+                if fmt == 'txt' and filename.endswith('.md'):
+                    new_name = filename[:-3] + '.txt'
+                    os.rename(os.path.join(workspace, filename), os.path.join(workspace, new_name))
+                    filename = new_name
+            else:
+                with open(temp_path, 'r', encoding='utf-8') as f: content = f.read()
+                filename = f"{os.path.splitext(os.path.basename(temp_path))[0]}.{fmt}"
+                with open(os.path.join(workspace, filename), 'wb') as f: f.write(converter.convert(content, fmt))
+                os.remove(temp_path)
             saved.append(filename)
-            yield f"data: {json.dumps({'type': 'tool_result', 'tool': 'create_file', 'result': f'บันทึก {filename} เรียบร้อย'})}\n\n"
+            size = os.path.getsize(os.path.join(workspace, filename))
+            agent_type = (agent_types[i] if agent_types and i < len(agent_types) else filename.split('_')[0])
+            db.record_file(job_id, filename, agent_type, size)
+            _notify_workspace_changed(workspace)
+            yield {'type': 'tool_result', 'tool': 'create_file', 'result': f'บันทึก {filename} เรียบร้อย'}
         except Exception as e:
-            logger.error(f"Failed to move temp file {temp_path}: {e}")
-            yield f"data: {json.dumps({'type': 'error', 'message': f'ไม่สามารถบันทึก {os.path.basename(temp_path)}: {str(e)}'})}\n\n"
+            logger.error(f"[handle_pm_save] failed to save {os.path.basename(temp_path)}: {e}", exc_info=True)
+            yield {'type': 'error', 'message': f'ไม่สามารถบันทึก {os.path.basename(temp_path)} กรุณาลองใหม่'}
 
-    count = len(saved)
-    if count > 0:
-        names = ', '.join(saved)
-        yield f"data: {json.dumps({'type': 'text', 'content': f'✅ บันทึก {count} ไฟล์เรียบร้อย\\n{names}'})}\n\n"
+    if saved:
+        names_str = ", ".join(saved)
+        yield {'type': 'text', 'content': f'✅ บันทึก {len(saved)} ไฟล์เรียบร้อย\n{names_str}'}
     else:
-        yield f"data: {json.dumps({'type': 'text', 'content': 'ไม่พบไฟล์ที่รอบันทึก (อาจหมดอายุแล้ว) กรุณาสร้างเอกสารใหม่'})}\n\n"
-
+        yield {'type': 'text', 'content': 'ไม่พบไฟล์ที่รอบันทึก'}
 
 # ─── Routes ──────────────────────────────────────────────────────────────────
 
-@app.route('/')
-def index():
-    return send_file('index.html')
+app = Flask(__name__)
+app.json.ensure_ascii = False
+CORS(app, origins=["http://localhost:5000", "http://127.0.0.1:5000", "http://0.0.0.0:5000"])
+db.init_db()
 
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_limiter.errors import RateLimitExceeded
+
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=[],
+    storage_uri=os.getenv("RATELIMIT_STORAGE_URI", "memory://"),
+)
+
+@app.errorhandler(RateLimitExceeded)
+def handle_rate_limit(e):
+    return jsonify({'error': 'คุณส่งคำสั่งบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่'}), 429
+
+@app.route('/')
+def index(): return send_file('index.html')
+
+@app.route('/history')
+def history_page(): return send_file('history.html')
 
 @app.route('/api/chat', methods=['POST'])
+@limiter.limit(os.getenv("CHAT_RATE_LIMIT", "10 per minute"))
 def chat():
-    if not request.json:
-        return jsonify({'error': 'Invalid request'}), 400
+    if not request.json: return jsonify({'error': 'Invalid request'}), 400
     user_input = request.json.get('message', '').strip()
-    if not user_input:
-        return jsonify({'error': 'ไม่มีข้อความ'}), 400
-    if len(user_input) > 5000:
-        return jsonify({'error': 'ข้อความยาวเกินไป (สูงสุด 5,000 ตัวอักษร)'}), 400
-
-    # Confirmation flow fields
-    pending_doc        = request.json.get('pending_doc', '').strip()
-    pending_agent      = request.json.get('pending_agent', '').strip()
+    if not user_input: return jsonify({'error': 'ไม่มีข้อความ'}), 400
+    
+    pending_doc = request.json.get('pending_doc', '').strip()[:_MAX_PENDING_DOC_BYTES]
+    pending_agent = request.json.get('pending_agent', '').strip()
     pending_temp_paths = request.json.get('pending_temp_paths', [])
-    if not isinstance(pending_temp_paths, list):
-        pending_temp_paths = []
+    pending_agent_types = request.json.get('agent_types') or []
+    session_id = request.json.get('session_id')
+    output_format = request.json.get('output_format', 'md').lower()
+    output_formats = request.json.get('output_formats')
+    _raw_overwrite = (request.json.get('overwrite_filename') or '').strip()
+    overwrite_filename = _raw_overwrite if _raw_overwrite and re.match(r'^[\w.\-]{1,120}$', _raw_overwrite) else None
+    if _raw_overwrite and not overwrite_filename:
+        logger.warning("[chat] rejected invalid overwrite_filename: %r", _raw_overwrite[:80])
+    local_agent_mode = bool(request.json.get('local_agent_mode', False))
+    raw_history = request.json.get('conversation_history', [])
+
+    conversation_history = [
+        {'role': m['role'], 'content': str(m['content'])[:3000]}
+        for m in (raw_history[-20:] if isinstance(raw_history, list) else [])
+        if isinstance(m, dict) and m.get('role') in ('user', 'assistant') and m.get('content')
+    ]
 
     def generate():
-        with _workspace_lock:
-            workspace = WORKSPACE_PATH
+        job_id = db.create_job(user_input, session_id)
+        # Capture workspace once at request start — do NOT call get_workspace() again
+        # inside the PM loop or sub-agent calls (D3: global state risk).
+        workspace = get_workspace()
         os.makedirs(workspace, exist_ok=True)
         _cleanup_old_temp()
 
-        # ── Follow-up: PM staged files waiting for confirmation ──────────────
         if pending_temp_paths:
             if _is_save_intent(user_input):
-                for sse in handle_pm_save(pending_temp_paths, workspace):
-                    yield sse
-                yield f"data: {json.dumps({'type': 'done'})}\n\n"
+                pm_save_ok = True
+                for event in handle_pm_save(pending_temp_paths, workspace, job_id, output_format, output_formats, pending_agent_types):
+                    yield format_sse(event)
+                    if event.get('type') == 'error':
+                        pm_save_ok = False
+                if pm_save_ok:
+                    db.complete_job(job_id, '')
+                else:
+                    db.fail_job(job_id)
+                yield format_sse({'type': 'done'})
                 return
-            # Discard temp files regardless
+            if _is_edit_intent(user_input) and not _is_discard_intent(user_input):
+                db.discard_job(job_id)
+                yield format_sse({'type': 'text', 'content': 'คุณมีไฟล์รอบันทึกอยู่ กรุณาพิมพ์ **บันทึก** เพื่อบันทึกไฟล์ก่อน หรือ **ยกเลิก** เพื่อยกเลิกแล้วส่งคำสั่งใหม่'})
+                yield format_sse({'type': 'done'})
+                return
             for tp in pending_temp_paths:
-                if _is_safe_temp_path(tp) and os.path.isfile(tp):
-                    os.remove(tp)
-                    logger.info(f"Discarded temp file: {os.path.basename(tp)}")
+                if _is_safe_temp_path(tp) and os.path.isfile(tp): os.remove(tp)
             if _is_pure_discard(user_input):
-                # Pure cancel keyword — just confirm and stop
-                yield f"data: {json.dumps({'type': 'text', 'content': '🗑️ ยกเลิกการบันทึกไฟล์เรียบร้อย'})}\n\n"
-                yield f"data: {json.dumps({'type': 'done'})}\n\n"
+                db.discard_job(job_id)
+                yield format_sse({'type': 'text', 'content': '🗑️ ยกเลิกการบันทึกไฟล์เรียบร้อย'})
+                yield format_sse({'type': 'done'})
                 return
-            # New task alongside discard — notify briefly then fall through to Orchestrator
-            yield f"data: {json.dumps({'type': 'status', 'message': '🗑️ ยกเลิกไฟล์เก่าแล้ว กำลังดำเนินการคำสั่งใหม่...'})}\n\n"
+            yield format_sse({'type': 'status', 'message': '🗑️ ยกเลิกไฟล์เก่าแล้ว กำลังดำเนินการคำสั่งใหม่...'})
 
-        # ── Follow-up: single-agent doc confirming/editing ───────────────────
         if pending_doc and pending_agent:
             if _is_save_intent(user_input):
-                for sse in handle_save(pending_doc, pending_agent, workspace):
-                    yield sse
-                yield f"data: {json.dumps({'type': 'done'})}\n\n"
+                save_ok = True
+                for event in handle_save(pending_doc, pending_agent, workspace, job_id, output_format, conversation_history[-5:], overwrite_filename):
+                    yield format_sse(event)
+                    if event.get('type') == 'save_failed':
+                        save_ok = False
+                if save_ok:
+                    db.complete_job(job_id, pending_doc)
+                else:
+                    db.fail_job(job_id)
+                yield format_sse({'type': 'done'})
                 return
             elif _is_discard_intent(user_input):
                 if _is_pure_discard(user_input):
-                    # Pure cancel keyword — just confirm and stop
-                    yield f"data: {json.dumps({'type': 'text', 'content': '🗑️ ยกเลิกเอกสารแล้ว สามารถส่งคำสั่งใหม่ได้เลย'})}\n\n"
-                    yield f"data: {json.dumps({'type': 'done'})}\n\n"
+                    db.discard_job(job_id)
+                    yield format_sse({'type': 'text', 'content': '🗑️ ยกเลิกเอกสารแล้ว สามารถส่งคำสั่งใหม่ได้เลย'})
+                    yield format_sse({'type': 'done'})
                     return
-                # Has additional task content — notify briefly then fall through to Orchestrator
-                yield f"data: {json.dumps({'type': 'status', 'message': '🗑️ ยกเลิกเอกสารเดิมแล้ว กำลังดำเนินการคำสั่งใหม่...'})}\n\n"
+                yield format_sse({'type': 'status', 'message': '🗑️ ยกเลิกเอกสารเดิมแล้ว กำลังดำเนินการคำสั่งใหม่...'})
             elif _is_edit_intent(user_input):
-                # Explicit edit instruction → revise the pending doc
-                for sse in handle_revise(pending_doc, pending_agent, user_input, workspace):
-                    yield sse
-                yield f"data: {json.dumps({'type': 'done'})}\n\n"
+                text_chunks = []
+                for event in handle_revise(pending_doc, pending_agent, user_input, history=conversation_history):
+                    yield format_sse(event)
+                    if event.get('type') == 'text':
+                        text_chunks.append(event.get('content', ''))
+                db.complete_job(job_id, ''.join(text_chunks))
+                yield format_sse({'type': 'done'})
                 return
             else:
-                # No save/discard/edit signal → treat as new task, discard pending doc silently
-                yield f"data: {json.dumps({'type': 'status', 'message': '🗑️ ยกเลิกเอกสารเดิมแล้ว กำลังดำเนินการคำสั่งใหม่...'})}\n\n"
-                # fall through to Orchestrator
+                yield format_sse({'type': 'status', 'message': '🗑️ ยกเลิกเอกสารเดิมแล้ว กำลังดำเนินการคำสั่งใหม่...'})
 
         try:
-            # Step 1: Orchestrator เลือก Agent
-            yield f"data: {json.dumps({'type': 'status', 'message': 'กำลังวิเคราะห์งาน...'})}\n\n"
+            yield format_sse({'type': 'status', 'message': 'กำลังวิเคราะห์งาน...'})
+            orch = Orchestrator()
+            agent_type, reason = orch.route(user_input, conversation_history[-3:])
+            db.update_job_agent(job_id, agent_type, reason)
+            yield format_sse({'type': 'agent', 'agent': agent_type, 'reason': reason})
 
-            try:
-                orchestrator_response = client.chat.completions.create(
-                    model=MODEL,
-                    max_tokens=1024,
-                    messages=[
-                        {"role": "system", "content": ORCHESTRATOR_PROMPT},
-                        {"role": "user", "content": user_input}
-                    ]
-                )
-            except RateLimitError:
-                yield f"data: {json.dumps({'type': 'error', 'message': 'API ถูกใช้งานเกิน limit กรุณารอสักครู่แล้วลองใหม่'})}\n\n"
-                return
-            except APITimeoutError:
-                yield f"data: {json.dumps({'type': 'error', 'message': 'API ใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้ง'})}\n\n"
-                return
-            except APIError:
-                yield f"data: {json.dumps({'type': 'error', 'message': 'เกิดข้อผิดพลาดจาก API กรุณาลองใหม่'})}\n\n"
-                return
+            agent_instance = AgentFactory.get_agent(agent_type)
 
-            orch_choice = orchestrator_response.choices[0]
-            if orch_choice.finish_reason == 'length':
-                logger.warning("Orchestrator response truncated by max_tokens")
-            raw = orch_choice.message.content
-            if not raw:
-                yield f"data: {json.dumps({'type': 'error', 'message': 'Orchestrator ไม่ตอบกลับ กรุณาลองใหม่'})}\n\n"
-                return
-            try:
-                raw = _extract_json(raw)
-                routing = json.loads(raw)
-            except (json.JSONDecodeError, ValueError):
-                yield f"data: {json.dumps({'type': 'error', 'message': 'Orchestrator ตอบกลับผิดรูปแบบ กรุณาลองใหม่'})}\n\n"
-                return
-            agent = routing.get('agent', 'hr')
-            reason = routing.get('reason', '')
-
-            yield f"data: {json.dumps({'type': 'agent', 'agent': agent, 'reason': reason})}\n\n"
-
-            # Step 2: Route to agent(s)
-            if agent == 'pm':
-                # PM path: decompose → multiple agents
-                yield f"data: {json.dumps({'type': 'status', 'message': 'PM Agent กำลังวางแผนงาน...'})}\n\n"
-
-                try:
-                    pm_response = client.chat.completions.create(
-                        model=MODEL,
-                        max_tokens=6000,
-                        messages=[
-                            {"role": "system", "content": PM_PROMPT},
-                            {"role": "user", "content": user_input}
-                        ]
-                    )
-                except Exception as e:
-                    yield f"data: {json.dumps({'type': 'error', 'message': f'PM Agent เกิดข้อผิดพลาด: {str(e)}'})}\n\n"
-                    return
-
-                # Log finish_reason to detect future truncation issues
-                pm_choice = pm_response.choices[0]
-                if pm_choice.finish_reason == 'length':
-                    logger.warning("PM Agent response truncated by max_tokens — consider increasing further")
-                else:
-                    logger.info(f"PM Agent finish_reason: {pm_choice.finish_reason}")
-
-                raw_pm = pm_choice.message.content or ''
-                try:
-                    raw_pm = _extract_json(raw_pm)
-                    pm_data = json.loads(raw_pm)
-                    subtasks = pm_data.get('subtasks', [])
-                except (json.JSONDecodeError, ValueError):
-                    logger.warning(f"PM Agent bad response: {raw_pm[:300]!r}")
-                    yield f"data: {json.dumps({'type': 'error', 'message': 'PM Agent ตอบกลับผิดรูปแบบ กรุณาลองใหม่'})}\n\n"
-                    return
-
-                # Filter out invalid agents (e.g. 'pm' self-reference)
-                valid_agents = {'hr', 'accounting', 'manager'}
-                subtasks = [s for s in subtasks if s.get('agent') in valid_agents]
-
+            if agent_type == 'pm':
+                yield format_sse({'type': 'status', 'message': 'PM Agent กำลังวางแผนงาน...'})
+                subtasks = agent_instance.plan(user_input, conversation_history)
                 if not subtasks:
-                    yield f"data: {json.dumps({'type': 'error', 'message': 'PM Agent ไม่สามารถแบ่งงานได้ กรุณาลองใหม่'})}\n\n"
+                    yield format_sse({'type': 'error', 'message': 'PM Agent ไม่สามารถแบ่งงานได้'})
                     return
-
-                yield f"data: {json.dumps({'type': 'pm_plan', 'subtasks': subtasks})}\n\n"
-                logger.info(f"PM Agent decomposed into {len(subtasks)} subtasks")
-
+                yield format_sse({'type': 'pm_plan', 'subtasks': subtasks})
+                
+                all_pm_chunks = []
                 for i, subtask in enumerate(subtasks):
-                    sub_agent = subtask.get('agent', 'hr')
-                    sub_task = subtask.get('task', user_input)
-
-                    if sub_agent == 'hr':
-                        sub_prompt = HR_PROMPT
-                        sub_label = 'HR Agent'
-                        sub_max_tokens = 7500
-                    elif sub_agent == 'manager':
-                        sub_prompt = MANAGER_PROMPT
-                        sub_label = 'Manager Advisor'
-                        sub_max_tokens = 8000
-                    else:
-                        sub_prompt = ACCOUNTING_PROMPT
-                        sub_label = 'Accounting Agent'
-                        sub_max_tokens = 6000
-
-                    yield f"data: {json.dumps({'type': 'agent', 'agent': sub_agent, 'reason': f'Subtask {i+1}/{len(subtasks)}'})}\n\n"
-                    yield f"data: {json.dumps({'type': 'status', 'message': f'{sub_label} กำลังสร้างเอกสาร...'})}\n\n"
-                    logger.info(f"PM → {sub_label}: {sub_task[:60]}")
-
-                    # Stream content to frontend AND capture it for temp staging
+                    sub_agent_type = subtask.get('agent', 'hr')
+                    sub_task_desc = subtask.get('task', user_input)
+                    sub_agent = AgentFactory.get_agent(sub_agent_type)
+                    
+                    yield format_sse({'type': 'agent', 'agent': sub_agent_type, 'reason': f'Subtask {i+1}/{len(subtasks)}', 'task': sub_task_desc[:80]})
+                    yield format_sse({'type': 'status', 'message': f'{sub_agent.name} กำลังสร้างเอกสาร...'})
+                    
                     subtask_chunks = []
-                    subtask_failed = False
-                    for sse_line in stream_agent(sub_prompt, sub_task, sub_label, sub_max_tokens):
-                        yield sse_line
-                        if sse_line.startswith('data: '):
-                            try:
-                                d = json.loads(sse_line[6:])
-                                if d.get('type') == 'text':
-                                    subtask_chunks.append(d.get('content', ''))
-                                elif d.get('type') == 'error':
-                                    subtask_failed = True
-                            except Exception:
-                                pass
-                    if subtask_failed:
-                        break
+                    try:
+                        for chunk in sub_agent.stream_response(f"[PM_SUBTASK]\n{sub_task_desc}", max_tokens=AGENT_MAX_TOKENS):
+                            yield format_sse({'type': 'text', 'content': chunk})
+                            subtask_chunks.append(chunk)
+                    except Exception as sub_e:
+                        logger.error("[PM subtask %d] stream_response failed: %s", i + 1, sub_e, exc_info=True)
+                        yield format_sse({'type': 'error', 'message': f'Subtask {i + 1} ({sub_agent.name}) เกิดข้อผิดพลาด: กรุณาลองใหม่อีกครั้ง'})
+                        yield format_sse({'type': 'subtask_done', 'agent': sub_agent_type, 'index': i, 'total': len(subtasks)})
+                        continue
 
-                    # Write captured content to temp staging (hidden from workspace/file panel)
-                    full_content = ''.join(subtask_chunks)
+                    # Strip sentinel echo and save-footer in case LLM ignores prompt rule
+                    _SAVE_FOOTER = '💬 ต้องการแก้ไขส่วนไหนไหม? หรือพิมพ์ **บันทึก** เพื่อบันทึกไฟล์'
+                    full_content = ''.join(subtask_chunks).replace('[PM_SUBTASK]', '').replace(_SAVE_FOOTER, '').strip()
+                    all_pm_chunks.append(full_content)
                     if full_content.strip():
-                        temp_path = _write_temp(full_content, sub_agent)
-                        filename = os.path.basename(temp_path)
-                        yield f"data: {json.dumps({'type': 'pending_file', 'temp_path': temp_path, 'filename': filename, 'agent': sub_agent})}\n\n"
-
-                    yield f"data: {json.dumps({'type': 'subtask_done', 'agent': sub_agent, 'index': i, 'total': len(subtasks)})}\n\n"
-
+                        temp_path = _write_temp(full_content, sub_agent_type)
+                        yield format_sse({'type': 'pending_file', 'temp_path': temp_path, 'filename': os.path.basename(temp_path), 'agent': sub_agent_type})
+                    yield format_sse({'type': 'subtask_done', 'agent': sub_agent_type, 'index': i, 'total': len(subtasks)})
+                
+                db.complete_job(job_id, '\n\n---\n\n'.join(all_pm_chunks))
             else:
-                # Single-agent path — stream only, no auto-save (user confirms later)
-                if agent == 'hr':
-                    system_prompt = HR_PROMPT
-                    agent_label = 'HR Agent'
-                    agent_max_tokens = 7500
-                elif agent == 'manager':
-                    system_prompt = MANAGER_PROMPT
-                    agent_label = 'Manager Advisor'
-                    agent_max_tokens = 8000
-                else:
-                    system_prompt = ACCOUNTING_PROMPT
-                    agent_label = 'Accounting Agent'
-                    agent_max_tokens = 6000
+                yield format_sse({'type': 'status', 'message': f'{agent_instance.name} กำลังตรวจสอบ workspace...'})
+                active_tools = LOCAL_AGENT_TOOLS if local_agent_mode else READ_ONLY_TOOLS
+                text_chunks = []
+                _max_tok = CHAT_MAX_TOKENS if agent_type == 'chat' else AGENT_MAX_TOKENS
+                for sse_data in agent_instance.run_with_tools(user_input, workspace, tools=active_tools, history=conversation_history, max_tokens=_max_tok):
+                    # Intercept local_delete marker — ส่ง event ให้ browser ลบจริง
+                    if (sse_data.get('type') == 'tool_result'
+                            and sse_data.get('tool') == 'local_delete'
+                            and sse_data.get('result', '').startswith('__LOCAL_DELETE__:')):
+                        filename = sse_data['result'].split(':', 1)[1]
+                        yield format_sse({'type': 'local_delete', 'filename': filename})
+                    # Intercept request_delete marker — ส่ง event ให้ browser แสดง confirm modal
+                    elif (sse_data.get('type') == 'tool_result'
+                            and sse_data.get('tool') == 'request_delete'
+                            and sse_data.get('result', '').startswith('__DELETE_REQUEST__:')):
+                        filename = sse_data['result'].split(':', 1)[1].strip()
+                        if filename:
+                            yield format_sse({'type': 'delete_request', 'filename': filename})
+                        else:
+                            logger.warning("[generate] request_delete returned empty filename — suppressed")
+                    else:
+                        yield format_sse(sse_data)
+                    if sse_data.get('type') == 'text': text_chunks.append(sse_data.get('content', ''))
+                db.complete_job(job_id, ''.join(text_chunks))
 
-                logger.info(f"Routed to {agent_label}: {user_input[:60]}")
-                yield f"data: {json.dumps({'type': 'status', 'message': f'{agent_label} กำลังสร้างเอกสาร...'})}\n\n"
-
-                for sse_line in stream_agent(system_prompt, user_input, agent_label, agent_max_tokens):
-                    yield sse_line
-
-            yield f"data: {json.dumps({'type': 'done'})}\n\n"
-
-        except json.JSONDecodeError:
-            yield f"data: {json.dumps({'type': 'error', 'message': 'Orchestrator ตอบกลับผิดรูปแบบ กรุณาลองใหม่'})}\n\n"
-            yield f"data: {json.dumps({'type': 'done'})}\n\n"
+            yield format_sse({'type': 'done'})
         except Exception as e:
-            logger.error(f"Unexpected error in chat: {e}")
-            yield f"data: {json.dumps({'type': 'error', 'message': 'เกิดข้อผิดพลาดจากระบบ กรุณาลองใหม่อีกครั้ง'})}\n\n"
-            yield f"data: {json.dumps({'type': 'done'})}\n\n"
+            db.fail_job(job_id)
+            logger.error(f"[generate] unhandled error: {e}", exc_info=True)
+            yield format_sse({'type': 'error', 'message': 'เกิดข้อผิดพลาดจากระบบ กรุณาลองใหม่อีกครั้ง'})
+            yield format_sse({'type': 'done'})
 
-    return Response(
-        generate(),
-        mimetype='text/event-stream; charset=utf-8',
-        headers={
-            'Cache-Control': 'no-cache',
-            'X-Accel-Buffering': 'no',
-            'Connection': 'keep-alive'
-        }
-    )
-
+    return Response(stream_with_context(generate()), mimetype='text/event-stream; charset=utf-8', headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no', 'Connection': 'keep-alive'})
 
 @app.route('/api/workspace', methods=['GET'])
-def get_workspace():
-    with _workspace_lock:
-        wp = WORKSPACE_PATH
-    return jsonify({
-        'path': wp,
-        'exists': os.path.isdir(wp),
-        'files': len(fs_list_files(wp))
-    })
-
+def get_workspace_api():
+    wp = get_workspace()
+    return jsonify({'path': wp, 'exists': os.path.isdir(wp), 'files': len(fs_list_files(wp))})
 
 @app.route('/api/workspace', methods=['POST'])
-def set_workspace():
-    global WORKSPACE_PATH
-    data = request.json or {}
-    new_path = data.get('path', '').strip()
-    if not new_path:
-        return jsonify({'error': 'ระบุ path ไม่ถูกต้อง'}), 400
+def set_workspace_api():
+    new_path = (request.json or {}).get('path', '').strip()
     abs_path = _normalize_workspace_path(new_path)
-    # Basic safety: reject suspiciously short paths (e.g. bare drive root "C:\")
-    if len(abs_path) <= 3:
-        return jsonify({'error': 'Path ไม่ปลอดภัย กรุณาระบุ directory ที่ชัดเจนกว่านี้'}), 400
-    if not _is_allowed_workspace_path(abs_path):
-        return jsonify({
-            'error': f'อนุญาตเฉพาะ workspace ภายใต้โปรเจกต์นี้เท่านั้น: {_PROJECT_ROOT}'
-        }), 400
-    try:
-        os.makedirs(abs_path, exist_ok=True)
-    except OSError as e:
-        return jsonify({'error': f'ไม่สามารถสร้าง directory ได้: {str(e)}'}), 400
-    with _workspace_lock:
-        WORKSPACE_PATH = abs_path
-    logger.info(f"Workspace changed to: {abs_path}")
+    if len(abs_path) <= 3 or not _is_allowed_workspace_path(abs_path): return jsonify({'error': 'Invalid path'}), 400
+    os.makedirs(abs_path, exist_ok=True)
+    set_workspace(abs_path)
     return jsonify({'path': abs_path, 'exists': True})
 
+@app.route('/api/workspaces', methods=['GET'])
+def list_workspaces():
+    current = os.path.realpath(get_workspace())
+    result = {'current': current, 'roots': []}
+    for root in _ALLOWED_ROOTS:
+        workspaces = []
+        try:
+            for entry in sorted(os.scandir(root), key=lambda e: e.name.lower()):
+                if entry.is_dir() and not entry.name.startswith('.'):
+                    workspaces.append({'path': entry.path, 'name': entry.name, 'active': os.path.realpath(entry.path) == current})
+        except OSError as e:
+            logger.warning(f"[list_workspaces] cannot scan root {root}: {e}")
+        result['roots'].append({'root': root, 'label': os.path.basename(root) or root, 'workspaces': workspaces})
+    return jsonify(result)
+
+@app.route('/api/workspace/new', methods=['POST'])
+def create_workspace_folder():
+    data = request.json or {}
+    root, name = data.get('root', '').strip(), data.get('name', '').strip()
+    if not root or not name or not re.match(r'^[a-zA-Z0-9_-]{1,50}$', name):
+        return jsonify({'error': 'Invalid request'}), 400
+    # Validate root is one of the configured allowed roots — never trust client-provided path
+    real_root = os.path.realpath(root)
+    if real_root not in {os.path.realpath(r) for r in _ALLOWED_ROOTS}:
+        logger.warning("[create_workspace_folder] rejected invalid root: %s", root)
+        return jsonify({'error': 'Invalid root'}), 400
+    new_path = os.path.realpath(os.path.join(real_root, name))
+    if not _is_allowed_workspace_path(new_path):
+        logger.warning("[create_workspace_folder] path escape attempt: %s", new_path)
+        return jsonify({'error': 'Invalid path'}), 400
+    os.makedirs(new_path, exist_ok=True)
+    set_workspace(new_path)
+    return jsonify({'path': new_path, 'name': name})
 
 @app.route('/api/files')
 def list_files_snapshot():
-    with _workspace_lock:
-        wp = WORKSPACE_PATH
+    wp = get_workspace()
     return jsonify({'workspace': wp, 'files': fs_list_files(wp)})
-
 
 @app.route('/api/files/stream')
 def files_stream():
     def generate():
-        with _workspace_lock:
-            wp = WORKSPACE_PATH
-        os.makedirs(wp, exist_ok=True)
-
+        wp = get_workspace()
         event_queue = queue.Queue(maxsize=20)
-
+        with _ws_change_lock: _ws_change_queues.setdefault(wp, []).append(event_queue)
         class Handler(FileSystemEventHandler):
             def on_any_event(self, event):
                 if not event.is_directory:
-                    try:
-                        event_queue.put_nowait('changed')
-                    except queue.Full:
-                        pass
-
+                    try: event_queue.put_nowait('changed')
+                    except queue.Full: pass
         observer = Observer()
         observer.schedule(Handler(), wp, recursive=False)
         observer.start()
-
         try:
-            # Send initial snapshot
-            files = fs_list_files(wp)
-            yield f"data: {json.dumps({'type': 'files', 'files': files, 'workspace': wp})}\n\n"
-
+            yield format_sse({'type': 'files', 'files': fs_list_files(wp), 'workspace': wp})
             while True:
-                try:
-                    event_queue.get(timeout=25)
-                    # Drain stacked events
-                    while not event_queue.empty():
-                        try:
-                            event_queue.get_nowait()
-                        except queue.Empty:
-                            break
+                try: event_queue.get(timeout=25)
                 except queue.Empty:
-                    # Heartbeat to keep connection alive
-                    yield f"data: {json.dumps({'type': 'heartbeat'})}\n\n"
+                    yield format_sse({'type': 'heartbeat'})
                     continue
-
-                files = fs_list_files(wp)
-                yield f"data: {json.dumps({'type': 'files', 'files': files, 'workspace': wp})}\n\n"
-
-        except GeneratorExit:
-            pass
+                yield format_sse({'type': 'files', 'files': fs_list_files(wp), 'workspace': wp})
         finally:
             observer.stop()
             observer.join(timeout=2)
-
-    return Response(
-        generate(),
-        mimetype='text/event-stream; charset=utf-8',
-        headers={
-            'Cache-Control': 'no-cache',
-            'X-Accel-Buffering': 'no',
-            'Connection': 'keep-alive'
-        }
-    )
-
+            with _ws_change_lock:
+                bucket = _ws_change_queues.get(wp, [])
+                if event_queue in bucket: bucket.remove(event_queue)
+    return Response(stream_with_context(generate()), mimetype='text/event-stream; charset=utf-8', headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no', 'Connection': 'keep-alive'})
 
 @app.route('/api/health')
 def health():
-    with _workspace_lock:
-        wp = WORKSPACE_PATH
-    return jsonify({
-        'status': 'ok',
-        'model': MODEL,
-        'provider': 'openrouter',
-        'api_key_configured': bool(OPENROUTER_API_KEY),
-        'workspace': wp,
-        'workspace_exists': os.path.isdir(wp)
-    })
+    wp = get_workspace()
+    return jsonify({'status': 'ok', 'model': MODEL, 'workspace': wp, 'db': db.db_status()})
+
+@app.route('/api/history')
+def history(): return jsonify({'jobs': db.get_history(int(request.args.get('limit', 50))), 'db_available': db.DB_AVAILABLE})
+
+@app.route('/api/history/<job_id>')
+def history_job(job_id: str):
+    job = db.get_job(job_id)
+    return jsonify(job) if job else (jsonify({'error': 'Not found'}), 404)
+
+@app.route('/api/serve/<filename>')
+def serve_workspace_file(filename: str):
+    """Serve a raw file from the current workspace (used for PDF/image inline preview)."""
+    if not re.match(r'^[\w.\-]{1,200}$', filename):
+        return jsonify({'error': 'invalid filename'}), 400
+    workspace = get_workspace()
+    filepath = os.path.join(workspace, filename)
+    if not os.path.realpath(filepath).startswith(os.path.realpath(workspace)):
+        return jsonify({'error': 'access denied'}), 403
+    if not os.path.isfile(filepath):
+        return jsonify({'error': 'not found'}), 404
+    return send_file(filepath, conditional=True, max_age=60)
+
+
+@app.route('/api/preview')
+def preview_file():
+    filename = (request.args.get('file') or '').strip()
+    if not filename or not re.match(r'^[\w.\-]{1,200}$', filename):
+        return jsonify({'error': 'invalid filename'}), 400
+    workspace = get_workspace()
+    filepath = os.path.join(workspace, filename)
+    if not os.path.realpath(filepath).startswith(os.path.realpath(workspace)):
+        return jsonify({'error': 'access denied'}), 403
+    if not os.path.isfile(filepath):
+        return jsonify({'error': 'not found'}), 404
+    try:
+        content = fs_read_file(workspace, filename)
+        ext = os.path.splitext(filename)[1].lower()
+        size = os.path.getsize(filepath)
+        return jsonify({'filename': filename, 'content': content, 'ext': ext, 'size': size})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/delete', methods=['POST'])
+@limiter.limit("20 per minute")
+def delete_file_api():
+    data = request.json or {}
+    filename = (data.get('filename') or '').strip()
+    if not filename or not re.match(r'^[\w.\-]{1,120}$', filename):
+        return jsonify({'error': 'invalid filename'}), 400
+    workspace = get_workspace()
+    result = execute_tool(workspace, 'delete_file', {'filename': filename})
+    if _tool_result_is_error(result):
+        return jsonify({'error': result}), 400
+    logger.info("[delete_file_api] deleted: %s from workspace %s", filename, workspace)
+    _notify_workspace_changed(workspace)
+    return jsonify({'success': True, 'filename': filename})
+
+
+@app.route('/api/sessions')
+def list_sessions():
+    return jsonify({'sessions': db.get_sessions()})
+
+
+@app.route('/api/sessions/<session_id>')
+def get_session_api(session_id: str):
+    if not re.match(r'^[\w\-]{8,64}$', session_id):
+        return jsonify({'error': 'invalid session_id'}), 400
+    return jsonify({'jobs': db.get_session_jobs(session_id)})
 
 
 if __name__ == '__main__':
-    debug_mode = os.getenv('FLASK_DEBUG', '').strip().lower() in {'1', 'true', 'yes', 'on'}
-    app.run(debug=debug_mode, port=5000, threaded=True)
+    app.run(debug=os.getenv('FLASK_DEBUG','').lower() in {'1','true'}, host=os.getenv('FLASK_HOST','0.0.0.0'), port=5000, threaded=True)

@@ -1,135 +1,58 @@
-# AI POC — Internal AI Assistant
+# CLAUDE.md — Internal AI Assistant
 
-## โปรเจกต์นี้คืออะไร
-Flask + OpenRouter API สำหรับ demo ต่อหัวหน้า
-Multi-agent: Orchestrator → HR Agent / Accounting Agent / Manager Advisor
-Output: เอกสารภาษาไทย (สัญญาจ้าง, invoice, JD, คำแนะนำการบริหารทีม)
+## 🛠 คำสั่งที่ใช้บ่อย
+- **รันระบบ:** `./start.sh` (Flask บน http://localhost:5000)
+- **รันเทส Smoke (Phase 0):** `./venv/bin/python3 smoke_test_phase0.py`
+- **รันเทส Use Cases:** `PYTHONUTF8=1 ./venv/bin/python3 test_cases.py`
+- **Setup ครั้งแรก:** `bash setup.sh`
 
-## เอกสารสำคัญ — อ่านก่อนทำงานทุกครั้ง
-- `docs/poc-plan.md`     — แผน POC 2 คืน พร้อม code และ demo script
-- `docs/project-plan.md` — แผนการพัฒนาทั้งหมด Phase 0-4
+## 🏗 โครงสร้างโฟลเดอร์ (v0.12.2+)
+- `app.py`: Flask Routes
+- `core/`: Orchestrator, Factory, Shared State, Utils
+- `agents/`: โมดูล Agent แต่ละแผนก (HR, Accounting, Manager, PM, Chat)
+- `prompts/`: System Prompts (.md files)
+- `workspace/`: พื้นที่เก็บเอกสารจริงที่สร้างเสร็จแล้ว
+- `temp/`: พื้นที่เก็บ Draft เอกสารที่รอการยืนยัน
+- `.claude/agents/`: Subagent definitions — AI ใช้เรียกใช้ agent เฉพาะทาง
 
-## Stack
-- Python 3.11 + Flask + flask-cors
-- OpenAI SDK → OpenRouter (`https://openrouter.ai/api/v1`)
-- SSE สำหรับ streaming response (`client.chat.completions.create(stream=True)`)
-- index.html ไฟล์เดียว ไม่มี framework — dark mode default, toggle light/dark ได้
+## 📜 กฎเหล็ก (Mandatory Rules)
+1.  **ภาษา:** AI Output + UI ต้องเป็นภาษาไทย 100%
+2.  **วันที่:** ใช้ พ.ศ. (ปัจจุบัน 2569)
+3.  **Disclaimer:** ท้ายเอกสารต้องมีคำเตือนเรื่อง AI Draft เสมอ
+4.  **ไฟล์:** ชื่อไฟล์ต้องเป็น `english_snake_case.ext` ห้ามมีภาษาไทยในชื่อไฟล์
+5.  **ความปลอดภัย:** ห้ามอ่าน/แก้ไขไฟล์นอก `workspace/` และห้ามแตะไฟล์ `.env` โดยตรง
+6.  **Versioning:** ทุก commit ต้อง bump version ใน `index.html` + `CHANGELOG.md`
+7.  **Documentation:** หลังงานเสร็จ ต้องอัปเดตเอกสาร (PROJECT_SUMMARY, CLAUDE.md, GEMINI.md) ให้ sync กัน
 
-## โครงสร้างไฟล์
-- app.py          — Flask server + Orchestrator + PM Agent + Agentic loop
-- mcp_server.py   — MCP Filesystem Server (FastMCP) + 5 tools (Layer A/B)
-- index.html      — Web UI (dark/light toggle, Enter ส่ง, Shift+Enter ขึ้นบรรทัดใหม่)
-- .env            — `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `WORKSPACE_PATH` (ห้าม commit)
-- .env.example    — template สำหรับ setup ใหม่
-- requirements.txt — flask, flask-cors, openai, python-dotenv, mcp, watchdog
-- workspace/       — workspace directory สำหรับ agent สร้างไฟล์ (gitignored ยกเว้น .gitkeep)
-- temp/            — staging area สำหรับไฟล์ที่รอ confirm ก่อน move ไป workspace (gitignored ยกเว้น .gitkeep)
-- test_cases.py   — ทดสอบ 5 use cases อัตโนมัติ (`PYTHONUTF8=1 python test_cases.py`)
-- docs/           — project-plan.md, poc-plan.md
-- .claude/agents/ — subagents ทั้งหมด
+## 🔍 ลำดับการ Review ก่อน Commit (Mandatory Review Order)
 
-## Known Issues & Quirks
-- **Reasoning models** (เช่น minimax/minimax-m2.7) ใช้ token ไปกับ internal thinking ก่อน — Orchestrator ต้องใช้ `max_tokens=1024` ขึ้นไป ไม่เช่นนั้น `content` จะเป็น `None`
-- **Windows terminal** ต้อง prefix ด้วย `PYTHONUTF8=1` เมื่อรัน script ที่มีภาษาไทย
-- model name ที่แสดงใน sidebar ดึงจาก `/api/health` endpoint ตอนโหลดหน้า (ไม่ได้ hardcode ใน HTML)
+ทุกครั้งที่มีการแก้ไขโค้ด ให้รัน subagent ตามลำดับนี้ก่อน commit เสมอ:
 
-## Version Management
-
-Version แสดงใน `index.html` บรรทัด `<div class="version">INTERNAL POC — vX.X.X</div>`
-
-รูปแบบ: **v0.MINOR.PATCH**
-
-| การเปลี่ยนแปลง | bump | ตัวอย่าง |
+| ลำดับ | Subagent | Trigger |
 |---|---|---|
-| เพิ่ม Agent ใหม่, ฟีเจอร์หลักใหม่ (route ใหม่, capability ใหม่) | Minor | v0.2.x → v0.3.0 |
-| Bug fix, UI tweak, prompt update, doc update | Patch | v0.2.0 → v0.2.1 |
+| 1 | `backend-python-reviewer` | **ทุกครั้ง** ที่แก้ `app.py`, `core/`, `agents/`, `db.py`, `converter.py`, `mcp_server.py` |
+| 2 | `python-reviewer` | แก้ไฟล์ `.py` ใดๆ นอกจากข้อ 1 (เช่น test scripts) |
+| 3 | `ui-ux-reviewer` | แก้ `index.html` หรือ `history.html` |
+| 4 | `security-checker` | ก่อน demo ทุกครั้ง หรือเมื่อแก้ `.env` / API config |
+| 5 | `db-checker` | แก้ `db.py` หรือ `converter.py` |
+| 6 | `thai-doc-checker` | **ทุกครั้ง** ที่แก้หรือสร้างไฟล์ภาษาไทยทุกประเภท — ครอบคลุม `docs/`, `CHANGELOG.md`, `PROJECT_SUMMARY.md`, `DEMO-READINESS-REPORT.md`, `GEMINI.md`, `prompts/`, และ output ที่ agents สร้าง |
 
-กฎ:
-- **ทุก commit ต้อง bump version** ใน index.html พร้อมกัน
-- **ทุก commit ต้องเพิ่ม entry ใน CHANGELOG.md** ระบุ version, วันที่, ประเภท, รายละเอียด
-- เมื่อ bump Minor ให้ reset Patch เป็น 0 เสมอ (v0.2.3 → v0.3.0)
-- Version ปัจจุบัน: **v0.4.20**
+> **กฎ:** ห้าม commit ถ้า `backend-python-reviewer` ยังไม่ผ่าน เมื่อมีการแก้ backend
+> **กฎ:** ห้าม commit เอกสารภาษาไทยถ้า `thai-doc-checker` ยังไม่ผ่าน
 
-ประวัติ:
-- v0.1.0 — initial POC (HR + Accounting agents, SSE streaming)
-- v0.2.0 — Manager Advisor agent + timer counter + copy button
-- v0.2.1 — fix Manager badge label/color, update sidebar agent list
-- v0.2.2 — adopt semantic versioning scheme
-- v0.2.3 — PROJECT_SUMMARY.md (AI context document)
-- v0.3.0 — UI redesign "The Silent Concierge" (Navbar + Sidebar redesign, dark/light tokens, Material Symbols)
-- v0.3.1 — Markdown rendering (marked.js) + status-row solid background fix
-- v0.3.2 — auto-resize textarea (1–5 บรรทัด)
-- v0.3.3 — input area redesign: button absolute inside container (ChatGPT style)
-- v0.3.4 — agent badge reserved space + idle state
-- v0.3.5 — nav-items → pill chips, dark mode สว่างขึ้น
-- v0.3.6 — typing indicator (3 bouncing dots) ก่อน streaming เริ่ม
-- v0.3.7 — fix accent line สูงพอดี bubble ระหว่าง typing state
-- v0.3.8 — fix "tokens"→"ตัวอักษร" + typing indicator ค้างเมื่อ error
-- v0.3.9 — chat bubble UI: user bubble ขวา, AI ซ้าย, ประวัติสะสม
-- v0.4.0 — PM Agent + MCP Filesystem (workspace selector, real-time file panel, agentic tool-calling loop)
-- v0.4.1 — Confirmation flow: AI generates → asks to edit or save → user confirms before file write
-- v0.4.2 — fix PM Agent JSON parse robustness + sidebar badge overflow
-- v0.4.3 — temp staging flow: PM subtasks stream full content → temp dir → confirm → move to workspace
-- v0.4.4 — fix PM Agent max_tokens 1024→6000 (subtask JSON truncation) + finish_reason logging
-- v0.4.5 — fix pending state hijack: ✕ ยกเลิก button + _is_discard_intent() backend safety net
-- v0.4.6 — fix fall-through routing: งานใหม่ขณะ pending → ยกเลิกเดิม + ส่งงานใหม่ไป Orchestrator
-- v0.4.7 — fix new-task-vs-edit: _is_edit_intent() แยก edit instruction ออกจากงานใหม่ ป้องกัน handle_revise() ถูกเรียกผิด
-- v0.4.8 — harden runtime default: ปิด Flask debug mode สำหรับการรันปกติ และเปิดได้ผ่าน FLASK_DEBUG
-- v0.4.9 — harden workspace switching: จำกัด runtime workspace ให้อยู่ภายใต้ project root
-- v0.4.10 — harden save confirmation flow: save fail แล้วไม่หลอกว่าสำเร็จ และไม่ทำ pending state หาย
-- v0.4.11 — harden frontend rendering: sanitize markdown และลดการใช้ innerHTML กับข้อมูลจาก server/LLM
-- v0.4.12 — smoke test harness hardening: เพิ่ม `smoke_test_phase0.py`, กัน false alarm จาก Windows shell encoding, และเพิ่ม retry/timeout diagnostics
-- v0.4.13 — fix 5A: เพิ่ม `done` event ใน outer except blocks ป้องกัน frontend ค้างเมื่อเกิด error
-- v0.4.14 — fix 5B: PM subtask loop break เมื่อ subtask error ป้องกัน loop วิ่งต่อหลังพัง
-- v0.4.15 — fix 5C: นำ 'งานใหม่'/'เริ่มใหม่' ออกจาก _DISCARD_KEYWORDS ป้องกัน false positive
-- v0.4.16 — fix 5D: นำ 'ใช่' ออกจาก _SAVE_KEYWORDS + _SAVE_NEGATIVE_PREFIX ป้องกัน save false positive
-- v0.4.17 — fix stale pending after save: receivedAgentEvent flag ป้องกัน save text ถูกตีความเป็น pending doc
-- v0.4.18 — fix scroll lock: userScrolledUp flag หยุด auto-scroll เมื่อ user เลื่อนขึ้นอ่านระหว่าง streaming
-- v0.4.19 — fix typing indicator ค้าง + discard notification ปนในเอกสาร: status type + always-hide on text
-- v0.4.20 — feature pending doc modal: popup ถามก่อนยกเลิก บันทึกก่อน/ข้ามไป/ยกเลิก + auto-send queue
+## 📝 รูปแบบการ Commit (Message Format)
+`vX.X.X — [fix/feature/refactor/docs]: <คำอธิบายภาษาไทยหรืออังกฤษ>`
+*(ห้ามลืม bump version และ commit ในขั้นตอนเดียวกัน)*
 
-## Rules ที่ต้องทำตามเสมอ
-- ภาษาไทยใน UI และ system prompts ทั้งหมด
-- ทุก agent output ต้องมี disclaimer ว่าเป็น draft
-- Error messages เป็นภาษาไทยที่ user เข้าใจ ไม่ใช่ technical
-- ห้าม hardcode API key ใน code เด็ดขาด
-- ก่อนเริ่มงานใหม่ทุกครั้ง อ่าน docs/poc-plan.md ก่อน
-- **ทุกครั้งที่มีการเปลี่ยนแปลงโค้ดที่อาจส่งผลต่อเอกสาร ให้อัปเดตเอกสารที่เกี่ยวข้องทันที** ดูตารางด้านล่าง
+## 🔒 กฎบังคับท้าย Session (End-of-Session Mandatory Rules)
 
-### เอกสารที่ต้องอัปเดตเมื่อโค้ดเปลี่ยน
+ทุกครั้งที่งานในรอบนั้นเสร็จสมบูรณ์ ต้องทำตามลำดับนี้ก่อนจบ session เสมอ — **ห้ามข้าม**:
 
-| เมื่อเปลี่ยน | อัปเดตเอกสารเหล่านี้ |
-|---|---|
-| version ใน index.html | CLAUDE.md (Version ปัจจุบัน + ประวัติ), CHANGELOG.md, PROJECT_SUMMARY.md (version + history table), docs/poc-plan.md (file tree), docs/project-plan.md (POC version), DEMO-READINESS-REPORT.md |
-| UI feature ใหม่ (index.html) | PROJECT_SUMMARY.md (UI Architecture), DEMO-READINESS-REPORT.md (UI FEATURES), docs/poc-plan.md (progress list) |
-| Agent ใหม่ หรือ agent logic เปลี่ยน (app.py) | PROJECT_SUMMARY.md (Agents table), docs/poc-plan.md (Agent table + progress), DEMO-READINESS-REPORT.md (Agent Routing Status) |
-| โครงสร้างไฟล์เปลี่ยน | PROJECT_SUMMARY.md (โครงสร้างไฟล์), CLAUDE.md (โครงสร้างไฟล์), docs/poc-plan.md (file tree) |
-| Demo use cases เปลี่ยน | PROJECT_SUMMARY.md (Demo Use Cases), docs/poc-plan.md (session log), DEMO-READINESS-REPORT.md (USE CASES STATUS), backup/demo-inputs.txt |
+1. **Bump version** — อัปเดต `index.html` (`.version-tag`) + เพิ่ม entry ใหม่ใน `CHANGELOG.md`
+2. **Run reviewers** — รัน subagent ตามตาราง Mandatory Review Order ด้านบน
+3. **Git commit** — `git add` เฉพาะไฟล์ที่เปลี่ยน แล้ว commit ด้วย format `vX.X.X — ...`
+4. **ตรวจสอบ** — รัน `git status` หลัง commit เพื่อยืนยันว่าไม่มีไฟล์ค้างอยู่
 
-## Agent Workflow Rules — Follow Automatically
-
-These rules apply without needing to be asked:
-
-### After writing or editing any .py file
-→ ALWAYS run python-reviewer before considering done
-
-### After any error or exception appears  
-→ ALWAYS run debug-assistant immediately
-
-### After generating any Thai document output
-→ ALWAYS run thai-doc-checker
-
-### After writing or editing index.html
-→ Run frontend-developer to verify
-→ Then run ui-ux-reviewer to validate UX
-
-### Before demo or dry-run
-→ Run security-checker first
-→ Then run demo-preparer for full checklist
-
-### After any code change affecting documentation
-→ Update related docs immediately (see table in "Rules ที่ต้องทำตามเสมอ")
-→ Do NOT wait until end of session — update inline as part of the same change
-
-### At end of each work session
-→ Run project-documenter to update docs/poc-plan.md
+> **กฎ:** ถ้ายังไม่ได้ commit → ถือว่างานยังไม่เสร็จ
+> **กฎ:** ห้าม commit ไฟล์ที่ไม่เกี่ยวข้อง เช่น `server.log`, `*.zip`, `Screenshot.png`, `.env`
+> **กฎ:** `requirements.txt` ต้องอัปเดตทุกครั้งที่ `pip install` package ใหม่

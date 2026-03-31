@@ -1,7 +1,7 @@
 # DEMO READINESS REPORT
 **Project:** Internal AI Assistant POC
-**Version:** v0.4.20
-**Date:** 24 มีนาคม 2569
+**Version:** v0.12.2
+**Date:** 26 มีนาคม 2569
 **Assessor:** Claude Code
 
 ---
@@ -26,8 +26,8 @@
 
 - Flask Server: Running on port 5000
 - Health Endpoint: /api/health returns 200 with model name
-- UI Frontend: http://localhost:5000 loads (v0.4.20)
-- Dependencies: All installed (flask, flask-cors, openai, python-dotenv, mcp, watchdog)
+- UI Frontend: http://localhost:5000 loads (v0.12.2)
+- Dependencies: All installed (flask, flask-cors, openai, python-dotenv, mcp, watchdog, ddgs)
 - API Key: Configured in .env
 - Model: configurable via OPENROUTER_MODEL env var
 - MCP Server: mcp_server.py implements 5 filesystem tools
@@ -35,14 +35,17 @@
 
 ### CODE & DOCUMENTATION — COMPLETE
 
-- Backend: D:/ai-poc/app.py (Orchestrator + HR + Accounting + Manager Advisor + PM Agent + Agentic loop + discard keywords)
-- MCP Server: D:/ai-poc/mcp_server.py (FastMCP + 5 filesystem tools)
-- Frontend: D:/ai-poc/index.html (The Silent Concierge UI + chat bubbles + confirmation flow + cancel button)
-- Demo Inputs: D:/ai-poc/backup/demo-inputs.txt (6 cases ready)
-- Demo Script: D:/ai-poc/backup/demo-script.md (3-case flow)
-- Quick Check: D:/ai-poc/quick-demo-check.py (7 checks: 6 cases + health)
-- Phase 0 Smoke Test: D:/ai-poc/smoke_test_phase0.py (5 checks: health, workspace guard, basic chat, Thai save/discard confirmation)
-- Pre-Demo Checklist: D:/ai-poc/PRE-DEMO-CHECKLIST.md
+- Backend: app.py + core/ + agents/ + prompts/ (Modular Architecture — Orchestrator + HR + Accounting + Manager Advisor + PM Agent + Chat Agent + DB integration)
+- DB Layer: db.py (SQLite persistence — jobs, saved_files, graceful degradation)
+- Converter: converter.py (multi-format export: .md/.txt/.docx/.xlsx/.pdf)
+- MCP Server: mcp_server.py (FastMCP + 5 filesystem tools)
+- Frontend: index.html (The Silent Concierge UI + chat bubbles + format selector popup)
+- History: history.html (standalone history viewer — /history route)
+- Demo Inputs: backup/demo-inputs.txt (6 cases ready)
+- Demo Script: backup/demo-script.md (3-case flow)
+- Quick Check: quick-demo-check.py (7 checks: 6 cases + health)
+- Phase 0 Smoke Test: smoke_test_phase0.py (5 checks: health, workspace guard, basic chat, Thai save/discard confirmation)
+- Pre-Demo Checklist: PRE-DEMO-CHECKLIST.md
 
 ### BACKUP MATERIALS — INCOMPLETE
 
@@ -87,18 +90,19 @@
 
 ## AGENT ROUTING STATUS
 
-| Agent | Route Key | Badge Color | max_tokens |
-|---|---|---|---|
-| HR Agent | `"hr"` | เขียว | 7,500 |
-| Accounting Agent | `"accounting"` | น้ำเงิน/ม่วง | 6,000 |
-| Manager Advisor | `"manager"` | ม่วง | 8,000 |
-| PM Agent | `"pm"` | ส้ม | 8,000 (with MCP tools) |
+| Agent | Route Key | Badge Color | max_tokens | Tools |
+|---|---|---|---|---|
+| HR Agent | `"hr"` | เขียว | 10,000 | list_files, read_file, web_search |
+| Accounting Agent | `"accounting"` | น้ำเงิน/ม่วง | 10,000 | list_files, read_file, web_search |
+| Manager Advisor | `"manager"` | ม่วง | 10,000 | list_files, read_file, web_search |
+| PM Agent | `"pm"` | ส้ม | 10,000 | stream_response (sub-agents ไม่มี tool access) |
+| Chat Agent | `"chat"` | เทา | 10,000 | ไม่มี (สนทนาทั่วไป ไม่สร้างเอกสาร) |
 
 ---
 
-## UI FEATURES (v0.4.20)
+## UI FEATURES (v0.12.2)
 
-- ✅ Navbar: Fixed, frosted glass, version tag แสดง v0.4.20
+- ✅ Navbar: Fixed, frosted glass, version tag แสดง v0.12.2
 - ✅ Sidebar:
   - Workspace selector (dropdown + เลือก folder)
   - Agent badge (reserved space + idle state + overflow ellipsis)
@@ -128,6 +132,22 @@
 - ✅ Typing indicator fix: ใช้ status type และซ่อน typing indicator ทันทีเมื่อได้รับ text chunk
 - ✅ Pending doc confirmation modal: popup ถามก่อนยกเลิก (บันทึกก่อน/ข้ามไป/ยกเลิก) + auto-send queue
 - ✅ Dark/Light mode toggle (dark mode สว่างขึ้น)
+- ✅ SQLite persistence (v0.5.0): job history, session_id, /api/history routes, graceful DB degradation
+- ✅ History viewer (v0.5.1): history.html — standalone page แสดง job history จาก DB
+- ✅ Multi-format export (v0.6.0): converter.py — save as .md/.txt/.docx/.xlsx/.pdf
+- ✅ Format detection (v0.6.2): "save as pdf" / "บันทึกเป็น excel" → auto-detect format จาก message
+- ✅ Per-file format modal (v0.7.0): popup เลือก format แยกต่อไฟล์ก่อน PM save
+- ✅ Single-agent format popup (v0.7.1): popup แสดงสำหรับ HR/Accounting/Manager doc ด้วย
+- ✅ Format dropdown removed (v0.7.2): popup เป็นตัวเลือก format หลัก — ไม่มี dropdown ซ้ำซ้อน
+- ✅ Workspace Picker Modal (v0.8.0): เลือก/สร้าง workspace ได้จาก UI
+- ✅ Workspace file read context (v0.8.4): HR/Accounting/Manager อ่านไฟล์ workspace ก่อนเขียนเมื่อ user ระบุชื่อไฟล์
+- ✅ Conversation memory (v0.9.0): last 10 turns ส่งไปยัง Orchestrator + agents ทุก request
+- ✅ Web search via DDGS (v0.11.0): HR/Accounting/Manager agents ค้นหาข้อมูลอินเทอร์เน็ตได้ ไม่ต้อง API key
+- ✅ Chat Agent (v0.11.0): ตอบสนทนาทั่วไปและทักทาย ไม่ trigger save flow — badge "💬 Assistant"
+- ✅ Modular Architecture (v0.12.0): แยก app.py เป็น core/, agents/, prompts/ — maintainable และ extensible
+- ✅ PM subtask fix (v0.12.1): PM sub-agents ไม่ hallucinate write_file อีกต่อไป — [PM_SUBTASK] marker + code-level strip
+- ✅ SSE hardening (v0.12.2): stream_with_context บน SSE generators ทั้งสองเส้นทาง — ป้องกัน silent crash บน Gunicorn/WSGI
+- ✅ Error message hardening (v0.12.2): แทน str(e) ด้วย Thai messages ใน SSE events; bare except แก้เป็น except OSError; core/utils.py error leaks แก้แล้ว
 
 ---
 
@@ -136,7 +156,7 @@
 **30 Minutes Before Demo:**
 - [ ] Server running (`python app.py`)
 - [ ] Browser ready at http://localhost:5000
-- [ ] Version tag แสดง v0.4.20 ใน navbar (ขวาบน)
+- [ ] Version tag แสดง v0.12.2 ใน navbar (ขวาบน) ✅
 - [ ] Model name แสดงใน sidebar footer
 - [ ] Workspace path configured in .env (WORKSPACE_PATH)
 - [ ] workspace/ and temp/ directories exist
@@ -189,7 +209,7 @@
 
 ## CONCLUSION
 
-**System Quality:** Production-ready POC — 4 agents + PM Agent with MCP, chat bubbles, confirmation flow, real-time file panel
+**System Quality:** Production-ready POC — 5 agents (HR/Accounting/Manager/PM/Chat) + Modular Architecture (v0.12.0), SSE hardening + error leak fixes (v0.12.2), chat bubbles, confirmation flow, real-time file panel, conversation memory, web search
 **Documentation:** Comprehensive (CHANGELOG, PROJECT_SUMMARY, demo script, demo inputs)
 **Risk Level:** Medium (missing screenshots)
 **Success Probability:** 90% with proper prep
@@ -198,5 +218,5 @@
 
 ---
 
-**Report Generated:** 24 มีนาคม 2569 (v0.4.20)
+**Report Updated:** 26 มีนาคม 2569 (v0.12.2)
 **For details, see:** PRE-DEMO-CHECKLIST.md

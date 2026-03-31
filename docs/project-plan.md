@@ -14,11 +14,11 @@
 
 ## Tech Stack
 
-### POC (ทำแล้ว — v0.4.20)
+### POC/Prototype (ทำแล้ว — v0.11.0)
 
 | Layer | Technology |
 |---|---|
-| Frontend | index.html ไฟล์เดียว — "The Silent Concierge" UI, chat bubbles, confirmation flow, cancel button, confirmation modal, workspace selector, file panel |
+| Frontend | index.html ไฟล์เดียว — "The Silent Concierge" UI, chat bubbles, confirmation flow, workspace picker modal, format selector popup, file panel |
 | Backend | Python 3.11 + Flask + flask-cors |
 | AI Provider | OpenRouter API via OpenAI SDK |
 | Streaming | SSE (Server-Sent Events) |
@@ -136,7 +136,7 @@ Local Network บริษัท
 - [ ] สร้างโครงสร้างโปรเจกต์ Flask
 - [ ] กำหนด API routes: `/api/chat`, `/api/stream`, `/api/history`, `/api/download`
 - [ ] ตั้งค่า CORS สำหรับ React dev server
-- [ ] สร้าง SQLite database + schema: users, jobs, results
+- [x] สร้าง SQLite database + schema: jobs, saved_files (v0.5.0 — db.py)
 
 **1.2 LangGraph — Orchestrator**
 - [ ] สร้าง `FlowState` (shared state ระหว่าง nodes)

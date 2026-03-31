@@ -30,6 +30,7 @@
       --ac-bg:         #0d0d1f; --ac-fg:   #818cf8; --ac-border: #3730a3;
       --mg-bg:         #1a0d1a; --mg-fg:   #e879f9; --mg-border: #7e22ce;
       --pm-bg:         #0d1a26; --pm-fg:   #38bdf8; --pm-border: #0369a1;
+      --doc-bg:        #1a1500; --doc-fg:  #fbbf24; --doc-border: #92400e;
     }
     body.light-mode {
       --bg:            #f8f9fa;
@@ -52,6 +53,7 @@
       --ac-bg:         #eef2ff; --ac-fg:   #3730a3; --ac-border: #c7d2fe;
       --mg-bg:         #fdf4ff; --mg-fg:   #7e22ce; --mg-border: #d8b4fe;
       --pm-bg:         #f0f9ff; --pm-fg:   #0369a1; --pm-border: #bae6fd;
+      --doc-bg:        #fffbeb; --doc-fg:  #92400e; --doc-border: #fcd34d;
     }
 
     /* ─── Base ───────────────────────────────────────────────────── */
@@ -85,8 +87,10 @@
       flex-direction: column;
       flex-shrink: 0;
       z-index: 40;
-      transition: background 0.3s;
+      overflow: hidden;
+      transition: width 0.25s ease, background 0.3s;
     }
+    body.sidebar-collapsed .sidebar { width: 0; }
 
     /* Brand */
     .brand {
@@ -143,6 +147,102 @@
       opacity: 0.5;
       padding: 12px 8px 6px;
     }
+    .section-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 8px 4px;
+    }
+    .section-label-row .section-label { padding: 0; }
+
+    /* ─── Sessions ───────────────────────────────────────────────── */
+    .session-new-btn {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--outline-var);
+      background: transparent;
+      color: var(--on-surface-2);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .session-new-btn:hover { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+    .session-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      max-height: 180px;
+      overflow-y: auto;
+      padding: 0 4px 4px;
+    }
+    .session-list::-webkit-scrollbar { width: 3px; }
+    .session-list::-webkit-scrollbar-thumb { background: var(--outline-var); border-radius: 4px; }
+    .session-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 7px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s;
+      border-left: 2px solid transparent;
+    }
+    .session-item:hover { background: var(--surface-hi); }
+    .session-item.active {
+      background: color-mix(in srgb, var(--primary) 12%, transparent);
+      border-left-color: var(--primary);
+    }
+    .session-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 4px;
+      background: var(--outline);
+    }
+    .session-dot.agent-hr      { background: var(--hr-fg); }
+    .session-dot.agent-accounting { background: var(--ac-fg); }
+    .session-dot.agent-manager { background: var(--mg-fg); }
+    .session-dot.agent-pm      { background: var(--pm-fg); }
+    .session-dot.agent-document { background: var(--doc-fg); }
+    .session-dot.agent-chat    { background: var(--on-surface-2); }
+    .session-content { flex: 1; min-width: 0; }
+    .session-title {
+      font-size: 11px;
+      color: var(--on-surface);
+      line-height: 1.4;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      word-break: break-word;
+    }
+    .session-meta {
+      font-size: 10px;
+      color: var(--on-surface-2);
+      opacity: 0.55;
+      margin-top: 2px;
+    }
+    .session-empty {
+      font-size: 11px;
+      color: var(--on-surface-2);
+      opacity: 0.35;
+      font-style: italic;
+      text-align: center;
+      padding: 10px 8px;
+    }
+    /* History mode: dimmed old messages */
+    .msg-history-divider {
+      text-align: center;
+      font-size: 10px;
+      color: var(--on-surface-2);
+      opacity: 0.4;
+      padding: 8px 0 4px;
+      letter-spacing: 0.08em;
+    }
+    .msg-history .msg-user { opacity: 0.6; }
+    .msg-history .msg-ai-container { opacity: 0.7; }
 
     /* Agent Badge */
     .agent-badge {
@@ -186,7 +286,9 @@
     .agent-badge.agent-hr      { background: var(--hr-bg); color: var(--hr-fg); box-shadow: inset 0 0 0 1px var(--hr-border); }
     .agent-badge.agent-accounting { background: var(--ac-bg); color: var(--ac-fg); box-shadow: inset 0 0 0 1px var(--ac-border); }
     .agent-badge.agent-manager { background: var(--mg-bg); color: var(--mg-fg); box-shadow: inset 0 0 0 1px var(--mg-border); }
-    .agent-badge.agent-pm      { background: var(--pm-bg); color: var(--pm-fg); box-shadow: inset 0 0 0 1px var(--pm-border); }
+    .agent-badge.agent-pm       { background: var(--pm-bg);  color: var(--pm-fg);  box-shadow: inset 0 0 0 1px var(--pm-border); }
+    .agent-badge.agent-document { background: var(--doc-bg); color: var(--doc-fg); box-shadow: inset 0 0 0 1px var(--doc-border); }
+    .agent-badge.agent-chat     { background: var(--surface-hi); color: var(--on-surface); box-shadow: inset 0 0 0 1px var(--outline-var); }
 
     /* Nav chips */
     .nav-chips {
@@ -271,6 +373,22 @@
       line-height: 1.5;
     }
 
+    /* ─── Sidebar Toggle ─────────────────────────────────────────── */
+    .sidebar-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--on-surface-2);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.2s, color 0.2s;
+    }
+    .sidebar-toggle:hover { background: var(--surface-hi); color: var(--on-surface); }
+
     /* ─── Main ───────────────────────────────────────────────────── */
     .main {
       flex: 1;
@@ -280,6 +398,155 @@
       height: 100vh;
       overflow: hidden;
       position: relative;
+      transition: margin-left 0.25s ease;
+    }
+    body.sidebar-collapsed .main { margin-left: 0; }
+    body.preview-open .main { margin-right: 420px; }
+    body.preview-open .input-footer { right: 420px; }
+
+    /* ─── Preview Panel ──────────────────────────────────────────── */
+    .preview-panel {
+      width: 420px;
+      height: calc(100vh - 60px);
+      position: fixed;
+      right: 0; top: 60px;
+      background: var(--surface);
+      border-left: 1px solid var(--outline-var);
+      display: flex;
+      flex-direction: column;
+      z-index: 35;
+      transform: translateX(100%);
+      transition: transform 0.25s ease, background 0.3s;
+    }
+    body.preview-open .preview-panel { transform: translateX(0); }
+    .preview-header {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px 14px 10px;
+      border-bottom: 1px solid var(--outline-var);
+      flex-shrink: 0;
+    }
+    .preview-header-row1 {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+    .preview-header-row2 {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .preview-header-tabs {
+      display: flex;
+      gap: 4px;
+      flex: 1;
+    }
+    .preview-tab {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: var(--on-surface-2);
+      transition: background 0.15s, color 0.15s;
+    }
+    .preview-tab.active {
+      background: var(--surface-hi);
+      color: var(--on-surface);
+    }
+    .preview-filename {
+      flex: 1;
+      min-width: 0;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--on-surface);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: 'Inter', monospace;
+    }
+    .preview-close-btn {
+      flex-shrink: 0;
+      width: 26px; height: 26px;
+      border: none;
+      background: transparent;
+      color: var(--on-surface-2);
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      line-height: 1;
+      transition: background 0.15s, color 0.15s;
+    }
+    .preview-close-btn:hover { background: var(--error); color: #fff; }
+    .preview-action-btn {
+      width: 28px; height: 26px;
+      border: none;
+      background: transparent;
+      color: var(--on-surface-2);
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, color 0.15s;
+    }
+    .preview-action-btn:hover { background: var(--surface-hi); color: var(--on-surface); }
+    .preview-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+    .preview-body::-webkit-scrollbar { width: 4px; }
+    .preview-body::-webkit-scrollbar-track { background: transparent; }
+    .preview-body::-webkit-scrollbar-thumb { background: var(--outline-var); border-radius: 4px; }
+    .preview-rendered { line-height: 1.7; font-size: 13px; }
+    .preview-rendered h1, .preview-rendered h2, .preview-rendered h3 {
+      color: var(--on-surface); margin: 1em 0 0.4em; font-weight: 600;
+    }
+    .preview-rendered h1 { font-size: 18px; }
+    .preview-rendered h2 { font-size: 15px; }
+    .preview-rendered h3 { font-size: 13px; }
+    .preview-rendered p { margin-bottom: 0.8em; color: var(--on-surface-2); }
+    .preview-rendered ul, .preview-rendered ol { padding-left: 1.4em; margin-bottom: 0.8em; color: var(--on-surface-2); }
+    .preview-rendered li { margin-bottom: 0.2em; }
+    .preview-rendered strong { color: var(--on-surface); }
+    .preview-rendered hr { border: none; border-top: 1px solid var(--outline-var); margin: 1em 0; }
+    .preview-rendered code { font-family: monospace; font-size: 12px; background: var(--surface-hi); padding: 1px 5px; border-radius: 4px; }
+    .preview-rendered pre { background: var(--surface-hi); padding: 12px; border-radius: 8px; overflow-x: auto; margin-bottom: 0.8em; }
+    .preview-rendered pre code { background: none; padding: 0; }
+    .preview-raw {
+      font-family: 'Inter', monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: var(--on-surface-2);
+      line-height: 1.6;
+    }
+    .preview-loading {
+      display: flex; align-items: center; justify-content: center;
+      height: 100%;
+      color: var(--on-surface-2);
+      font-size: 13px;
+      opacity: 0.5;
+    }
+    .preview-pdf-wrap {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      padding: 0;
+    }
+    .preview-pdf-wrap iframe {
+      width: 100%; height: 100%;
+      border: none;
+    }
+    .preview-error {
+      color: var(--error);
+      font-size: 12px;
+      text-align: center;
+      padding: 20px;
     }
 
     /* ─── Navbar ─────────────────────────────────────────────────── */
@@ -288,6 +555,7 @@
       top: 0; left: 256px; right: 0;
       height: 60px;
       z-index: 50;
+      transition: left 0.25s ease, background 0.3s;
       background: color-mix(in srgb, var(--bg) 80%, transparent);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
@@ -297,9 +565,10 @@
       padding: 0 32px;
       transition: background 0.3s;
     }
+    body.sidebar-collapsed .navbar { left: 0; }
     .navbar-left {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       gap: 12px;
     }
     .app-title {
@@ -406,24 +675,7 @@
       0%, 60%, 100% { transform: translateY(0); opacity: 0.35; }
       30%           { transform: translateY(-5px); opacity: 1; }
     }
-    .typing-indicator {
-      display: none;
-      align-items: center;
-      gap: 5px;
-      padding: 12px 16px;
-      background: var(--surface-hi);
-      border-radius: 18px 18px 18px 4px;
-      width: fit-content;
-      margin-bottom: 8px;
-    }
-    .typing-indicator span {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: var(--on-surface-2);
-      animation: typing-bounce 1.2s ease-in-out infinite;
-    }
-    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+    .typing-indicator { display: none; } /* replaced by status bar above input */
 
     .output-area {
       flex: 1;
@@ -487,7 +739,9 @@
       position: fixed;
       bottom: 0; left: 256px; right: 0;
       pointer-events: none;
+      transition: left 0.25s ease;
     }
+    body.sidebar-collapsed .input-footer { left: 0; }
 
     .input-inner {
       max-width: 780px;
@@ -503,11 +757,49 @@
       min-height: 28px;
       background: var(--bg);
     }
+    @keyframes status-spin {
+      to { transform: rotate(360deg); }
+    }
     #status {
-      font-size: 11px;
-      color: var(--on-surface-2);
-      opacity: 0.6;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 500;
       font-family: 'Inter', sans-serif;
+      padding: 6px 14px;
+      border-radius: 20px;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+      pointer-events: none;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    #status.status-visible { opacity: 1; }
+    #status.status-fade    { opacity: 0; }
+    #status.status-processing {
+      background: color-mix(in srgb, var(--primary) 12%, transparent);
+      color: var(--primary);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 25%, transparent);
+    }
+    #status.status-processing::before {
+      content: '';
+      width: 13px; height: 13px;
+      border-radius: 50%;
+      border: 2px solid color-mix(in srgb, var(--primary) 25%, transparent);
+      border-top-color: var(--primary);
+      flex-shrink: 0;
+      animation: status-spin 0.75s linear infinite;
+    }
+    #status.status-done {
+      background: color-mix(in srgb, #22c55e 12%, transparent);
+      color: #16a34a;
+    }
+    #status.status-error {
+      background: color-mix(in srgb, #ef4444 12%, transparent);
+      color: #dc2626;
     }
     .copy-btn {
       display: none;
@@ -590,6 +882,7 @@
       cursor: default;
     }
     .send-btn .material-symbols-outlined { font-size: 18px; }
+
 
     .input-hint-row {
       display: flex;
@@ -694,6 +987,8 @@
       cursor: default;
     }
     .file-item:hover { background: var(--surface-hi); color: var(--on-surface); }
+    .file-item.file-item-active { background: var(--primary); color: var(--on-primary); opacity: 1; }
+    .file-item.file-item-active:hover { background: var(--primary-dim); }
     .file-item-name {
       flex: 1;
       overflow: hidden;
@@ -740,6 +1035,80 @@
       opacity: 0.6;
       margin: 2px 0 6px;
     }
+
+    /* ─── Web Search Sources ─────────────────────────────────────────── */
+    .web-search-sources {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--on-surface-2);
+      opacity: 0.75;
+      margin: 2px 0 10px;
+    }
+    .web-search-sources .ws-icon {
+      font-size: 13px;
+      opacity: 0.65;
+    }
+    .ws-query {
+      opacity: 0.6;
+      font-style: italic;
+    }
+    .ws-sep { opacity: 0.4; }
+    .ws-domain {
+      display: inline-block;
+      background: var(--surface-hi);
+      border-radius: 4px;
+      padding: 1px 7px;
+      font-size: 10px;
+      color: var(--on-surface-2);
+      text-decoration: none;
+      border: 1px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .ws-domain:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+      opacity: 1;
+    }
+
+    /* ─── PM Agent Sub-task Cards ───────────────────────────────────────── */
+    .pm-agent-card {
+      border: 1px solid var(--surface-hi);
+      border-radius: 10px;
+      margin: 10px 0;
+      overflow: hidden;
+    }
+    .pm-agent-card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      border-bottom: 1px solid var(--surface-hi);
+    }
+    .pm-agent-card-label { white-space: nowrap; }
+    .pm-agent-card-task {
+      font-size: 11px;
+      font-weight: 400;
+      opacity: 0.65;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+    }
+    .pm-agent-card-body { padding: 12px 14px 6px; }
+
+    .card-hr  { border-color: var(--hr-border); }
+    .card-hr .pm-agent-card-header  { background: var(--hr-bg); color: var(--hr-fg); border-bottom-color: var(--hr-border); }
+    .card-accounting { border-color: var(--ac-border); }
+    .card-accounting .pm-agent-card-header { background: var(--ac-bg); color: var(--ac-fg); border-bottom-color: var(--ac-border); }
+    .card-manager { border-color: var(--mg-border); }
+    .card-manager .pm-agent-card-header { background: var(--mg-bg); color: var(--mg-fg); border-bottom-color: var(--mg-border); }
+    .card-pm { border-color: var(--pm-border); }
+    .card-pm .pm-agent-card-header { background: var(--pm-bg); color: var(--pm-fg); border-bottom-color: var(--pm-border); }
 
     /* ── Pending Doc Confirmation Modal ─────────────────────────────────── */
     .modal-overlay {
@@ -805,6 +1174,153 @@
       color: var(--text-secondary);
       border: 1px solid var(--surface-hi);
     }
+    .modal-btn-danger {
+      background: var(--error);
+      color: #fff;
+    }
+    .modal-box-wide { max-width: 500px; text-align: left; }
+    .modal-title-center { text-align: center; }
+
+    /* File format modal rows */
+    .file-format-list { margin: 14px 0 20px; }
+    .file-format-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--outline-var);
+      font-size: 13px;
+    }
+    .file-format-row:last-child { border-bottom: none; }
+    .file-format-name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--on-surface);
+    }
+    .file-format-sel {
+      background: var(--surface-hi);
+      border: 1px solid var(--outline-var);
+      color: var(--on-surface);
+      font-family: inherit;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .file-format-sel:focus { outline: none; border-color: var(--primary); }
+    .modal-actions-row {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    /* ─── Workspace Picker Modal ─────────────────────────────────────── */
+    .workspace-picker-list {
+      max-height: 220px;
+      overflow-y: auto;
+      margin: 12px 0 8px;
+      border: 1px solid var(--outline-var);
+      border-radius: 8px;
+    }
+    .workspace-picker-list::-webkit-scrollbar { width: 3px; }
+    .workspace-picker-list::-webkit-scrollbar-thumb { background: var(--outline-var); border-radius: 4px; }
+    .workspace-group-header {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--on-surface-2);
+      opacity: 0.5;
+      padding: 8px 12px 4px;
+    }
+    .workspace-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      font-size: 13px;
+      font-family: 'Inter', monospace;
+      color: var(--on-surface);
+      cursor: pointer;
+      border-bottom: 1px solid var(--outline-var);
+      transition: background 0.15s;
+    }
+    .workspace-item:last-child { border-bottom: none; }
+    .workspace-item:hover { background: var(--surface-hi); }
+    .workspace-item.ws-active {
+      background: color-mix(in srgb, var(--primary) 12%, transparent);
+      color: var(--primary);
+      font-weight: 600;
+      cursor: default;
+    }
+    .workspace-item .ws-icon { font-size: 15px; flex-shrink: 0; }
+    .workspace-item .ws-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .workspace-new-section {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--outline-var);
+    }
+    .workspace-new-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--on-surface-2);
+      margin-bottom: 8px;
+    }
+    .workspace-new-row { display: flex; gap: 8px; align-items: center; }
+    .workspace-new-input {
+      flex: 1;
+      background: var(--surface-hi);
+      border: 1px solid var(--outline-var);
+      color: var(--on-surface);
+      font-family: 'Inter', monospace;
+      font-size: 13px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      outline: none;
+    }
+    .workspace-new-input:focus { border-color: var(--primary); }
+    .workspace-new-input::placeholder { color: var(--on-surface-2); opacity: 0.45; }
+    .workspace-new-root-sel { flex-shrink: 0; max-width: 150px; }
+    .workspace-new-btn { padding: 7px 14px; font-size: 12px; flex-shrink: 0; }
+    .workspace-new-error { font-size: 11px; color: var(--error); margin-top: 6px; min-height: 16px; }
+    .save-confirm-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: var(--surface-2, #f3f4f6);
+  border-radius: 10px;
+  border: 1px solid var(--border, #e5e7eb);
+  font-size: 13px;
+}
+.save-confirm-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.save-confirm-top > span { flex: 1; color: var(--on-surface, #374151); font-weight: 500; }
+.save-confirm-btns { display: flex; gap: 8px; flex-shrink: 0; }
+.save-confirm-hint { font-size: 12px; color: var(--on-surface-2, #6b7280); }
+.save-confirm-bar .btn-save-yes {
+  padding: 6px 16px; border-radius: 8px; border: none; cursor: pointer;
+  background: var(--primary, #6366f1); color: #fff; font-size: 13px; font-weight: 600;
+}
+.save-confirm-bar .btn-save-no {
+  padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border, #e5e7eb);
+  cursor: pointer; background: transparent; color: var(--on-surface-2, #6b7280); font-size: 13px;
+}
+.save-confirm-bar .btn-save-yes:hover { opacity: 0.88; }
+.save-confirm-bar .btn-save-no:hover { background: var(--surface-3, #e5e7eb); }
+.save-confirm-bar .btn-save-overwrite {
+  padding: 6px 16px; border-radius: 8px; border: none; cursor: pointer;
+  background: #b45309; color: #fff; font-size: 13px; font-weight: 600;
+}
+.save-confirm-bar .btn-save-overwrite:hover { opacity: 0.88; }
   </style>
 </head>
 <body>
@@ -828,6 +1344,15 @@
     <!-- Agent Active -->
     <div class="section-label">Agent Active</div>
     <div id="agentBadge" class="agent-badge agent-idle">รอคำสั่งงาน...</div>
+
+    <!-- Sessions -->
+    <div class="section-label-row">
+      <span class="section-label">Sessions</span>
+      <button class="session-new-btn" onclick="startNewSession()">+ Session ใหม่</button>
+    </div>
+    <div class="session-list" id="sessionList">
+      <div class="session-empty">ยังไม่มีประวัติ</div>
+    </div>
 
     <!-- Use Cases -->
     <div class="section-label">ตัวอย่างงาน</div>
@@ -887,6 +1412,9 @@
   <!-- Navbar -->
   <header class="navbar">
     <div class="navbar-left">
+      <button class="sidebar-toggle" id="sidebarToggleBtn" onclick="toggleSidebar()" title="ซ่อน/แสดง sidebar" aria-label="ซ่อน/แสดง sidebar">
+        <span class="material-symbols-outlined" style="font-size:20px">menu</span>
+      </button>
       <h1 class="app-title">AI Assistant</h1>
       <span class="app-desc">Orchestrator · PM · HR · Accounting · Manager</span>
     </div>
@@ -895,7 +1423,8 @@
         <span class="material-symbols-outlined" style="font-size:13px">folder_open</span>
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
-      <span class="version-tag">v0.4.20</span>
+      <span id="localAgentBadge" title="Local Agent ไม่พบ — ไฟล์จะบันทึกบน server" style="display:none;font-size:10px;padding:2px 7px;border-radius:10px;background:#22c55e;color:#fff;font-weight:600;cursor:default">💻 Local</span>
+      <span class="version-tag">v0.30.4</span>
     </div>
   </header>
 
@@ -943,6 +1472,53 @@
 </div>
 
 <!-- Pending Doc Confirmation Modal -->
+<!-- Workspace Picker Modal -->
+<div id="workspaceModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true">
+  <div class="modal-box modal-box-wide">
+    <div class="modal-icon modal-title-center">📁</div>
+    <p class="modal-title modal-title-center">เลือก Workspace</p>
+    <div id="workspacePickerList" class="workspace-picker-list"></div>
+    <div class="workspace-new-section">
+      <p class="workspace-new-label">➕ สร้างโฟลเดอร์ใหม่</p>
+      <div class="workspace-new-row">
+        <select id="workspaceNewRoot" class="file-format-sel workspace-new-root-sel" style="display:none"></select>
+        <input id="workspaceNewName" type="text" class="workspace-new-input" placeholder="folder-name (a-z, 0-9, _, -)">
+        <button class="modal-btn modal-btn-primary workspace-new-btn" onclick="_createWorkspaceFolder()">สร้าง</button>
+      </div>
+      <p id="workspaceNewError" class="workspace-new-error"></p>
+    </div>
+    <div class="modal-actions-row" style="margin-top:16px">
+      <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('workspaceModal').style.display='none'">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- File Format Selector Modal (PM multi-file save) -->
+<div id="fileFormatModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true">
+  <div class="modal-box modal-box-wide">
+    <div class="modal-icon modal-title-center">💾</div>
+    <p class="modal-title modal-title-center">เลือกรูปแบบไฟล์ก่อนบันทึก</p>
+    <div class="file-format-list" id="fileFormatList"></div>
+    <div class="modal-actions-row">
+      <button class="modal-btn modal-btn-cancel" id="fileFormatCancelBtn">ยกเลิก</button>
+      <button class="modal-btn modal-btn-primary" id="fileFormatSaveBtn">💾 บันทึกทั้งหมด</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cancel Confirm Modal (PM multi-file discard) -->
+<div id="cancelConfirmModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <div class="modal-icon">⚠️</div>
+    <p class="modal-title" id="cancelConfirmTitle">ยืนยันการยกเลิก</p>
+    <p class="modal-body" id="cancelConfirmBody"></p>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-secondary" id="cancelConfirmNoBtn">ไม่ใช่ กลับไป</button>
+      <button class="modal-btn modal-btn-danger" id="cancelConfirmYesBtn">ยืนยันยกเลิก</button>
+    </div>
+  </div>
+</div>
+
 <div id="pendingModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true">
   <div class="modal-box">
     <div class="modal-icon">📄</div>
@@ -953,6 +1529,45 @@
       <button class="modal-btn modal-btn-secondary" id="modalSkipBtn">⏭ ข้ามและดำเนินการต่อ</button>
       <button class="modal-btn modal-btn-cancel" id="modalCancelBtn">✕ ยกเลิก</button>
     </div>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal (HITL delete flow) -->
+<div id="deleteConfirmModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <div class="modal-icon">🗑️</div>
+    <p class="modal-title">ยืนยันการลบไฟล์</p>
+    <p class="modal-body">AI ต้องการลบไฟล์ <strong id="deleteConfirmFilename"></strong><br>การกระทำนี้ไม่สามารถย้อนกลับได้</p>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-danger" id="deleteConfirmYes">🗑️ ลบไฟล์</button>
+      <button class="modal-btn modal-btn-cancel" id="deleteConfirmNo">✕ ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Preview Panel ───────────────────────────────────────────── -->
+<div class="preview-panel" id="previewPanel" role="complementary" aria-label="ตัวอย่างไฟล์">
+  <div class="preview-header">
+    <div class="preview-header-row1">
+      <span class="material-symbols-outlined" style="font-size:15px;opacity:0.5;flex-shrink:0" id="previewFileIcon">description</span>
+      <span class="preview-filename" id="previewFilename">—</span>
+      <button class="preview-close-btn" onclick="closePreview()" title="ปิด (Esc)">✕</button>
+    </div>
+    <div class="preview-header-row2" id="previewTabsRow">
+      <div class="preview-header-tabs">
+        <button class="preview-tab active" id="previewTabRender" onclick="setPreviewTab('render')">แสดงผล</button>
+        <button class="preview-tab" id="previewTabRaw" onclick="setPreviewTab('raw')">ข้อความ</button>
+      </div>
+      <button class="preview-action-btn" onclick="copyPreviewContent()" title="คัดลอก">
+        <span class="material-symbols-outlined" style="font-size:15px">content_copy</span>
+      </button>
+    </div>
+  </div>
+  <div class="preview-body" id="previewBody">
+    <div class="preview-loading">คลิกไฟล์เพื่อดูตัวอย่าง</div>
+  </div>
+  <div class="preview-pdf-wrap" id="previewPdfWrap" style="display:none">
+    <iframe id="previewPdfFrame" title="PDF Preview"></iframe>
   </div>
 </div>
 
@@ -967,16 +1582,354 @@
 
   let startTime = 0;
 
-  // Confirmation flow state
+  // Session ID — persisted across page refreshes for history grouping
+  function _isSaveIntentJS(msg) {
+    return /บันทึก|save|ยืนยัน|confirm|ตกลง|ok\b/i.test(msg);
+  }
+
+  function _isCancelIntentJS(msg) {
+    return /ยกเลิก|cancel|discard|ไม่บันทึก|ไม่เอา/i.test(msg);
+  }
+
+  function _showFileFormatModal(originalMessage) {
+    const modal = document.getElementById('fileFormatModal');
+    const list  = document.getElementById('fileFormatList');
+    const defaultFmt = _extractFormatFromMessage(originalMessage) || 'md';
+
+    list.innerHTML = '';
+    pendingTempPaths.forEach((tp, i) => {
+      const fname = tp.split('/').pop();
+
+      const row = document.createElement('div');
+      row.className = 'file-format-row';
+
+      const icon = document.createElement('span');
+      icon.className = 'material-symbols-outlined';
+      icon.style.cssText = 'font-size:16px;color:var(--on-surface-2);flex-shrink:0';
+      icon.textContent = 'description';
+
+      const nameEl = document.createElement('span');
+      nameEl.className = 'file-format-name';
+      nameEl.textContent = fname;
+      nameEl.title = fname;
+
+      const sel = document.createElement('select');
+      sel.className = 'file-format-sel';
+      sel.dataset.index = i;
+      ['md','txt','docx','xlsx','pdf'].forEach(fmt => {
+        const opt = document.createElement('option');
+        opt.value = fmt;
+        opt.textContent = '.' + fmt;
+        if (fmt === defaultFmt) opt.selected = true;
+        sel.appendChild(opt);
+      });
+
+      row.appendChild(icon);
+      row.appendChild(nameEl);
+      row.appendChild(sel);
+      list.appendChild(row);
+    });
+
+    modal.style.display = 'flex';
+
+    document.getElementById('fileFormatCancelBtn').onclick = () => {
+      modal.style.display = 'none';
+      pendingFileFormats = null;
+    };
+
+    document.getElementById('fileFormatSaveBtn').onclick = () => {
+      modal.style.display = 'none';
+      pendingFileFormats = Array.from(
+        list.querySelectorAll('.file-format-sel')
+      ).map(s => s.value);
+      sendMessage(originalMessage);
+    };
+  }
+
+  function showSaveFormatModal() {
+    _showSingleFileFormatModal('บันทึก');
+  }
+
+  function _appendSaveConfirmBar(bodyEl) {
+    // Remove any existing confirm bar first
+    document.querySelectorAll('.save-confirm-bar').forEach(el => el.remove());
+
+    const bar = document.createElement('div');
+    bar.className = 'save-confirm-bar';
+
+    const overwriteBtnHtml = lastReadFile
+      ? `<button class="btn-save-overwrite" onclick="confirmOverwrite()">🔄 เขียนทับ ${lastReadFile}</button>`
+      : '';
+
+    bar.innerHTML = `
+      <div class="save-confirm-top">
+        <span>📄 ต้องการสร้างไฟล์นี้ไหม?</span>
+        <div class="save-confirm-btns">
+          <button class="btn-save-yes" onclick="showSaveFormatModal()">💾 สร้างไฟล์ใหม่</button>
+          ${overwriteBtnHtml}
+          <button class="btn-save-no" onclick="cancelPending()">✕ ไม่ต้องการ</button>
+        </div>
+      </div>
+      <div class="save-confirm-hint">✏️ หรือพิมพ์ข้อความด้านล่างเพื่อแก้ไขเอกสาร</div>
+    `;
+    bodyEl.appendChild(bar);
+  }
+
+  function confirmOverwrite() {
+    pendingOverwriteFile = lastReadFile;
+    sendMessage('บันทึก');
+  }
+
+  function _showDeleteConfirmModal(filename, outputEl) {
+    const modal = document.getElementById('deleteConfirmModal');
+    document.getElementById('deleteConfirmFilename').textContent = filename;
+    modal.style.display = 'flex';
+
+    document.getElementById('deleteConfirmYes').onclick = async () => {
+      modal.style.display = 'none';
+      try {
+        const res = await fetch('/api/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename })
+        });
+        const d = await res.json();
+        const line = document.createElement('div');
+        line.className = 'tool-result-line';
+        if (d.success) {
+          line.textContent = `🗑️ ลบไฟล์ ${filename} เรียบร้อยแล้ว`;
+          fetch('/api/files').then(r => r.json()).then(fd => {
+            if (fd.files !== undefined) renderFileList(fd.files, fd.workspace);
+          }).catch(() => {});
+        } else {
+          line.textContent = `❌ ลบไฟล์ไม่สำเร็จ: ${d.error || 'ไม่ทราบสาเหตุ'}`;
+        }
+        outputEl.before(line);
+      } catch (err) {
+        const line = document.createElement('div');
+        line.className = 'tool-result-line';
+        line.textContent = `❌ ลบไฟล์ไม่สำเร็จ: ${err.message}`;
+        outputEl.before(line);
+      }
+    };
+
+    document.getElementById('deleteConfirmNo').onclick = () => {
+      modal.style.display = 'none';
+      const line = document.createElement('div');
+      line.className = 'tool-result-line';
+      line.textContent = `↩️ ยกเลิกการลบไฟล์ ${filename}`;
+      outputEl.before(line);
+    };
+  }
+
+  function _showSingleFileFormatModal(originalMessage) {
+    const modal = document.getElementById('fileFormatModal');
+    const list  = document.getElementById('fileFormatList');
+    const defaultFmt = _extractFormatFromMessage(originalMessage) || 'md';
+
+    const agentLabels = {
+      hr: 'HR Agent', accounting: 'Accounting Agent',
+      manager: 'Manager Advisor', pm: 'PM Agent'
+    };
+
+    list.innerHTML = '';
+
+    const row = document.createElement('div');
+    row.className = 'file-format-row';
+
+    const icon = document.createElement('span');
+    icon.className = 'material-symbols-outlined';
+    icon.style.cssText = 'font-size:16px;color:var(--on-surface-2);flex-shrink:0';
+    icon.textContent = 'description';
+
+    const nameEl = document.createElement('span');
+    nameEl.className = 'file-format-name';
+    nameEl.textContent = agentLabels[pendingAgent] || pendingAgent || 'เอกสาร';
+
+    const sel = document.createElement('select');
+    sel.className = 'file-format-sel';
+    sel.id = 'singleFileFormatSel';
+    ['md','txt','docx','xlsx','pdf'].forEach(fmt => {
+      const opt = document.createElement('option');
+      opt.value = fmt;
+      opt.textContent = '.' + fmt;
+      if (fmt === defaultFmt) opt.selected = true;
+      sel.appendChild(opt);
+    });
+
+    row.appendChild(icon);
+    row.appendChild(nameEl);
+    row.appendChild(sel);
+    list.appendChild(row);
+
+    modal.style.display = 'flex';
+
+    document.getElementById('fileFormatCancelBtn').onclick = () => {
+      modal.style.display = 'none';
+    };
+
+    document.getElementById('fileFormatSaveBtn').onclick = () => {
+      modal.style.display = 'none';
+      const selectedFmt = document.getElementById('singleFileFormatSel').value;
+      pendingFormat = selectedFmt;
+      sendMessage(originalMessage);
+    };
+  }
+
+  function _showCancelConfirmModal(originalMessage, fileCount) {
+    const modal = document.getElementById('cancelConfirmModal');
+    document.getElementById('cancelConfirmBody').textContent =
+      `คุณแน่ใจหรือไม่ว่าต้องการยกเลิก? ไฟล์ ${fileCount} ไฟล์จะถูกลบออกทั้งหมด`;
+
+    modal.style.display = 'flex';
+
+    document.getElementById('cancelConfirmNoBtn').onclick = () => {
+      modal.style.display = 'none';
+    };
+
+    document.getElementById('cancelConfirmYesBtn').onclick = () => {
+      modal.style.display = 'none';
+      sendMessage(originalMessage);
+    };
+  }
+
+  function _extractFormatFromMessage(msg) {
+    const lower = msg.toLowerCase();
+    if (/\b(xlsx|excel|เอกเซล)\b/.test(lower)) return 'xlsx';
+    if (/\b(docx|word|เวิร์ด)\b/.test(lower))  return 'docx';
+    if (/\b(pdf)\b/.test(lower))                return 'pdf';
+    if (/\b(txt|text)\b/.test(lower))           return 'txt';
+    if (/\b(md|markdown)\b/.test(lower))        return 'md';
+    return null;
+  }
+
+  function _getSessionId() {
+    let sid = localStorage.getItem('ai_session_id');
+    if (!sid) {
+      // crypto.randomUUID() requires HTTPS or localhost — fallback for plain HTTP
+      if (crypto && crypto.randomUUID) {
+        sid = crypto.randomUUID();
+      } else {
+        sid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+          const r = Math.random() * 16 | 0;
+          return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+      }
+      localStorage.setItem('ai_session_id', sid);
+    }
+    return sid;
+  }
+
+  // ─── Local File Agent ────────────────────────────────────────────────────────
+  // local_agent.py รันบนเครื่อง user ที่ localhost:7000
+  // ถ้าไม่รัน → fallback บันทึกบน server เหมือนเดิม
+  const LOCAL_AGENT_URL = 'http://localhost:7000';
+  let localAgentActive = false;
+  let localAgentWorkspace = '';
+
+  async function _checkLocalAgent() {
+    try {
+      const r = await fetch(`${LOCAL_AGENT_URL}/health`, { signal: AbortSignal.timeout(1500) });
+      if (!r.ok) return;
+      const d = await r.json();
+      if (d.status === 'ok') {
+        localAgentActive = true;
+        localAgentWorkspace = d.workspace || '';
+        const badge = document.getElementById('localAgentBadge');
+        if (badge) {
+          badge.style.display = 'inline';
+          badge.title = `Local Agent พร้อม — workspace: ${localAgentWorkspace}`;
+        }
+        const pathEl = document.getElementById('workspacePath');
+        if (pathEl && localAgentWorkspace) {
+          pathEl.textContent = localAgentWorkspace;
+          pathEl.title = `💻 Local: ${localAgentWorkspace}`;
+        }
+        _startLocalFileStream();
+      }
+    } catch (_) {
+      localAgentActive = false;
+    }
+  }
+
+  let _localFileInterval = null;
+
+  async function _refreshLocalFiles() {
+    try {
+      const res = await fetch(`${LOCAL_AGENT_URL}/files`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'list' })
+      });
+      const d = await res.json();
+      if (d.ok) renderFileList(d.files, localAgentWorkspace);
+    } catch (_) { /* agent offline — keep showing last state */ }
+  }
+
+  function _startLocalFileStream() {
+    // หยุด SSE จาก server ก่อน แล้ว poll local agent แทน
+    if (_fileEventSource) { _fileEventSource.close(); _fileEventSource = null; }
+    if (_localFileInterval) clearInterval(_localFileInterval);
+    _refreshLocalFiles();
+    _localFileInterval = setInterval(_refreshLocalFiles, 3000);
+  }
+
+  async function _localSave(filename, content) {
+    // ตรวจ duplicate — ถ้ามีไฟล์อยู่แล้วให้ update แทน create
+    const action = await fetch(`${LOCAL_AGENT_URL}/files`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'list' })
+    }).then(r => r.json()).then(d => {
+      const exists = (d.files || []).some(f => f.name === filename);
+      return exists ? 'update' : 'create';
+    }).catch(() => 'create');
+
+    const res = await fetch(`${LOCAL_AGENT_URL}/files`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, filename, content })
+    });
+    const d = await res.json();
+    if (!d.ok) throw new Error(d.error || 'Local agent error');
+    return d.message || `บันทึกไฟล์ '${filename}' ลงเครื่องสำเร็จ`;
+  }
+
+  async function _localDelete(filename) {
+    const res = await fetch(`${LOCAL_AGENT_URL}/files`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', filename })
+    });
+    const d = await res.json();
+    if (!d.ok) throw new Error(d.error || 'Local agent error');
+    _refreshLocalFiles();
+    return d.message || `ลบไฟล์ '${filename}' ออกจากเครื่องสำเร็จ`;
+  }
+
+  // ─── Confirmation flow state ──────────────────────────────────────────────
   let pendingDoc = '';
   let pendingAgent = '';
+  let pendingFormat = 'md';    // output format locked at generation time
   let pendingTempPaths = [];   // PM task: staged temp file paths waiting for confirm
+  let pendingFileAgents = [];  // agent type per pending temp file
   let isPendingConfirmation = false;
   let wasPMTask = false;
+  let currentPmCard = null;
   let lastAgent = '';
+  let lastReadFile = '';          // last file read by agent — used for overwrite flow
+  let pendingOverwriteFile = '';  // file to overwrite when user picks "🔄 เขียนทับ"
 
   // Queued task after "save first" modal choice
   let queuedMessage = '';
+
+  // Per-file formats collected from file format modal before submitting
+  let pendingFileFormats = null;
+
+  // Conversation history — sent to backend so agents understand prior context
+  // Each entry: { role: 'user'|'assistant', content: string }
+  const MAX_HISTORY_TURNS = 10;   // keep last 10 full turns (20 messages)
+  let conversationHistory = [];
 
   // Auto-scroll lock — stops forcing scroll-to-bottom when user has scrolled up
   let userScrolledUp = false;
@@ -993,6 +1946,29 @@
     if (!userScrolledUp) outputWrapEl.scrollTop = outputWrapEl.scrollHeight;
   }
 
+  let _statusFadeTimer = null;
+  function _setStatus(el, text) {
+    clearTimeout(_statusFadeTimer);
+    el.textContent = text;
+    el.className = '';
+    if (!text) return;
+    if (text.startsWith('✅')) {
+      el.classList.add('status-done', 'status-visible');
+      // stays until next task clears it
+    } else if (text.startsWith('กรุณา') || text.includes('ไม่สำเร็จ') || text.includes('ผิดพลาด')) {
+      el.classList.add('status-error', 'status-visible');
+    } else {
+      el.classList.add('status-processing', 'status-visible');
+    }
+  }
+
+  function _looksLikeDraft(text) {
+    if (!text || text.length < 400) return false;
+    return /^#{1,3}\s+.+/m.test(text)           // # Markdown heading
+        || /^\*\*[^*\n]{3,}\*\*\s*$/m.test(text) // **Bold heading** on its own line
+        || text.split('\n').length > 20;          // 20+ lines = document structure
+  }
+
   function _updateInputHint(isPending, fileCount) {
     const hint = document.getElementById('inputHint');
     const cancelBtn = document.getElementById('cancelPendingBtn');
@@ -1000,7 +1976,7 @@
     if (isPending) {
       const msg = (fileCount > 0)
         ? `💾 พิมพ์ บันทึก เพื่อบันทึก ${fileCount} ไฟล์ หรือ ✏️ ระบุสิ่งที่แก้ไข`
-        : '💬 พิมพ์ บันทึก เพื่อบันทึกไฟล์ หรือ ✏️ ระบุสิ่งที่แก้ไข';
+        : '✏️ ระบุสิ่งที่ต้องการแก้ไข หรือกดปุ่มด้านบนเพื่อสร้างไฟล์';
       hint.textContent = msg;
       hint.style.color = 'var(--primary)';
       hint.style.opacity = '1';
@@ -1017,8 +1993,12 @@
     isPendingConfirmation = false;
     pendingDoc = '';
     pendingAgent = '';
+    pendingFormat = 'md';
     pendingTempPaths = [];
+    lastReadFile = '';
+    pendingOverwriteFile = '';
     _updateInputHint(false, 0);
+    document.querySelectorAll('.save-confirm-bar').forEach(el => el.remove());
     // Temp files in temp/ will be auto-cleaned after 1hr by _cleanup_old_temp()
   }
 
@@ -1146,18 +2126,41 @@
     const message = overrideMessage !== undefined ? overrideMessage : input.value.trim();
     if (!message) return;
 
-    // Intercept: if pending doc and message is a new task → show modal
-    if (isPendingConfirmation && _isNewTask(message) && !overrideMessage) {
-      input.value = '';
-      input.style.height = 'auto';
-      _showPendingModal(message);
-      return;
+    // Intercept: PM files pending + save/cancel intent → show dedicated modal
+    if (pendingTempPaths.length > 0 && !overrideMessage) {
+      if (_isSaveIntentJS(message)) {
+        input.value = '';
+        input.style.height = 'auto';
+        _showFileFormatModal(message);
+        return;
+      }
+      if (_isCancelIntentJS(message)) {
+        input.value = '';
+        input.style.height = 'auto';
+        _showCancelConfirmModal(message, pendingTempPaths.length);
+        return;
+      }
+    }
+
+    // Intercept: single-agent doc pending + save intent → show format modal
+    if (pendingDoc && pendingAgent && !overrideMessage) {
+      if (_isSaveIntentJS(message)) {
+        input.value = '';
+        input.style.height = 'auto';
+        _showSingleFileFormatModal(message);
+        return;
+      }
+    }
+
+    // Any pending state + new message → silently discard and proceed (cron handles disk cleanup)
+    if (isPendingConfirmation && !overrideMessage) {
+      cancelPending();
     }
 
     // Reset UI state
     startTime = Date.now();
     btn.disabled = true;
-    status.textContent = '⚙️ กำลังวิเคราะห์งาน...';
+    _setStatus(status, '⚙️ กำลังวิเคราะห์งาน...');
     badge.className = 'agent-badge agent-idle';
     badge.textContent = 'รอคำสั่งงาน...';
     copyBtn.style.display = 'none';
@@ -1182,14 +2185,9 @@
     const aiBody = document.createElement('div');
     aiBody.className = 'msg-ai-body';
 
-    const typingIndicator = document.createElement('div');
-    typingIndicator.className = 'typing-indicator';
-    typingIndicator.innerHTML = '<span></span><span></span><span></span>';
-
     let currentOutputEl = document.createElement('div');
     currentOutputEl.className = 'output-area';
 
-    aiBody.appendChild(typingIndicator);
     aiBody.appendChild(currentOutputEl);
     container.appendChild(accentLine);
     container.appendChild(aiBody);
@@ -1203,12 +2201,15 @@
       hr:         { cls: 'agent-hr',         label: 'HR Agent',         icon: '👤' },
       accounting: { cls: 'agent-accounting',  label: 'Accounting Agent', icon: '📊' },
       manager:    { cls: 'agent-manager',     label: 'Manager Advisor',  icon: '🧭' },
-      pm:         { cls: 'agent-pm',          label: 'PM Agent',         icon: '🗂️' }
+      pm:         { cls: 'agent-pm',          label: 'PM Agent',         icon: '🗂️' },
+      document:   { cls: 'agent-document',   label: 'Document Agent',   icon: '📝' },
+      chat:       { cls: 'agent-chat',        label: 'Assistant',        icon: '💬' }
     };
 
     const previousPendingState = {
       doc: pendingDoc,
       agent: pendingAgent,
+      format: pendingFormat,
       tempPaths: [...pendingTempPaths],
       isPending: isPendingConfirmation
     };
@@ -1216,25 +2217,129 @@
       if (!previousPendingState.isPending) return;
       pendingDoc = previousPendingState.doc;
       pendingAgent = previousPendingState.agent;
+      pendingFormat = previousPendingState.format;
       pendingTempPaths = [...previousPendingState.tempPaths];
       isPendingConfirmation = true;
       _updateInputHint(true, pendingTempPaths.length);
     };
 
     try {
-      const reqBody = { message };
+      const detectedFormat = _extractFormatFromMessage(message);
+      const resolvedFormat = detectedFormat || pendingFormat || 'md';
+      const reqBody = {
+        message,
+        session_id: _getSessionId(),
+        output_format: resolvedFormat,
+        conversation_history: conversationHistory.slice(-(MAX_HISTORY_TURNS * 2)),
+        ...(localAgentActive ? { local_agent_mode: true } : {})
+      };
+      // ── Local Agent Save Intercept ──────────────────────────────────────────
+      // ถ้า local agent รันอยู่ และเป็น single-doc save → บันทึกลงเครื่อง user โดยตรง
+      // PM mode (pendingTempPaths) ยังคงบันทึกบน server เหมือนเดิม
+      if (isPendingConfirmation && localAgentActive && pendingDoc && pendingAgent && _isSaveIntentJS(message)) {
+        conversationHistory.push({ role: 'user', content: message });
+        isPendingConfirmation = false;
+        const savedDoc   = pendingDoc;
+        const savedAgent = pendingAgent;
+        const savedFmt   = detectedFormat || pendingFormat || 'md';
+        pendingDoc = ''; pendingAgent = ''; pendingFormat = 'md';
+        pendingFileFormats = null; pendingTempPaths = []; pendingFileAgents = [];
+        _updateInputHint(false, 0);
+
+        // สร้าง AI bubble แสดงผล
+        const _cl = document.getElementById('chatLog');
+        const _ct = document.createElement('div'); _ct.className = 'msg-ai-container';
+        const _ab = document.createElement('div'); _ab.className = 'ai-accent-line';
+        const _bd = document.createElement('div'); _bd.className = 'msg-ai-body';
+        const _oa = document.createElement('div'); _oa.className = 'output-area';
+        _bd.appendChild(_oa); _ct.appendChild(_ab); _ct.appendChild(_bd); _cl.appendChild(_ct);
+        document.getElementById('outputWrap').scrollTop = 99999;
+
+        // สร้างชื่อไฟล์
+        const _ts = new Date().toISOString().slice(0,19).replace('T','_').replaceAll(':','-');
+        const filename = `${savedAgent}_${_ts}.${savedFmt}`;
+        try {
+          const result = await _localSave(filename, savedDoc);
+          _oa.textContent = `💻 บันทึกลงเครื่องสำเร็จ\n📁 ${localAgentWorkspace}\\${filename}`;
+          conversationHistory.push({ role: 'assistant', content: `บันทึกไฟล์ ${filename} ลงเครื่องสำเร็จ` });
+        } catch (err) {
+          _oa.textContent = `❌ Local agent error: ${err.message}\nกรุณาตรวจสอบว่า local_agent.py รันอยู่`;
+        }
+        return;
+      }
+      // ────────────────────────────────────────────────────────────────────────
+
       if (isPendingConfirmation) {
         if (pendingTempPaths.length > 0) {
           reqBody.pending_temp_paths = pendingTempPaths;
+          reqBody.agent_types = pendingFileAgents;
+          if (pendingFileFormats) {
+            reqBody.output_formats = pendingFileFormats;
+          }
         } else {
           reqBody.pending_doc = pendingDoc;
           reqBody.pending_agent = pendingAgent;
+          if (pendingOverwriteFile) reqBody.overwrite_filename = pendingOverwriteFile;
         }
       }
+      // Push user turn to history AFTER building reqBody (so this turn isn't in the payload)
+      conversationHistory.push({ role: 'user', content: message });
       isPendingConfirmation = false;
       pendingDoc = '';
       pendingAgent = '';
+      pendingFormat = 'md';
+      pendingFileFormats = null;
       pendingTempPaths = [];
+      pendingFileAgents = [];
+      lastReadFile = '';
+      pendingOverwriteFile = '';
+
+      // ── Local Agent File Context Injection ──────────────────────────────────
+      // ถ้า local agent รันอยู่ → ดึง file list + เนื้อหา text files แนบให้ AI
+      // user bubble แสดง message เดิม — AI เห็น message + context เสริม
+      const _TEXT_EXTS = new Set(['md','txt','py','js','ts','json','csv','html','xml','yaml','yml','ini','cfg','log','sh','bat','sql']);
+      const _MAX_FILE_BYTES = 50000; // 50KB per file
+      if (localAgentActive && localAgentWorkspace) {
+        try {
+          const _lr = await fetch(`${LOCAL_AGENT_URL}/files`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'list' }), signal: AbortSignal.timeout(2000)
+          });
+          const _ld = await _lr.json();
+          if (_ld.ok && Array.isArray(_ld.files)) {
+            const contextParts = [`[Local Workspace: ${localAgentWorkspace}]`];
+            if (_ld.files.length === 0) {
+              contextParts.push('ยังไม่มีไฟล์ใน workspace');
+            } else {
+              for (const f of _ld.files) {
+                const ext = f.name.split('.').pop().toLowerCase();
+                if (_TEXT_EXTS.has(ext) && f.size <= _MAX_FILE_BYTES) {
+                  try {
+                    const _cr = await fetch(`${LOCAL_AGENT_URL}/files`, {
+                      method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ action: 'read', filename: f.name }),
+                      signal: AbortSignal.timeout(3000)
+                    });
+                    const _cd = await _cr.json();
+                    if (_cd.ok) {
+                      contextParts.push(`--- ไฟล์: ${f.name} (${f.size} bytes, แก้ไขล่าสุด: ${f.modified}) ---\n${_cd.content}\n---`);
+                    } else {
+                      contextParts.push(`- ${f.name} (${f.size} bytes, แก้ไขล่าสุด: ${f.modified}) [อ่านไม่ได้]`);
+                    }
+                  } catch (_) {
+                    contextParts.push(`- ${f.name} (${f.size} bytes, แก้ไขล่าสุด: ${f.modified}) [timeout]`);
+                  }
+                } else {
+                  const reason = !_TEXT_EXTS.has(ext) ? 'binary' : 'ไฟล์ใหญ่เกิน 50KB';
+                  contextParts.push(`- ${f.name} (${f.size} bytes, แก้ไขล่าสุด: ${f.modified}) [${reason} — แสดงเฉพาะ metadata]`);
+                }
+              }
+            }
+            reqBody.message = contextParts.join('\n') + `\n\nคำถาม/คำสั่งของ user: ${reqBody.message}`;
+          }
+        } catch (_) { /* ถ้า fetch ล้มเหลว ส่ง message เดิมโดยไม่มี context */ }
+      }
+      // ────────────────────────────────────────────────────────────────────────
 
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -1245,11 +2350,15 @@
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       const reader = response.body.getReader();
+      // Keep reference for cancel() in catch block
       const decoder = new TextDecoder();
       let buffer = '';
       let outputText = '';
+      let totalChars = 0;
       let saveFailed = false;
       let receivedAgentEvent = false;
+      let pmOutputAccumulator = [];
+      let hadError = false;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -1265,7 +2374,7 @@
           try { data = JSON.parse(line.slice(6)); } catch { continue; }
 
           if (data.type === 'status') {
-            status.textContent = '⚙️ ' + data.message;
+            _setStatus(status, '⚙️ ' + data.message);
 
           } else if (data.type === 'agent') {
             lastAgent = data.agent;
@@ -1273,63 +2382,147 @@
             const info = agentMap[data.agent] || agentMap['hr'];
             _setAgentBadge(badge, info, data.reason);
             container.classList.add('streaming');
-            typingIndicator.style.display = 'flex';
             container.classList.add('typing');
+            // PM mode: wrap each sub-agent's output in a coloured card
+            if (wasPMTask) {
+              const card = document.createElement('div');
+              card.className = `pm-agent-card card-${data.agent}`;
+              const hdr = document.createElement('div');
+              hdr.className = 'pm-agent-card-header';
+              const lbl = document.createElement('span');
+              lbl.className = 'pm-agent-card-label';
+              lbl.textContent = `${info.icon} ${info.label}`;
+              hdr.appendChild(lbl);
+              if (data.task) {
+                const tsk = document.createElement('span');
+                tsk.className = 'pm-agent-card-task';
+                tsk.textContent = data.task;
+                hdr.appendChild(tsk);
+              }
+              card.appendChild(hdr);
+              const body = document.createElement('div');
+              body.className = 'pm-agent-card-body output-area';
+              card.appendChild(body);
+              currentOutputEl.replaceWith(card);
+              currentPmCard = card;
+              currentOutputEl = body;
+            }
 
           } else if (data.type === 'pm_plan') {
             wasPMTask = true;
+            currentPmCard = null;
             // PM plan: show subtask breakdown before agent output
             const planDiv = document.createElement('div');
             planDiv.className = 'pm-plan-step';
             _renderPmPlan(planDiv, data.subtasks);
-            aiBody.insertBefore(planDiv, typingIndicator);
+            aiBody.insertBefore(planDiv, currentOutputEl);
 
           } else if (data.type === 'pending_file') {
             // PM subtask: content staged to temp, waiting for user confirmation
             pendingTempPaths.push(data.temp_path);
+            pendingFileAgents.push(data.agent || '');
+
+          } else if (data.type === 'web_search_sources') {
+            const srcDiv = document.createElement('div');
+            srcDiv.className = 'web-search-sources';
+            const icon = document.createElement('span');
+            icon.className = 'material-symbols-outlined ws-icon';
+            icon.textContent = 'travel_explore';
+            srcDiv.appendChild(icon);
+            if (data.query) {
+              const q = document.createElement('span');
+              q.className = 'ws-query';
+              q.textContent = `"${data.query}"`;
+              srcDiv.appendChild(q);
+            }
+            if (data.sources && data.sources.length > 0) {
+              const sep = document.createElement('span');
+              sep.className = 'ws-sep';
+              sep.textContent = '·';
+              srcDiv.appendChild(sep);
+              data.sources.forEach(src => {
+                const pill = document.createElement('a');
+                pill.className = 'ws-domain';
+                if (src.url && /^https?:\/\//.test(src.url)) {
+                  pill.href = src.url;
+                  pill.target = '_blank';
+                  pill.rel = 'noopener noreferrer';
+                }
+                pill.textContent = src.domain || src.url;
+                srcDiv.appendChild(pill);
+              });
+            }
+            currentOutputEl.before(srcDiv);
+            _scrollToBottom();
+
+          } else if (data.type === 'local_delete') {
+            // browser ลบไฟล์จาก local agent แทน server
+            _localDelete(data.filename).catch(err => {
+              const errLine = document.createElement('div');
+              errLine.className = 'tool-result-line';
+              errLine.textContent = `❌ ลบไฟล์ไม่สำเร็จ: ${err.message}`;
+              currentOutputEl.before(errLine);
+            });
+
+          } else if (data.type === 'delete_request') {
+            // Agent requests file deletion — show confirm modal (HITL)
+            _showDeleteConfirmModal(data.filename, currentOutputEl);
 
           } else if (data.type === 'tool_result') {
+            // Track last file read by agent — used for overwrite flow
+            if (data.tool === 'read_file' && data.filename) lastReadFile = data.filename;
             // Show tool execution feedback
             const resultLine = document.createElement('div');
             resultLine.className = 'tool-result-line';
             _renderToolResult(resultLine, data.tool, data.result);
-            aiBody.insertBefore(resultLine, currentOutputEl);
+            currentOutputEl.before(resultLine);
 
           } else if (data.type === 'save_failed') {
             saveFailed = true;
             currentOutputEl.textContent = `❌ ${data.message}`;
-            status.textContent = 'บันทึกไฟล์ไม่สำเร็จ';
+            _setStatus(status, 'บันทึกไฟล์ไม่สำเร็จ');
             container.classList.remove('streaming');
             container.classList.remove('typing');
-            typingIndicator.style.display = 'none';
             btn.disabled = false;
             restorePendingState();
             _scrollToBottom();
 
           } else if (data.type === 'text') {
-            typingIndicator.style.display = 'none';
             container.classList.remove('typing');
             outputText += data.content;
+            totalChars += data.content.length;
+            // Strip fake tool-call JSON in real-time — display only; outputText stays raw
+            // so text_replace + done/subtask_done can still clean it properly
+            currentOutputEl.textContent = outputText
+              .replace(/\{[^{}]*"(?:request|tool)"\s*:\s*"[^"]*"[^{}]*\}/g, '')
+              .replace(/\n{3,}/g, '\n\n')
+              .trimStart();
+            _scrollToBottom();
+
+          } else if (data.type === 'text_replace') {
+            // Server stripped fake tool-call JSON from the stream.
+            // Replace the accumulated bubble content with the clean version.
+            outputText = data.content;
             currentOutputEl.textContent = outputText;
             _scrollToBottom();
 
           } else if (data.type === 'subtask_done') {
-            // Render current subtask output as markdown
+            // Strip fake tool-call JSON before rendering subtask markdown
+            outputText = outputText
+              .replace(/\{[^{}]*"(?:request|tool)"\s*:\s*"[^"]*"[^{}]*\}/g, '')
+              .replace(/\n{3,}/g, '\n\n')
+              .trim();
             if (outputText) {
               _renderMarkdown(currentOutputEl, outputText);
+              pmOutputAccumulator.push(outputText);
             }
             outputText = '';
-            // Separator between subtasks
-            const sep = document.createElement('hr');
-            sep.style.cssText = 'border:none;border-top:1px solid var(--surface-hi);margin:16px 0;opacity:0.5';
-            aiBody.appendChild(sep);
-            // New output area for next subtask
+            currentPmCard = null;
+            // Placeholder for next card — will be replaced when next agent event fires
             const nextOutput = document.createElement('div');
             nextOutput.className = 'output-area';
             aiBody.appendChild(nextOutput);
             currentOutputEl = nextOutput;
-            // Re-show typing indicator for next subtask
-            aiBody.insertBefore(typingIndicator, currentOutputEl);
             _scrollToBottom();
 
           } else if (data.type === 'done') {
@@ -1338,15 +2531,24 @@
               _scrollToBottom();
               continue;
             }
+            // Strip any fake tool-call JSON that leaked into the stream.
+            // This is a client-side safety net — runs on every done event.
+            outputText = outputText
+              .replace(/\{[^{}]*"(?:request|tool)"\s*:\s*"[^"]*"[^{}]*\}/g, '')
+              .replace(/\n{3,}/g, '\n\n')
+              .trim();
             if (outputText) {
               _renderMarkdown(currentOutputEl, outputText);
+            } else if (receivedAgentEvent && !hadError) {
+              // Agent ran but returned empty — show inline hint instead of silent blank
+              _setInlineError(currentOutputEl, 'ระบบไม่ได้รับคำตอบ กรุณาลองใหม่หรือระบุรายละเอียดเพิ่มเติม');
+              hadError = true;
             }
             const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-            const charCount = outputText.length.toLocaleString('th-TH');
-            status.textContent = `✅ เสร็จสิ้น · ${elapsed} วินาที · ${charCount} ตัวอักษร`;
+            const charCount = totalChars.toLocaleString('th-TH');
+            _setStatus(status, hadError ? 'กรุณาลองใหม่อีกครั้ง' : `✅ เสร็จสิ้น · ${elapsed} วินาที · ${charCount} ตัวอักษร`);
             container.classList.remove('streaming');
             container.classList.remove('typing');
-            typingIndicator.style.display = 'none';
             _scrollToBottom();
             copyBtn.style.display = 'flex';
             btn.disabled = false;
@@ -1356,14 +2558,32 @@
               // PM task: staged files waiting for confirm
               isPendingConfirmation = true;
               _updateInputHint(true, pendingTempPaths.length);
-            } else if (receivedAgentEvent && !wasPMTask && lastAgent && outputText) {
-              // Single-agent: new document generated, waiting for confirm
+            } else if (receivedAgentEvent && !wasPMTask && lastAgent && lastAgent !== 'chat' && outputText && !hadError && _looksLikeDraft(outputText)) {
+              // Single-agent: new document generated, waiting for confirm (skip chat — no file saving)
               pendingDoc = outputText;
               pendingAgent = lastAgent;
+              pendingFormat = 'md';
               isPendingConfirmation = true;
-              _updateInputHint(true, 0);
+              _appendSaveConfirmBar(aiBody);
+              _updateInputHint(false, 0);
+            }
+            // Push assistant turn to history so next request has full context
+            const historyContent = pmOutputAccumulator.length > 0
+              ? pmOutputAccumulator.join('\n\n---\n\n')
+              : outputText;
+            if (historyContent) {
+              conversationHistory.push({ role: 'assistant', content: historyContent });
             }
             wasPMTask = false;
+            loadSessions(); // refresh session list after each completed turn
+
+            // Force-refresh file list after any save action (receivedAgentEvent=false = save/discard)
+            // This is a safety net against SSE workspace desync (e.g. after server restart)
+            if (!receivedAgentEvent && !hadError) {
+              fetch('/api/files').then(r => r.json()).then(d => {
+                if (d.files !== undefined) renderFileList(d.files, d.workspace);
+              }).catch(() => {});
+            }
 
             // Auto-send queued task if user chose "save first" in modal
             if (queuedMessage && !isPendingConfirmation) {
@@ -1373,11 +2593,11 @@
             }
 
           } else if (data.type === 'error') {
+            hadError = true;
             _setInlineError(currentOutputEl, `เกิดข้อผิดพลาด: ${data.message}`);
-            status.textContent = 'กรุณาลองใหม่อีกครั้ง';
+            _setStatus(status, 'กรุณาลองใหม่อีกครั้ง');
             container.classList.remove('streaming');
             container.classList.remove('typing');
-            typingIndicator.style.display = 'none';
             btn.disabled = false;
             wasPMTask = false;
             if (previousPendingState.isPending) {
@@ -1386,6 +2606,7 @@
               isPendingConfirmation = false;
               pendingDoc = '';
               pendingAgent = '';
+              pendingFormat = 'md';
               pendingTempPaths = [];
               _updateInputHint(false, 0);
             }
@@ -1393,11 +2614,13 @@
         }
       }
     } catch (err) {
+      if (typeof reader !== 'undefined' && reader) {
+        reader.cancel().catch(() => {});
+      }
       _setInlineError(currentOutputEl, `ไม่สามารถเชื่อมต่อ server ได้: ${err.message}`);
-      status.textContent = 'กรุณาตรวจสอบว่า Flask server รันอยู่ที่ port 5000';
+      _setStatus(status, 'กรุณาตรวจสอบว่า Flask server รันอยู่ที่ port 5000');
       container.classList.remove('streaming');
       container.classList.remove('typing');
-      typingIndicator.style.display = 'none';
       btn.disabled = false;
       wasPMTask = false;
       if (typeof restorePendingState === 'function' && previousPendingState?.isPending) {
@@ -1406,6 +2629,7 @@
         isPendingConfirmation = false;
         pendingDoc = '';
         pendingAgent = '';
+        pendingFormat = 'md';
         pendingTempPaths = [];
         _updateInputHint(false, 0);
       }
@@ -1413,8 +2637,15 @@
   }
 
   function copyOutput() {
-    const outputs = document.querySelectorAll('.output-area');
-    const text = outputs.length ? outputs[outputs.length - 1].textContent : '';
+    const containers = document.querySelectorAll('.msg-ai-container');
+    if (!containers.length) return;
+    const lastContainer = containers[containers.length - 1];
+    const outputs = lastContainer.querySelectorAll('.output-area');
+    const text = Array.from(outputs)
+      .map(el => el.textContent.trim())
+      .filter(Boolean)
+      .join('\n\n---\n\n');
+    if (!text) return;
     navigator.clipboard.writeText(text).then(() => {
       const btn = document.getElementById('copyBtn');
       const orig = btn.innerHTML;
@@ -1438,10 +2669,19 @@
   }
 
   function renderFileList(files, workspace) {
-    if (workspace) document.getElementById('workspacePath').textContent = workspace;
+    if (workspace && !localAgentActive) document.getElementById('workspacePath').textContent = workspace;
     const list = document.getElementById('fileList');
     const countEl = document.getElementById('fileCount');
     countEl.textContent = files.length + ' ไฟล์';
+    // Auto-refresh preview only when file size changes (avoid blinking on every SSE heartbeat)
+    if (_previewCurrentFile) {
+      const f = files.find(f => f.name === _previewCurrentFile);
+      if (!f) {
+        closePreview();
+      } else if (f.size !== _previewFileSize) {
+        _silentRefreshPreview();
+      }
+    }
     list.replaceChildren();
     if (files.length === 0) {
       const empty = document.createElement('div');
@@ -1453,12 +2693,15 @@
     files.forEach(f => {
       const item = document.createElement('div');
       item.className = 'file-item';
+      item.style.cursor = 'pointer';
+      item.title = 'คลิกเพื่อดูตัวอย่าง';
+      item.onclick = () => openPreview(f.name);
       const icon = document.createElement('span');
       icon.className = 'material-symbols-outlined';
       icon.style.fontSize = '13px';
       icon.style.opacity = '0.45';
       icon.style.flexShrink = '0';
-      icon.textContent = 'description';
+      icon.textContent = _fileIcon(f.name);
       const name = document.createElement('span');
       name.className = 'file-item-name';
       name.textContent = f.name;
@@ -1478,22 +2721,451 @@
     return (b / 1048576).toFixed(1) + 'MB';
   }
 
-  async function changeWorkspace() {
-    const current = document.getElementById('workspacePath').textContent;
-    const newPath = prompt('ระบุ path ของ workspace directory:', current);
-    if (!newPath || newPath.trim() === current) return;
+  function _fileIcon(name) {
+    const ext = (name.split('.').pop() || '').toLowerCase();
+    const map = { pdf: 'picture_as_pdf', docx: 'article', xlsx: 'table_chart', doc: 'article',
+                  xls: 'table_chart', md: 'edit_note', txt: 'text_snippet', json: 'data_object',
+                  png: 'image', jpg: 'image', jpeg: 'image', gif: 'image', csv: 'table_chart' };
+    return map[ext] || 'description';
+  }
+
+  // ─── Preview Panel ────────────────────────────────────────────────
+  let _previewCurrentFile = '';
+  let _previewFileSize = -1;
+  let _previewContent = '';
+  let _previewTab = 'render';  // 'render' | 'raw'
+
+  function _isMarkdown(filename) {
+    return ['md', 'markdown'].includes((filename.split('.').pop() || '').toLowerCase());
+  }
+  function _isPdf(filename) {
+    return (filename.split('.').pop() || '').toLowerCase() === 'pdf';
+  }
+
+  function _setPdfMode(on) {
+    document.getElementById('previewBody').style.display = on ? 'none' : '';
+    document.getElementById('previewPdfWrap').style.display = on ? 'flex' : 'none';
+  }
+
+  async function openPreview(filename) {
+    _previewCurrentFile = filename;
+    document.getElementById('previewFilename').textContent = filename;
+    document.getElementById('previewFileIcon').textContent = _fileIcon(filename);
+    document.body.classList.add('preview-open');
+
+    // Show tabs only for markdown files; hide for pdf/binary
+    const tabsRow = document.getElementById('previewTabsRow');
+    const isPdf = _isPdf(filename);
+    const isMd  = _isMarkdown(filename);
+    if (tabsRow) tabsRow.style.display = isMd ? 'flex' : 'none';
+    if (!isMd) _previewTab = 'raw';
+
+    // Mark active item in sidebar
+    document.querySelectorAll('.file-item').forEach(el => {
+      el.classList.toggle('file-item-active', el.querySelector('.file-item-name')?.textContent === filename);
+    });
+
+    if (isPdf) {
+      // Use browser's built-in PDF viewer via iframe
+      _setPdfMode(true);
+      // Show loading state until iframe is ready
+      const wrap = document.getElementById('previewPdfWrap');
+      wrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;width:100%;color:var(--on-surface-2);font-size:13px;opacity:0.5;flex-direction:column;gap:8px"><span class="material-symbols-outlined" style="font-size:32px;opacity:0.4">picture_as_pdf</span>กำลังโหลด PDF...</div>';
+      const frame = document.createElement('iframe');
+      frame.id = 'previewPdfFrame';
+      frame.title = 'PDF Preview';
+      frame.style.cssText = 'width:100%;height:100%;border:none;';
+      frame.onload = () => { if (_previewCurrentFile === filename) wrap.replaceChildren(frame); };
+      frame.onerror = () => { if (_previewCurrentFile === filename) closePreview(); };
+      frame.src = `/api/serve/${encodeURIComponent(filename)}`;
+      _previewContent = '';
+      _previewFileSize = -1;
+      return;
+    }
+
+    _setPdfMode(false);
+    document.getElementById('previewBody').innerHTML = '<div class="preview-loading">กำลังโหลด...</div>';
+
     try {
-      const res = await fetch('/api/workspace', {
+      const res = await fetch(`/api/preview?file=${encodeURIComponent(filename)}`);
+      const data = await res.json();
+      if (data.error) { _showPreviewError(data.error); return; }
+      _previewContent = data.content || '';
+      _previewFileSize = data.size ?? -1;
+      _renderPreview();
+    } catch (e) {
+      _showPreviewError('ไม่สามารถโหลดไฟล์ได้: ' + e.message);
+    }
+  }
+
+  async function _silentRefreshPreview() {
+    if (!_previewCurrentFile) return;
+    if (_isPdf(_previewCurrentFile)) {
+      // Re-open preview to reload PDF (frame may have been recreated)
+      openPreview(_previewCurrentFile);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/preview?file=${encodeURIComponent(_previewCurrentFile)}`);
+      const data = await res.json();
+      if (data.error) return;
+      _previewContent = data.content || '';
+      _previewFileSize = data.size ?? -1;
+      _renderPreview();
+    } catch (_) {}
+  }
+
+  function closePreview() {
+    document.body.classList.remove('preview-open');
+    _previewCurrentFile = '';
+    _previewFileSize = -1;
+    _setPdfMode(false);
+    document.getElementById('previewPdfWrap').innerHTML = '';
+    document.querySelectorAll('.file-item').forEach(el => el.classList.remove('file-item-active'));
+  }
+
+  function setPreviewTab(tab) {
+    _previewTab = tab;
+    document.getElementById('previewTabRender').classList.toggle('active', tab === 'render');
+    document.getElementById('previewTabRaw').classList.toggle('active', tab === 'raw');
+    _renderPreview();
+  }
+
+  function _renderPreview() {
+    const body = document.getElementById('previewBody');
+    if (!_previewContent) { body.innerHTML = '<div class="preview-loading">ไม่มีเนื้อหา</div>'; return; }
+    const ext = (_previewCurrentFile.split('.').pop() || '').toLowerCase();
+    const isMarkdown = ['md', 'markdown'].includes(ext);
+
+    if (_previewTab === 'render' && isMarkdown) {
+      const div = document.createElement('div');
+      div.className = 'preview-rendered';
+      div.innerHTML = marked.parse(_previewContent);
+      body.replaceChildren(div);
+    } else {
+      const pre = document.createElement('pre');
+      pre.className = 'preview-raw';
+      pre.textContent = _previewContent;
+      body.replaceChildren(pre);
+    }
+  }
+
+  function _showPreviewError(msg) {
+    const body = document.getElementById('previewBody');
+    body.innerHTML = `<div class="preview-error">❌ ${msg}</div>`;
+  }
+
+  function copyPreviewContent() {
+    if (!_previewContent) return;
+    navigator.clipboard.writeText(_previewContent).catch(() => {});
+    const btn = document.querySelector('.preview-action-btn[onclick="copyPreviewContent()"]');
+    if (btn) { const ic = btn.querySelector('.material-symbols-outlined'); ic.textContent = 'check'; setTimeout(() => { ic.textContent = 'content_copy'; }, 1500); }
+  }
+
+  // Close preview on Esc
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && _previewCurrentFile) closePreview(); });
+
+  // ─── Sessions ─────────────────────────────────────────────────────
+  function _formatSessionDate(isoStr) {
+    if (!isoStr) return '—';
+    const d = new Date(isoStr);
+    const diffDays = Math.floor((Date.now() - d) / 86400000);
+    if (diffDays === 0) return 'วันนี้';
+    if (diffDays === 1) return 'เมื่อวาน';
+    if (diffDays < 7) return `${diffDays} วันที่แล้ว`;
+    return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+  }
+
+  function _agentLabel(agent) {
+    const map = { hr: 'HR', accounting: 'บัญชี', manager: 'Manager', pm: 'PM', document: 'เอกสาร', chat: 'Chat' };
+    return map[agent] || agent || 'Chat';
+  }
+
+  async function loadSessions() {
+    try {
+      const res = await fetch('/api/sessions');
+      const data = await res.json();
+      _renderSessionList(data.sessions || []);
+    } catch (_) {}
+  }
+
+  function _renderSessionList(sessions) {
+    const list = document.getElementById('sessionList');
+    list.replaceChildren();
+    if (!sessions.length) {
+      const empty = document.createElement('div');
+      empty.className = 'session-empty';
+      empty.textContent = 'ยังไม่มีประวัติ';
+      list.appendChild(empty);
+      return;
+    }
+    const currentSid = _getSessionId();
+    sessions.forEach(s => {
+      const item = document.createElement('div');
+      item.className = 'session-item' + (s.session_id === currentSid ? ' active' : '');
+      item.onclick = () => loadSession(s.session_id);
+      item.title = s.first_message || '—';
+
+      const dot = document.createElement('span');
+      dot.className = `session-dot agent-${s.last_agent || 'chat'}`;
+
+      const content = document.createElement('div');
+      content.className = 'session-content';
+
+      const title = document.createElement('div');
+      title.className = 'session-title';
+      title.textContent = (s.first_message || '—').slice(0, 80);
+
+      const meta = document.createElement('div');
+      meta.className = 'session-meta';
+      meta.textContent = `${_formatSessionDate(s.last_active)} · ${_agentLabel(s.last_agent)} · ${s.job_count} งาน`;
+
+      content.appendChild(title);
+      content.appendChild(meta);
+      item.appendChild(dot);
+      item.appendChild(content);
+      list.appendChild(item);
+    });
+  }
+
+  function startNewSession() {
+    // Generate new session ID and save to localStorage
+    const newSid = (crypto && crypto.randomUUID) ? crypto.randomUUID()
+      : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+          const r = Math.random() * 16 | 0;
+          return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+    localStorage.setItem('ai_session_id', newSid);
+
+    // Clear chat
+    const chatLog = document.getElementById('chatLog');
+    const placeholder = document.getElementById('chatPlaceholder');
+    chatLog.replaceChildren();
+    if (placeholder) chatLog.appendChild(placeholder);
+    placeholder && (placeholder.style.display = '');
+
+    // Reset conversation history
+    conversationHistory = [];
+
+    // Refresh session list highlight
+    loadSessions();
+  }
+
+  async function loadSession(sessionId) {
+    if (sessionId === _getSessionId()) return; // already active
+
+    // Switch session
+    localStorage.setItem('ai_session_id', sessionId);
+
+    const chatLog = document.getElementById('chatLog');
+    const placeholder = document.getElementById('chatPlaceholder');
+    chatLog.replaceChildren();
+    if (placeholder) chatLog.appendChild(placeholder);
+    placeholder && (placeholder.style.display = 'none'); // hide placeholder when showing history
+
+    // Reset conversation history
+    conversationHistory = [];
+
+    // Loading indicator
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'msg-history-divider';
+    loadingDiv.textContent = 'กำลังโหลด session...';
+    chatLog.appendChild(loadingDiv);
+
+    try {
+      const res = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}`);
+      const data = await res.json();
+      const jobs = data.jobs || [];
+
+      chatLog.removeChild(loadingDiv);
+
+      if (!jobs.length) {
+        placeholder && (placeholder.style.display = '');
+        loadSessions();
+        return;
+      }
+
+      // History wrapper (dimmed)
+      const historyWrap = document.createElement('div');
+      historyWrap.className = 'msg-history';
+
+      const divider = document.createElement('div');
+      divider.className = 'msg-history-divider';
+      divider.textContent = `— ประวัติ ${jobs.length} รายการ —`;
+      historyWrap.appendChild(divider);
+
+      jobs.forEach(job => {
+        if (!job.user_input) return;
+
+        // User bubble
+        const userBubble = document.createElement('div');
+        userBubble.className = 'msg-user';
+        userBubble.textContent = job.user_input;
+        historyWrap.appendChild(userBubble);
+
+        // AI response
+        if (job.output_text) {
+          const container = document.createElement('div');
+          container.className = 'msg-ai-container';
+          const accentLine = document.createElement('div');
+          accentLine.className = `ai-accent-line${job.agent ? ' agent-' + job.agent : ''}`;
+          const aiBody = document.createElement('div');
+          aiBody.className = 'msg-ai-body';
+          const outputArea = document.createElement('div');
+          outputArea.className = 'output-area';
+          outputArea.innerHTML = marked.parse(job.output_text);
+          aiBody.appendChild(outputArea);
+          container.appendChild(accentLine);
+          container.appendChild(aiBody);
+          historyWrap.appendChild(container);
+        }
+
+        // Restore to conversation history (last 10 turns)
+        conversationHistory.push({ role: 'user', content: job.user_input });
+        if (job.output_text) conversationHistory.push({ role: 'assistant', content: job.output_text });
+      });
+
+      // Trim to MAX_HISTORY_TURNS
+      if (conversationHistory.length > MAX_HISTORY_TURNS * 2) {
+        conversationHistory = conversationHistory.slice(-(MAX_HISTORY_TURNS * 2));
+      }
+
+      chatLog.appendChild(historyWrap);
+
+      // "Continue here" divider
+      const continueDivider = document.createElement('div');
+      continueDivider.className = 'msg-history-divider';
+      continueDivider.style.opacity = '0.6';
+      continueDivider.textContent = '— พิมพ์เพื่อต่อบทสนทนา —';
+      chatLog.appendChild(continueDivider);
+
+      // Scroll to bottom
+      chatLog.scrollTop = chatLog.scrollHeight;
+
+    } catch (e) {
+      loadingDiv.textContent = '❌ โหลดไม่สำเร็จ';
+    }
+
+    loadSessions();
+  }
+
+  async function changeWorkspace() {
+    const modal    = document.getElementById('workspaceModal');
+    const listEl   = document.getElementById('workspacePickerList');
+    const rootSel  = document.getElementById('workspaceNewRoot');
+    const errEl    = document.getElementById('workspaceNewError');
+
+    // Reset create-new section
+    document.getElementById('workspaceNewName').value = '';
+    errEl.textContent = '';
+    listEl.innerHTML = '<div class="file-empty">กำลังโหลด...</div>';
+    modal.style.display = 'flex';
+
+    try {
+      const res  = await fetch('/api/workspaces');
+      const data = await res.json();
+
+      listEl.innerHTML = '';
+      rootSel.innerHTML = '';
+      const multiRoot = data.roots.length > 1;
+      rootSel.style.display = multiRoot ? '' : 'none';
+
+      data.roots.forEach(group => {
+        // Root selector option for create-new
+        const opt = document.createElement('option');
+        opt.value = group.root;
+        opt.textContent = group.label;
+        rootSel.appendChild(opt);
+
+        if (multiRoot) {
+          const hdr = document.createElement('div');
+          hdr.className = 'workspace-group-header';
+          hdr.textContent = group.label;
+          listEl.appendChild(hdr);
+        }
+
+        if (group.workspaces.length === 0) {
+          const empty = document.createElement('div');
+          empty.className = 'workspace-item';
+          empty.style.cssText = 'opacity:0.4;font-style:italic;cursor:default';
+          empty.textContent = 'ยังไม่มีโฟลเดอร์';
+          listEl.appendChild(empty);
+          return;
+        }
+
+        group.workspaces.forEach(ws => {
+          const item = document.createElement('div');
+          item.className = 'workspace-item' + (ws.active ? ' ws-active' : '');
+
+          const icon = document.createElement('span');
+          icon.className = 'ws-icon material-symbols-outlined';
+          icon.textContent = ws.active ? 'check_circle' : 'folder';
+
+          const name = document.createElement('span');
+          name.className = 'ws-name';
+          name.textContent = ws.name;
+          name.title = ws.path;
+
+          item.appendChild(icon);
+          item.appendChild(name);
+
+          if (!ws.active) {
+            item.onclick = async () => {
+              modal.style.display = 'none';
+              await _applyWorkspace(ws.path);
+            };
+          }
+          listEl.appendChild(item);
+        });
+      });
+
+    } catch (e) {
+      listEl.innerHTML = `<div class="file-empty" style="color:var(--error)">โหลดล้มเหลว: ${e.message}</div>`;
+    }
+  }
+
+  async function _applyWorkspace(path) {
+    try {
+      const res  = await fetch('/api/workspace', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: newPath.trim() })
+        body: JSON.stringify({ path })
       });
       const data = await res.json();
-      if (data.error) { alert('ไม่สามารถตั้งค่า workspace: ' + data.error); return; }
+      if (data.error) { alert('ไม่สามารถเปลี่ยน workspace: ' + data.error); return; }
       document.getElementById('workspacePath').textContent = data.path;
+      conversationHistory = [];   // new workspace = new context
       startFileStream();
     } catch (e) {
       alert('เกิดข้อผิดพลาด: ' + e.message);
+    }
+  }
+
+  async function _createWorkspaceFolder() {
+    const name   = document.getElementById('workspaceNewName').value.trim();
+    const root   = document.getElementById('workspaceNewRoot').value;
+    const errEl  = document.getElementById('workspaceNewError');
+    errEl.textContent = '';
+
+    if (!name) { errEl.textContent = 'กรุณาระบุชื่อโฟลเดอร์'; return; }
+    if (!/^[a-zA-Z0-9_-]{1,50}$/.test(name)) {
+      errEl.textContent = 'ชื่อใช้ได้เฉพาะ a-z, A-Z, 0-9, _, - (ไม่เกิน 50 ตัว)';
+      return;
+    }
+
+    try {
+      const res  = await fetch('/api/workspace/new', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ root, name })
+      });
+      const data = await res.json();
+      if (data.error) { errEl.textContent = data.error; return; }
+      document.getElementById('workspaceModal').style.display = 'none';
+      document.getElementById('workspacePath').textContent = data.path;
+      startFileStream();
+    } catch (e) {
+      errEl.textContent = 'เกิดข้อผิดพลาด: ' + e.message;
     }
   }
 
@@ -1523,7 +3195,10 @@
         document.getElementById('modelName').textContent = 'ไม่สามารถโหลดได้';
       });
 
+    loadSessions();
+
     startFileStream();
+    _checkLocalAgent();
   });
 
   function toggleTheme() {
@@ -1532,8 +3207,16 @@
     localStorage.setItem('theme', isLight ? 'light' : 'dark');
   }
 
+  function toggleSidebar() {
+    const collapsed = document.body.classList.toggle('sidebar-collapsed');
+    localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0');
+  }
+
   if (localStorage.getItem('theme') === 'light') {
     document.body.classList.add('light-mode');
+  }
+  if (localStorage.getItem('sidebarCollapsed') === '1') {
+    document.body.classList.add('sidebar-collapsed');
   }
 </script>
 
