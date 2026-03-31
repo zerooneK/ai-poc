@@ -1,7 +1,10 @@
 # Changelog — Internal AI Assistant POC
 
-## [v0.31.1] — 31 มีนาคม 2569 · docs
+## [v0.31.1] — 31 มีนาคม 2569 · docs/fix
 - docs (AGENTS.md): เพิ่ม Mandatory Workflow Rules 7 ข้อ — ห้ามแตะ .env, ถามให้ชัดก่อนทำ, วางแผนก่อนแก้, ทำตามแผน, อัปเดต docs ทุกครั้ง, commit ทุกอย่าง, สรุปให้ user เข้าใจง่าย
+- fix (index.html): block `data:` URIs in `_sanitizeHtml` — ป้องกัน XSS ผ่าน data: URI payload
+- fix (index.html): เปลี่ยน error messages จาก `innerHTML` เป็น `textContent` — ป้องกัน HTML injection ใน error display
+- fix (db.py): ลบ dead function `_handle_corrupt_db()` ที่ไม่มี caller
 
 ## [v0.31.0] — 31 มีนาคม 2569 · fix/docs
 - fix (app.py): UTF-8 safe byte truncation สำหรับ `pending_doc` — ป้องกัน multi-byte character ถูกตัดกลางตัวอักษร
