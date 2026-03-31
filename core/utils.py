@@ -89,9 +89,14 @@ def execute_tool(workspace: str, tool_name: str, tool_args: dict) -> str:
                 f"- {f['name']} ({f['size']} bytes, แก้ไขล่าสุด: {f['modified']})"
                 for f in files
             )
+        elif tool_name == 'request_delete':
+            # ส่ง marker กลับ — app.py จะแปลงเป็น delete_request SSE event ให้ browser แสดง confirm
+            filename = re.sub(r'[^\w.\-]', '', str(tool_args.get('filename', '')))[:120]
+            logger.info("[execute_tool] request_delete requested for: %s", filename)
+            return f"__DELETE_REQUEST__:{filename}"
         elif tool_name == 'local_delete':
             # ส่ง marker กลับ — app.py จะแปลงเป็น SSE event ให้ browser ลบจริง
-            filename = tool_args.get('filename', '')
+            filename = re.sub(r'[^\w.\-]', '', str(tool_args.get('filename', '')))[:120]
             return f"__LOCAL_DELETE__:{filename}"
         elif tool_name == 'web_search':
             query = tool_args.get('query', '')

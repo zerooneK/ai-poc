@@ -172,6 +172,8 @@ class BaseAgent:
                 if tool_name == 'web_search':
                     sources = extract_web_sources(result)
                     yield {"type": "web_search_sources", "query": args.get('query', ''), "sources": sources}
+                elif tool_name == 'read_file':
+                    yield {"type": "tool_result", "tool": tool_name, "result": result[:200], "filename": args.get('filename', '')}
                 else:
                     yield {"type": "tool_result", "tool": tool_name, "result": result[:200]}
 

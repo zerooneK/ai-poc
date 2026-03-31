@@ -1,5 +1,20 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.28.1] — 31 มีนาคม 2569 · fix
+- fix (mcp_server.py): `fs_read_file` ไม่สามารถอ่านไฟล์ binary ได้ — เพิ่ม text extraction สำหรับ `.docx` (python-docx), `.xlsx` (openpyxl), `.pdf` (pdfplumber) แทนการเปิดเป็น UTF-8 ตรงๆ ซึ่งทำให้ได้รับ `UnicodeDecodeError`
+
+---
+
+## [v0.28.0] — 31 มีนาคม 2569 · feat
+- feat: Delete with HITL — agent เรียก `request_delete` → frontend แสดง confirm modal → user ยืนยัน → POST `/api/delete` → ไฟล์ถูกลบ + sidebar refresh
+- feat: Overwrite existing file — agent อ่านไฟล์เดิม (`read_file`) → สร้างเนื้อหาใหม่ → confirm bar แสดงปุ่ม [💾 สร้างไฟล์ใหม่] [🔄 เขียนทับ filename] [✕ ไม่ต้องการ]
+- feat (app.py): เพิ่ม `request_delete` ใน MCP_TOOLS + READ_ONLY_TOOLS; intercept `__DELETE_REQUEST__:` marker → SSE `delete_request` event; `handle_save` รับ `overwrite_filename` param → ใช้ `update_file` แทน `create_file`; เพิ่ม `POST /api/delete` endpoint
+- feat (agents/base_agent.py): `read_file` tool_result event ส่ง `filename` field เพิ่มให้ frontend track `lastReadFile`
+- feat (core/utils.py): `request_delete` tool handler → คืน `__DELETE_REQUEST__:filename` marker
+- feat (index.html): state `lastReadFile`/`pendingOverwriteFile`; delete confirm modal; overwrite button ใน save confirm bar; `_showDeleteConfirmModal()`; `confirmOverwrite()`
+
+---
+
 ## [v0.27.1] — 31 มีนาคม 2569 · fix
 - fix (agents/base_agent.py): ลบ `if text_streamed: return` ออก — แก้ปัญหา agent ค้นเว็บแล้วไม่สร้างเอกสาร เพราะ early return ตัดการทำงาน iteration ถัดไปที่จะ generate เอกสารจริง
 

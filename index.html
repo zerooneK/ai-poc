@@ -1083,6 +1083,11 @@
 }
 .save-confirm-bar .btn-save-yes:hover { opacity: 0.88; }
 .save-confirm-bar .btn-save-no:hover { background: var(--surface-3, #e5e7eb); }
+.save-confirm-bar .btn-save-overwrite {
+  padding: 6px 16px; border-radius: 8px; border: none; cursor: pointer;
+  background: #b45309; color: #fff; font-size: 13px; font-weight: 600;
+}
+.save-confirm-bar .btn-save-overwrite:hover { opacity: 0.88; }
   </style>
 </head>
 <body>
@@ -1177,7 +1182,7 @@
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
       <span id="localAgentBadge" title="Local Agent ไม่พบ — ไฟล์จะบันทึกบน server" style="display:none;font-size:10px;padding:2px 7px;border-radius:10px;background:#22c55e;color:#fff;font-weight:600;cursor:default">💻 Local</span>
-      <span class="version-tag">v0.27.1</span>
+      <span class="version-tag">v0.28.1</span>
     </div>
   </header>
 
@@ -1285,6 +1290,19 @@
   </div>
 </div>
 
+<!-- Delete Confirm Modal (HITL delete flow) -->
+<div id="deleteConfirmModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <div class="modal-icon">🗑️</div>
+    <p class="modal-title">ยืนยันการลบไฟล์</p>
+    <p class="modal-body">AI ต้องการลบไฟล์ <strong id="deleteConfirmFilename"></strong><br>การกระทำนี้ไม่สามารถย้อนกลับได้</p>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-danger" id="deleteConfirmYes">🗑️ ลบไฟล์</button>
+      <button class="modal-btn modal-btn-cancel" id="deleteConfirmNo">✕ ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
 <script>
   function fillInput(text) {
     const ta = document.getElementById('inputMsg');
@@ -1370,17 +1388,70 @@
 
     const bar = document.createElement('div');
     bar.className = 'save-confirm-bar';
+
+    const overwriteBtnHtml = lastReadFile
+      ? `<button class="btn-save-overwrite" onclick="confirmOverwrite()">🔄 เขียนทับ ${lastReadFile}</button>`
+      : '';
+
     bar.innerHTML = `
       <div class="save-confirm-top">
         <span>📄 ต้องการสร้างไฟล์นี้ไหม?</span>
         <div class="save-confirm-btns">
-          <button class="btn-save-yes" onclick="showSaveFormatModal()">💾 สร้างไฟล์</button>
+          <button class="btn-save-yes" onclick="showSaveFormatModal()">💾 สร้างไฟล์ใหม่</button>
+          ${overwriteBtnHtml}
           <button class="btn-save-no" onclick="cancelPending()">✕ ไม่ต้องการ</button>
         </div>
       </div>
       <div class="save-confirm-hint">✏️ หรือพิมพ์ข้อความด้านล่างเพื่อแก้ไขเอกสาร</div>
     `;
     bodyEl.appendChild(bar);
+  }
+
+  function confirmOverwrite() {
+    pendingOverwriteFile = lastReadFile;
+    sendMessage('บันทึก');
+  }
+
+  function _showDeleteConfirmModal(filename, outputEl) {
+    const modal = document.getElementById('deleteConfirmModal');
+    document.getElementById('deleteConfirmFilename').textContent = filename;
+    modal.style.display = 'flex';
+
+    document.getElementById('deleteConfirmYes').onclick = async () => {
+      modal.style.display = 'none';
+      try {
+        const res = await fetch('/api/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename })
+        });
+        const d = await res.json();
+        const line = document.createElement('div');
+        line.className = 'tool-result-line';
+        if (d.success) {
+          line.textContent = `🗑️ ลบไฟล์ ${filename} เรียบร้อยแล้ว`;
+          fetch('/api/files').then(r => r.json()).then(fd => {
+            if (fd.files !== undefined) renderFileList(fd.files, fd.workspace);
+          }).catch(() => {});
+        } else {
+          line.textContent = `❌ ลบไฟล์ไม่สำเร็จ: ${d.error || 'ไม่ทราบสาเหตุ'}`;
+        }
+        outputEl.before(line);
+      } catch (err) {
+        const line = document.createElement('div');
+        line.className = 'tool-result-line';
+        line.textContent = `❌ ลบไฟล์ไม่สำเร็จ: ${err.message}`;
+        outputEl.before(line);
+      }
+    };
+
+    document.getElementById('deleteConfirmNo').onclick = () => {
+      modal.style.display = 'none';
+      const line = document.createElement('div');
+      line.className = 'tool-result-line';
+      line.textContent = `↩️ ยกเลิกการลบไฟล์ ${filename}`;
+      outputEl.before(line);
+    };
   }
 
   function _showSingleFileFormatModal(originalMessage) {
@@ -1578,6 +1649,8 @@
   let wasPMTask = false;
   let currentPmCard = null;
   let lastAgent = '';
+  let lastReadFile = '';          // last file read by agent — used for overwrite flow
+  let pendingOverwriteFile = '';  // file to overwrite when user picks "🔄 เขียนทับ"
 
   // Queued task after "save first" modal choice
   let queuedMessage = '';
@@ -1654,6 +1727,8 @@
     pendingAgent = '';
     pendingFormat = 'md';
     pendingTempPaths = [];
+    lastReadFile = '';
+    pendingOverwriteFile = '';
     _updateInputHint(false, 0);
     document.querySelectorAll('.save-confirm-bar').forEach(el => el.remove());
     // Temp files in temp/ will be auto-cleaned after 1hr by _cleanup_old_temp()
@@ -1941,6 +2016,7 @@
         } else {
           reqBody.pending_doc = pendingDoc;
           reqBody.pending_agent = pendingAgent;
+          if (pendingOverwriteFile) reqBody.overwrite_filename = pendingOverwriteFile;
         }
       }
       // Push user turn to history AFTER building reqBody (so this turn isn't in the payload)
@@ -1952,6 +2028,8 @@
       pendingFileFormats = null;
       pendingTempPaths = [];
       pendingFileAgents = [];
+      lastReadFile = '';
+      pendingOverwriteFile = '';
 
       // ── Local Agent File Context Injection ──────────────────────────────────
       // ถ้า local agent รันอยู่ → ดึง file list + เนื้อหา text files แนบให้ AI
@@ -2124,7 +2202,13 @@
               currentOutputEl.before(errLine);
             });
 
+          } else if (data.type === 'delete_request') {
+            // Agent requests file deletion — show confirm modal (HITL)
+            _showDeleteConfirmModal(data.filename, currentOutputEl);
+
           } else if (data.type === 'tool_result') {
+            // Track last file read by agent — used for overwrite flow
+            if (data.tool === 'read_file' && data.filename) lastReadFile = data.filename;
             // Show tool execution feedback
             const resultLine = document.createElement('div');
             resultLine.className = 'tool-result-line';

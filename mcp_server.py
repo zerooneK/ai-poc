@@ -58,10 +58,46 @@ def fs_create_file(workspace: str, filename: str, content: str) -> str:
 
 
 def fs_read_file(workspace: str, filename: str) -> str:
-    """Read file contents from workspace."""
+    """Read file contents from workspace. Binary formats (docx, xlsx, pdf) are extracted to plain text."""
     path = _validate_path(workspace, filename)
     if not os.path.exists(path):
         raise FileNotFoundError(f"ไม่พบไฟล์ '{filename}'")
+    ext = Path(path).suffix.lower()
+    if ext == '.docx':
+        try:
+            from docx import Document
+            doc = Document(path)
+            text = '\n'.join(p.text for p in doc.paragraphs if p.text.strip())
+            return text or '(ไฟล์ว่างเปล่า)'
+        except Exception as e:
+            raise ValueError(f"ไม่สามารถอ่านไฟล์ .docx ได้: {e}")
+    if ext == '.xlsx':
+        try:
+            import openpyxl
+            wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+            lines = []
+            for sheet in wb.worksheets:
+                lines.append(f"[Sheet: {sheet.title}]")
+                for row in sheet.iter_rows(values_only=True):
+                    line = '\t'.join('' if v is None else str(v) for v in row)
+                    if line.strip():
+                        lines.append(line)
+            wb.close()
+            return '\n'.join(lines) or '(ไฟล์ว่างเปล่า)'
+        except Exception as e:
+            raise ValueError(f"ไม่สามารถอ่านไฟล์ .xlsx ได้: {e}")
+    if ext == '.pdf':
+        try:
+            import pdfplumber
+            lines = []
+            with pdfplumber.open(path) as pdf:
+                for page in pdf.pages:
+                    t = page.extract_text()
+                    if t:
+                        lines.append(t)
+            return '\n\n'.join(lines) or '(ไฟล์ว่างเปล่า)'
+        except Exception as e:
+            raise ValueError(f"ไม่สามารถอ่านไฟล์ .pdf ได้: {e}")
     with open(path, 'r', encoding='utf-8') as f:
         return f.read()
 

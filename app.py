@@ -177,10 +177,30 @@ MCP_TOOLS = [
                 "required": ["query"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "request_delete",
+            "description": (
+                "ส่งคำขอลบไฟล์จาก workspace โดยต้องรอให้ผู้ใช้ยืนยันก่อน "
+                "ห้ามใช้ delete_file โดยตรง — ใช้ request_delete เสมอเมื่อต้องการลบไฟล์"
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "filename": {
+                        "type": "string",
+                        "description": "ชื่อไฟล์ที่ต้องการลบ"
+                    }
+                },
+                "required": ["filename"]
+            }
+        }
     }
 ]
 
-READ_ONLY_TOOLS = [t for t in MCP_TOOLS if t['function']['name'] in ('list_files', 'read_file', 'web_search')]
+READ_ONLY_TOOLS = [t for t in MCP_TOOLS if t['function']['name'] in ('list_files', 'read_file', 'web_search', 'request_delete')]
 
 _LOCAL_DELETE_TOOL = {
     "type": "function",
@@ -278,13 +298,19 @@ def _cleanup_old_temp():
     except OSError as e:
         logger.warning(f"[cleanup_old_temp] could not clean temp dir: {e}")
 
-def handle_save(pending_doc: str, pending_agent: str, workspace: str, job_id=None, output_format: str = 'md', history: list = None):
-    """Yields raw event dicts (not pre-formatted SSE) so callers can inspect type."""
+def handle_save(pending_doc: str, pending_agent: str, workspace: str, job_id=None, output_format: str = 'md', history: list = None, overwrite_filename: str = None):
+    """Yields raw event dicts (not pre-formatted SSE) so callers can inspect type.
+    If overwrite_filename is set, update the existing file instead of creating a new one."""
     try:
-        filename = _suggest_filename(pending_agent, pending_doc, output_format, history)
+        if overwrite_filename:
+            filename = overwrite_filename
+            tool_name = 'update_file'
+        else:
+            filename = _suggest_filename(pending_agent, pending_doc, output_format, history)
+            tool_name = 'create_file'
         yield {'type': 'status', 'message': f'กำลังบันทึกไฟล์ {filename}...'}
         if output_format in ('md', 'txt'):
-            result = execute_tool(workspace, 'create_file', {'filename': filename, 'content': pending_doc})
+            result = execute_tool(workspace, tool_name, {'filename': filename, 'content': pending_doc})
             if _tool_result_is_error(result):
                 yield {'type': 'save_failed', 'message': result}
                 return
@@ -296,7 +322,7 @@ def handle_save(pending_doc: str, pending_agent: str, workspace: str, job_id=Non
         db.record_file(job_id, filename, pending_agent, size)
         _notify_workspace_changed(workspace)
         yield {'type': 'text', 'content': f'✅ {result}'}
-        yield {'type': 'tool_result', 'tool': 'create_file', 'result': result}
+        yield {'type': 'tool_result', 'tool': tool_name, 'result': result}
     except Exception as e:
         logger.error(f"[handle_save] error: {e}", exc_info=True)
         yield {'type': 'save_failed', 'message': 'ไม่สามารถบันทึกไฟล์ได้ กรุณาลองใหม่อีกครั้ง'}
@@ -399,6 +425,10 @@ def chat():
     session_id = request.json.get('session_id')
     output_format = request.json.get('output_format', 'md').lower()
     output_formats = request.json.get('output_formats')
+    _raw_overwrite = (request.json.get('overwrite_filename') or '').strip()
+    overwrite_filename = _raw_overwrite if _raw_overwrite and re.match(r'^[\w.\-]{1,120}$', _raw_overwrite) else None
+    if _raw_overwrite and not overwrite_filename:
+        logger.warning("[chat] rejected invalid overwrite_filename: %r", _raw_overwrite[:80])
     local_agent_mode = bool(request.json.get('local_agent_mode', False))
     raw_history = request.json.get('conversation_history', [])
 
@@ -446,7 +476,7 @@ def chat():
         if pending_doc and pending_agent:
             if _is_save_intent(user_input):
                 save_ok = True
-                for event in handle_save(pending_doc, pending_agent, workspace, job_id, output_format, conversation_history[-5:]):
+                for event in handle_save(pending_doc, pending_agent, workspace, job_id, output_format, conversation_history[-5:], overwrite_filename):
                     yield format_sse(event)
                     if event.get('type') == 'save_failed':
                         save_ok = False
@@ -533,6 +563,15 @@ def chat():
                             and sse_data.get('result', '').startswith('__LOCAL_DELETE__:')):
                         filename = sse_data['result'].split(':', 1)[1]
                         yield format_sse({'type': 'local_delete', 'filename': filename})
+                    # Intercept request_delete marker — ส่ง event ให้ browser แสดง confirm modal
+                    elif (sse_data.get('type') == 'tool_result'
+                            and sse_data.get('tool') == 'request_delete'
+                            and sse_data.get('result', '').startswith('__DELETE_REQUEST__:')):
+                        filename = sse_data['result'].split(':', 1)[1].strip()
+                        if filename:
+                            yield format_sse({'type': 'delete_request', 'filename': filename})
+                        else:
+                            logger.warning("[generate] request_delete returned empty filename — suppressed")
                     else:
                         yield format_sse(sse_data)
                     if sse_data.get('type') == 'text': text_chunks.append(sse_data.get('content', ''))
@@ -642,6 +681,21 @@ def history(): return jsonify({'jobs': db.get_history(int(request.args.get('limi
 def history_job(job_id: str):
     job = db.get_job(job_id)
     return jsonify(job) if job else (jsonify({'error': 'Not found'}), 404)
+
+@app.route('/api/delete', methods=['POST'])
+@limiter.limit("20 per minute")
+def delete_file_api():
+    data = request.json or {}
+    filename = (data.get('filename') or '').strip()
+    if not filename or not re.match(r'^[\w.\-]{1,120}$', filename):
+        return jsonify({'error': 'invalid filename'}), 400
+    workspace = get_workspace()
+    result = execute_tool(workspace, 'delete_file', {'filename': filename})
+    if _tool_result_is_error(result):
+        return jsonify({'error': result}), 400
+    logger.info("[delete_file_api] deleted: %s from workspace %s", filename, workspace)
+    _notify_workspace_changed(workspace)
+    return jsonify({'success': True, 'filename': filename})
 
 if __name__ == '__main__':
     app.run(debug=os.getenv('FLASK_DEBUG','').lower() in {'1','true'}, host=os.getenv('FLASK_HOST','0.0.0.0'), port=5000, threaded=True)
