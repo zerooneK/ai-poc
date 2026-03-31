@@ -1,5 +1,12 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.25.9] — 31 มีนาคม 2569 · fix
+- fix (agents/base_agent.py): เพิ่ม fallback text เมื่อ model return empty response (ไม่มี text และไม่มี tool_calls) — แทนที่จะ silent return ที่ทำให้หน้าจอว่างเปล่า
+- fix (index.html): `done` handler แสดง inline error เมื่อ agent ตอบ 0 ตัวอักษร แทนที่จะแสดง status "0 ตัวอักษร" โดยไม่มีอะไรในกล่องคำตอบ
+- fix (prompts/orchestrator.md): เพิ่ม routing rule — คำขอ "สร้างเอกสาร/ไฟล์" ที่ไม่ระบุ domain → ส่งไป manager ไม่ใช่ chat
+
+---
+
 ## [v0.25.8] — 30 มีนาคม 2569 · fix
 - fix (index.html): `_looksLikeDraft()` เพิ่ม 2 เงื่อนไขเพิ่มเติม — detect `**bold heading**` บนบรรทัดเดียว และ 20+ บรรทัด — แก้ปัญหา confirm bar ไม่โผล่เมื่อเอกสาร Thai ใช้ bold แทน `#` heading
 

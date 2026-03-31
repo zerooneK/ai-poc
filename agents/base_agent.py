@@ -110,10 +110,20 @@ class BaseAgent:
                     "[%s] Stripped %d fake tool call pattern(s) from text stream: %s",
                     self.name, len(matches), [m[:80] for m in matches]
                 )
-                yield {"type": "text_replace", "content": cleaned_text}
+                if cleaned_text:
+                    yield {"type": "text_replace", "content": cleaned_text}
                 text_streamed = cleaned_text
 
+            # NOTE: text_streamed may be empty here if the fake-tool-call stripper
+            # consumed the entire response — that also triggers the fallback below (intentional).
             if not tool_calls_acc:
+                if not text_streamed:
+                    # Model returned empty response (no text, no tool calls) — yield fallback
+                    logger.warning(
+                        "[%s] Model returned empty response at iteration %d (finish_reason=%s)",
+                        self.name, iteration, finish_reason
+                    )
+                    yield {"type": "text", "content": "ขออภัย ระบบไม่ได้รับคำตอบจาก AI กรุณาลองใหม่หรือระบุรายละเอียดเพิ่มเติม"}
                 return
 
             tool_calls_list = [

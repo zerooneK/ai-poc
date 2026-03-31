@@ -1174,7 +1174,7 @@
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
       <span id="localAgentBadge" title="Local Agent ไม่พบ — ไฟล์จะบันทึกบน server" style="display:none;font-size:10px;padding:2px 7px;border-radius:10px;background:#22c55e;color:#fff;font-weight:600;cursor:default">💻 Local</span>
-      <span class="version-tag">v0.25.8</span>
+      <span class="version-tag">v0.25.9</span>
     </div>
   </header>
 
@@ -2193,10 +2193,14 @@
               .trim();
             if (outputText) {
               _renderMarkdown(currentOutputEl, outputText);
+            } else if (receivedAgentEvent && !hadError) {
+              // Agent ran but returned empty — show inline hint instead of silent blank
+              _setInlineError(currentOutputEl, 'ระบบไม่ได้รับคำตอบ กรุณาลองใหม่หรือระบุรายละเอียดเพิ่มเติม');
+              hadError = true;
             }
             const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
             const charCount = totalChars.toLocaleString('th-TH');
-            _setStatus(status, `✅ เสร็จสิ้น · ${elapsed} วินาที · ${charCount} ตัวอักษร`);
+            _setStatus(status, hadError ? 'กรุณาลองใหม่อีกครั้ง' : `✅ เสร็จสิ้น · ${elapsed} วินาที · ${charCount} ตัวอักษร`);
             container.classList.remove('streaming');
             container.classList.remove('typing');
             typingIndicator.style.display = 'none';
