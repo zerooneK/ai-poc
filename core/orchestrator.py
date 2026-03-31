@@ -1,5 +1,5 @@
 import json
-from core.shared import get_client, get_model
+from core.shared import get_client, get_model, ORCHESTRATOR_MAX_TOKENS
 from core.utils import load_prompt, inject_date
 
 class Orchestrator:
@@ -20,7 +20,7 @@ class Orchestrator:
             model=self.model,
             messages=messages,
             response_format={"type": "json_object"},
-            max_tokens=1024,
+            max_tokens=ORCHESTRATOR_MAX_TOKENS,
             stream=False
         )
         

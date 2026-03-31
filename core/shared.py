@@ -82,6 +82,14 @@ client = OpenAI(
 TEMP_DIR = os.path.abspath(os.path.join(_PROJECT_ROOT, 'temp'))
 os.makedirs(TEMP_DIR, exist_ok=True)
 
+# ── Output token limits (tune per model in .env) ──────────────────────────────
+# AGENT_MAX_TOKENS   — document generation agents (HR, Accounting, Document, etc.)
+# CHAT_MAX_TOKENS    — chat / advisory responses
+# ORCHESTRATOR_MAX_TOKENS — orchestrator JSON routing (keep low)
+AGENT_MAX_TOKENS        = int(os.getenv('AGENT_MAX_TOKENS',        '32000'))
+CHAT_MAX_TOKENS         = int(os.getenv('CHAT_MAX_TOKENS',         '8000'))
+ORCHESTRATOR_MAX_TOKENS = int(os.getenv('ORCHESTRATOR_MAX_TOKENS', '1024'))
+
 def get_model():
     return MODEL
 

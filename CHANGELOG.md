@@ -1,5 +1,13 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.28.3] — 31 มีนาคม 2569 · feat
+- feat (core/shared.py): เพิ่ม `AGENT_MAX_TOKENS`, `CHAT_MAX_TOKENS`, `ORCHESTRATOR_MAX_TOKENS` — configure ผ่าน `.env` แทน hardcode
+- feat (app.py): wire token limits per agent type — document agents ใช้ `AGENT_MAX_TOKENS`, chat ใช้ `CHAT_MAX_TOKENS`
+- feat (core/orchestrator.py): wire `ORCHESTRATOR_MAX_TOKENS`
+- docs (.env.example): เพิ่ม output token limit section พร้อม guide ต่อ model
+
+---
+
 ## [v0.28.2] — 31 มีนาคม 2569 · fix
 - fix (mcp_server.py): จำกัด plain-text read ที่ 80,000 ตัวอักษร (~20K tokens) + แสดงคำเตือนเมื่อไฟล์ถูกตัด — ป้องกัน context window overflow
 - fix (agents/base_agent.py): เพิ่ม tool_result display จาก 200 → 500 ตัวอักษร + แสดง `…` เมื่อ preview ถูกตัด — แก้ปัญหา user เข้าใจผิดว่า agent ได้รับเนื้อหาไม่ครบ

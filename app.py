@@ -19,7 +19,8 @@ from datetime import datetime
 from core.shared import (
     client, MODEL, OPENROUTER_API_KEY, _ALLOWED_ROOTS,
     _DEFAULT_WORKSPACE, _workspace_lock, _ws_change_queues, _ws_change_lock,
-    TEMP_DIR, _notify_workspace_changed, get_workspace, set_workspace
+    TEMP_DIR, _notify_workspace_changed, get_workspace, set_workspace,
+    AGENT_MAX_TOKENS, CHAT_MAX_TOKENS
 )
 from core.utils import load_prompt, execute_tool, format_sse
 from core.orchestrator import Orchestrator
@@ -336,7 +337,7 @@ def handle_revise(pending_doc: str, pending_agent: str, instruction: str, histor
         f"คำสั่งแก้ไข: {instruction}\n\nเอกสารเดิม:\n{pending_doc}"
     )
     try:
-        for chunk in agent_instance.stream_response(revise_message, history=history, max_tokens=10000):
+        for chunk in agent_instance.stream_response(revise_message, history=history, max_tokens=AGENT_MAX_TOKENS):
             yield {'type': 'text', 'content': chunk}
     except Exception as e:
         logger.error(f"[handle_revise] stream_response error: {e}", exc_info=True)
@@ -533,7 +534,7 @@ def chat():
                     
                     subtask_chunks = []
                     try:
-                        for chunk in sub_agent.stream_response(f"[PM_SUBTASK]\n{sub_task_desc}", max_tokens=10000):
+                        for chunk in sub_agent.stream_response(f"[PM_SUBTASK]\n{sub_task_desc}", max_tokens=AGENT_MAX_TOKENS):
                             yield format_sse({'type': 'text', 'content': chunk})
                             subtask_chunks.append(chunk)
                     except Exception as sub_e:
@@ -556,7 +557,8 @@ def chat():
                 yield format_sse({'type': 'status', 'message': f'{agent_instance.name} กำลังตรวจสอบ workspace...'})
                 active_tools = LOCAL_AGENT_TOOLS if local_agent_mode else READ_ONLY_TOOLS
                 text_chunks = []
-                for sse_data in agent_instance.run_with_tools(user_input, workspace, tools=active_tools, history=conversation_history, max_tokens=10000):
+                _max_tok = CHAT_MAX_TOKENS if agent_type == 'chat' else AGENT_MAX_TOKENS
+                for sse_data in agent_instance.run_with_tools(user_input, workspace, tools=active_tools, history=conversation_history, max_tokens=_max_tok):
                     # Intercept local_delete marker — ส่ง event ให้ browser ลบจริง
                     if (sse_data.get('type') == 'tool_result'
                             and sse_data.get('tool') == 'local_delete'
