@@ -700,7 +700,7 @@ def serve_workspace_file(filename: str):
         return jsonify({'error': 'access denied'}), 403
     if not os.path.isfile(filepath):
         return jsonify({'error': 'not found'}), 404
-    return send_file(filepath)
+    return send_file(filepath, conditional=True, max_age=60)
 
 
 @app.route('/api/preview')

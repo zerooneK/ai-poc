@@ -3,7 +3,9 @@ import os
 # Worker class — gevent enables async I/O for SSE streaming
 worker_class = "gevent"
 
-# 2 workers for POC/demo (1 per CPU core is standard for gevent)
+# gevent workers handle many concurrent connections per worker via greenlets,
+# so SSE streams don't block other requests. 2 workers is fine for most POC use.
+# Increase to 4 via GUNICORN_WORKERS=4 in .env if you have many concurrent users.
 workers = int(os.getenv("GUNICORN_WORKERS", "2"))
 
 # Greenlets per worker — each SSE connection = 1 greenlet

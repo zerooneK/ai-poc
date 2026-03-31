@@ -1,5 +1,12 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.30.3] — 31 มีนาคม 2569 · fix
+- fix (app.py): PDF serve เพิ่ม `conditional=True, max_age=60` — browser cache ETag/304 ทำให้เปิดครั้งที่ 2 ทันที
+- fix (index.html): PDF panel ว่างเปล่าระหว่างโหลด — เพิ่ม loading spinner พร้อม PDF icon ก่อน iframe พร้อม
+- fix (gunicorn.conf.py): อัปเดต comment ให้ตรงกับความจริง (gevent workers ไม่ block SSE)
+
+---
+
 ## [v0.30.2] — 31 มีนาคม 2569 · feat/fix
 - feat (app.py): เพิ่ม `GET /api/serve/<filename>` — serve raw file จาก workspace ใช้สำหรับ PDF/image inline preview
 - fix (index.html): PDF preview แสดงข้อความ garbled จาก pdfplumber — เปลี่ยนเป็นใช้ browser PDF viewer ผ่าน `<iframe src="/api/serve/file.pdf">` แทน

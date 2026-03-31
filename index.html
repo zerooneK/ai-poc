@@ -1436,7 +1436,7 @@
         <span class="workspace-path-text" id="workspacePath">กำลังโหลด...</span>
       </button>
       <span id="localAgentBadge" title="Local Agent ไม่พบ — ไฟล์จะบันทึกบน server" style="display:none;font-size:10px;padding:2px 7px;border-radius:10px;background:#22c55e;color:#fff;font-weight:600;cursor:default">💻 Local</span>
-      <span class="version-tag">v0.30.2</span>
+      <span class="version-tag">v0.30.3</span>
     </div>
   </header>
 
@@ -2793,7 +2793,15 @@
     if (isPdf) {
       // Use browser's built-in PDF viewer via iframe
       _setPdfMode(true);
-      document.getElementById('previewPdfFrame').src = `/api/serve/${encodeURIComponent(filename)}`;
+      // Show loading state until iframe is ready
+      const wrap = document.getElementById('previewPdfWrap');
+      wrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;width:100%;color:var(--on-surface-2);font-size:13px;opacity:0.5;flex-direction:column;gap:8px"><span class="material-symbols-outlined" style="font-size:32px;opacity:0.4">picture_as_pdf</span>กำลังโหลด PDF...</div>';
+      const frame = document.createElement('iframe');
+      frame.id = 'previewPdfFrame';
+      frame.title = 'PDF Preview';
+      frame.style.cssText = 'width:100%;height:100%;border:none;';
+      frame.onload = () => { wrap.replaceChildren(frame); };
+      frame.src = `/api/serve/${encodeURIComponent(filename)}`;
       _previewContent = '';
       _previewFileSize = -1;
       return;
@@ -2817,9 +2825,8 @@
   async function _silentRefreshPreview() {
     if (!_previewCurrentFile) return;
     if (_isPdf(_previewCurrentFile)) {
-      // Reload iframe src to pick up updated PDF
-      const frame = document.getElementById('previewPdfFrame');
-      frame.src = `/api/serve/${encodeURIComponent(_previewCurrentFile)}?t=${Date.now()}`;
+      // Re-open preview to reload PDF (frame may have been recreated)
+      openPreview(_previewCurrentFile);
       return;
     }
     try {
@@ -2837,7 +2844,7 @@
     _previewCurrentFile = '';
     _previewFileSize = -1;
     _setPdfMode(false);
-    document.getElementById('previewPdfFrame').src = '';
+    document.getElementById('previewPdfWrap').innerHTML = '';
     document.querySelectorAll('.file-item').forEach(el => el.classList.remove('file-item-active'));
   }
 
