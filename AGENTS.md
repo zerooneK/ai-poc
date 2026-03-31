@@ -2,6 +2,24 @@
 
 This document describes the structure, conventions, and workflows for this Python/Flask internal AI assistant POC. Read it fully before making changes.
 
+## Mandatory Workflow Rules
+
+These rules apply to every change. Do not skip any step.
+
+1. **Never touch `.env`** — This file contains real API keys and secrets. It is gitignored for a reason. Never read, modify, or reference it. Use `.env.example` as the only source of truth for environment variables.
+
+2. **Clarify the goal before acting** — If the user's request is ambiguous, ask follow-up questions until you have a clear, unambiguous understanding of what needs to be done. Do not guess or assume.
+
+3. **Plan in detail before changing anything** — Before writing or modifying any code, create a step-by-step plan. Identify every file that will change, what will change in each file, and any dependencies between changes. Present the plan to the user for approval before proceeding.
+
+4. **Follow the plan — do not deviate** — Once the plan is approved, execute only what is in the plan. Do not add unplanned changes, refactor unrelated code, or "improve" things outside the scope. If you discover something that needs fixing outside the plan, report it to the user separately.
+
+5. **Update all related documentation** — After code changes are complete, update every documentation file that references the changed behavior. This includes `CHANGELOG.md`, `docs/ARCHITECTURE.md`, `docs/BACKEND_MANUAL.md`, `docs/USER_GUIDE.md`, `docs/EXECUTION_SUMMARY.md`, and `PROJECT_SUMMARY.md`. Never leave docs stale.
+
+6. **Commit everything to git** — After all code and documentation changes are done, stage all modified files and create a descriptive commit using conventional commit prefixes (`fix:`, `feat:`, `docs:`, etc.). Do not leave uncommitted changes.
+
+7. **Summarize for the user** — After the commit is done, provide a clear, simple summary of what was changed. Use plain language. List the files modified, what was changed in each, and the commit hash. Avoid technical jargon.
+
 ## Project Structure
 
 ```

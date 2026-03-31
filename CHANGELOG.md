@@ -1,5 +1,8 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.31.1] — 31 มีนาคม 2569 · docs
+- docs (AGENTS.md): เพิ่ม Mandatory Workflow Rules 7 ข้อ — ห้ามแตะ .env, ถามให้ชัดก่อนทำ, วางแผนก่อนแก้, ทำตามแผน, อัปเดต docs ทุกครั้ง, commit ทุกอย่าง, สรุปให้ user เข้าใจง่าย
+
 ## [v0.31.0] — 31 มีนาคม 2569 · fix/docs
 - fix (app.py): UTF-8 safe byte truncation สำหรับ `pending_doc` — ป้องกัน multi-byte character ถูกตัดกลางตัวอักษร
 - fix (app.py): เพิ่ม `try/finally` ใน SSE generator — เรียก `db.fail_job()` เมื่อ client disconnect ป้องกัน zombie jobs
