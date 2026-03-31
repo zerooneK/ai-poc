@@ -1,5 +1,16 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.27.0] — 31 มีนาคม 2569 · feat
+- feat: เพิ่ม Document Agent — รองรับเอกสารทั่วไปที่ไม่ใช่งาน HR/บัญชี/manager advisory
+  - ครอบคลุม: รายงานการประชุม, คู่มือ/SOP, แผนธุรกิจ, ใบเสนอราคา, รายงานโครงการ, Executive Summary ฯลฯ
+- feat (prompts/orchestrator.md): เพิ่ม document routing + แก้ manager ให้เป็น advisory เท่านั้น
+- feat (agents/document_agent.py): สร้างใหม่
+- feat (prompts/document_agent.md): สร้างใหม่
+- feat (core/agent_factory.py): register DocumentAgent
+- feat (index.html): เพิ่ม agentMap entry + CSS color (amber/gold) สำหรับ Document Agent
+
+---
+
 ## [v0.26.0] — 31 มีนาคม 2569 · fix
 - fix (index.html): หลัง save สำเร็จ force-poll `/api/files` เพื่อ refresh sidebar — ป้องกัน "false save" จาก SSE workspace desync
 - fix (core/shared.py): persist workspace path ไปยัง `data/.workspace_state` — หลัง server restart workspace จะ restore กลับ path เดิมแทนที่จะ reset เป็น default

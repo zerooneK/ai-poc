@@ -5,6 +5,7 @@ from agents.accounting_agent import AccountingAgent
 from agents.manager_agent import ManagerAgent
 from agents.pm_agent import PMAgent
 from agents.chat_agent import ChatAgent
+from agents.document_agent import DocumentAgent
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,8 @@ class AgentFactory:
                     cls._agents[agent_type] = PMAgent()
                 elif agent_type == 'chat':
                     cls._agents[agent_type] = ChatAgent()
+                elif agent_type == 'document':
+                    cls._agents[agent_type] = DocumentAgent()
                 else:
                     # Default to chat for unknown types
                     logger.warning("[AgentFactory] Unknown agent_type %r, falling back to ChatAgent", agent_type)
