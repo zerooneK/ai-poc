@@ -87,3 +87,4 @@ The codebase is in good shape after 29 bug fixes across three rounds. All Critic
 - **Basic client-side sanitization** — The `_sanitizeHtml()` function handles common XSS vectors but is not as comprehensive as a dedicated library like DOMPurify.
 - **No accessibility audit** — ARIA labels and keyboard navigation have not been formally tested.
 - Added session deletion support for the Next.js sidebar, including backend cleanup of the selected session's persisted jobs and file records.
+- Updated the Next.js chat flow so the sidebar session list refreshes automatically as new chat history is created.

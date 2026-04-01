@@ -195,3 +195,4 @@ A: Yes. Each user session has its own isolated workspace, and the file APIs now 
 
 If you encounter issues or have questions about the system, check the history page at **http://localhost:5000/history** for details about previous requests. For technical issues, contact the development team.
 - In the Next.js sidebar, each saved session now has a delete button so you can remove that session and its chat history directly from the UI.
+- The Next.js sidebar now refreshes session history automatically after you send a message and when the assistant reply completes.

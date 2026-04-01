@@ -136,3 +136,4 @@ Browser (index.html)
 6.  **SSE Safety:** generators ทั้งหมดต้อง wrap ด้วย `stream_with_context` — ป้องกัน crash บน Gunicorn
 7.  **Error Messages:** ห้าม leak `str(e)` ออก frontend — ใช้ Thai user-friendly message + log traceback
 - Sidebar session management now supports deleting a single saved session from the Next.js UI.
+- Session history in the Next.js sidebar now updates automatically after new chat activity.

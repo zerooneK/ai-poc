@@ -950,3 +950,4 @@ _ทุก version มี AI disclaimer ท้ายเอกสาร: "⚠️ 
 # Unreleased
 
 - fix: add session deletion from the Next.js sidebar with a matching backend API
+- fix: refresh the Next.js session list immediately after sending and completing chat messages

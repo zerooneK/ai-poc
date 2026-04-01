@@ -136,8 +136,9 @@ export default function Home() {
         ...prev,
         { role: "assistant", content: outputText },
       ]);
+      loadSessions();
     },
-    []
+    [loadSessions]
   );
 
   const handleSend = useCallback(
@@ -156,8 +157,9 @@ export default function Home() {
           handleStreamComplete(payload.outputText, payload.agent);
         },
       });
+      loadSessions();
     },
-    [conversationHistory, handleStreamComplete, sendMessage, sessionId]
+    [conversationHistory, handleStreamComplete, loadSessions, sendMessage, sessionId]
   );
 
   const handleWorkspaceSwitch = (path: string) => {
