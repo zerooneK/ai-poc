@@ -134,6 +134,30 @@
 | 3.7 | Session management: load, restore context, switch | Click session → history loads → continue chat |
 | 3.8 | All modals/panels have z-index, focus trap, keyboard dismissal | Tab stays inside modal, Esc closes |
 
+### Status: ✅ COMPLETE (31 มีนาคม 2569)
+
+| DoD Item | Status |
+|---|---|
+| 3.1 PreviewPanel slides in, renders markdown+raw, closes on Esc/click | ✅ Done — slide-in panel with rendered/raw tabs, copy button |
+| 3.2 WorkspaceModal lists, creates, switches workspaces | ✅ Done — modal with workspace list + create new folder |
+| 3.3 FormatModal shows options, returns selected format | ✅ Done — 5 format options (md/txt/docx/xlsx/pdf) |
+| 3.4 ConfirmBar shows save/discard/overwrite, handles choice | ✅ Done — Thai confirm bar with save/discard/edit buttons |
+| 3.5 DeleteConfirmModal confirms deletion, refreshes sidebar | ✅ Done — modal with filename + confirm/cancel |
+| 3.6 File SSE events trigger sidebar auto-refresh | ✅ Done — useFileSSE hook with auto-reconnect |
+| 3.7 Session management: load, restore context, switch | ✅ Done — useSessions hook + sidebar session list |
+| 3.8 All modals/panels have z-index, focus trap, keyboard dismissal | ✅ Done — Esc closes all modals/panels |
+
+**Files created/modified:**
+- `frontend/components/PreviewPanel.tsx` (163 lines) — File preview with markdown rendering, raw text view, copy
+- `frontend/components/WorkspaceModal.tsx` (168 lines) — Workspace picker + create new folder
+- `frontend/components/FormatModal.tsx` (108 lines) — Format selector (md/txt/docx/xlsx/pdf)
+- `frontend/components/ConfirmBar.tsx` (67 lines) — Save/discard/edit confirmation bar
+- `frontend/components/DeleteConfirmModal.tsx` (70 lines) — Delete confirmation modal
+- `frontend/hooks/useFileSSE.ts` (81 lines) — File change SSE with auto-reconnect
+- `frontend/hooks/useSessions.ts` (45 lines) — Session list + job loading
+- `frontend/app/page.tsx` — Full app wiring: sidebar, chat, modals, panels, SSE
+- `frontend/app/layout.tsx` — Simplified to font setup + children only
+
 ---
 
 ## Phase 4 — Polish & Testing

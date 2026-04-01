@@ -1,5 +1,17 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.32.3] — 31 มีนาคม 2569 · feat
+- feat (frontend/): Phase 3 Advanced Features — เสร็จสมบูรณ์ ✅
+  - PreviewPanel: slide-in panel, markdown/raw tabs, copy button, Esc to close
+  - WorkspaceModal: list workspaces, create new folder, switch workspace
+  - FormatModal: 5 format options (md/txt/docx/xlsx/pdf)
+  - ConfirmBar: save/discard/edit confirmation with Thai text
+  - DeleteConfirmModal: HITL delete confirmation
+  - useFileSSE hook: file change events with auto-reconnect
+  - useSessions hook: session list + job loading
+  - Full sidebar: file list with icons/sizes, session list with agent badges
+  - npm run build + npm run lint ผ่านทั้งหมด (0 errors, 0 warnings)
+
 ## [v0.32.2] — 31 มีนาคม 2569 · feat
 - feat (frontend/): Phase 2 Core Layout & Chat — เสร็จสมบูรณ์ ✅
   - Root layout: collapsible sidebar + navbar + main content area
