@@ -44,7 +44,7 @@ function getOrCreateSessionId(): string {
 }
 
 export default function Home() {
-  const [sessionId] = useState(() =>
+  const [sessionId, setSessionId] = useState(() =>
     typeof window !== "undefined" ? getOrCreateSessionId() : ""
   );
   const [messages, setMessages] = useState<Message[]>([]);
@@ -70,7 +70,7 @@ export default function Home() {
   } = useSSE();
 
   const { fileChanged } = useFileSSE(sessionId);
-  const { sessions, loadSessions } = useSessions();
+  const { sessions, loadSessions, loadSessionJobs } = useSessions();
 
   // Load session workspace on mount
   useEffect(() => {
@@ -92,6 +92,36 @@ export default function Home() {
   useEffect(() => {
     loadSessions();
   }, [loadSessions]);
+
+  const handleSessionSelect = useCallback(
+    async (selectedSessionId: string) => {
+      if (!selectedSessionId || selectedSessionId === sessionId) return;
+      const response = await loadSessionJobs(selectedSessionId);
+      const restoredMessages: Message[] = [];
+      const restoredHistory: Array<{ role: string; content: string }> = [];
+
+      for (const job of response.jobs) {
+        if (job.user_input) {
+          restoredMessages.push({ role: "user", content: job.user_input });
+          restoredHistory.push({ role: "user", content: job.user_input });
+        }
+        if (job.output_text) {
+          restoredMessages.push({
+            role: "assistant",
+            content: job.output_text,
+            agent: job.agent || undefined,
+          });
+          restoredHistory.push({ role: "assistant", content: job.output_text });
+        }
+      }
+
+      setPreviewFile(null);
+      setMessages(restoredMessages);
+      setConversationHistory(restoredHistory);
+      setSessionId(selectedSessionId);
+    },
+    [loadSessionJobs, sessionId]
+  );
 
   const handleStreamComplete = useCallback(
     (outputText: string, agent?: string) => {
@@ -226,7 +256,12 @@ export default function Home() {
                 {sessions.map((s) => (
                   <button
                     key={s.session_id}
-                    className="w-full text-left px-2 py-2 rounded hover:bg-bg-hover transition-colors"
+                    onClick={() => void handleSessionSelect(s.session_id)}
+                    className={`w-full text-left px-2 py-2 rounded transition-colors ${
+                      s.session_id === sessionId
+                        ? "bg-accent/10 text-accent"
+                        : "hover:bg-bg-hover"
+                    }`}
                   >
                     <p className="text-sm text-text-primary truncate">
                       {s.first_message.slice(0, 40)}

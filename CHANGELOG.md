@@ -1,5 +1,9 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.32.9] — 1 เมษายน 2569 · fix
+- fix (frontend/): กด session ใน sidebar แล้วโหลดบทสนทนาทั้งหมดของ session นั้นกลับมาแสดงในหน้าจอ
+- fix (frontend/): เปลี่ยน active session ของหน้าให้ตรงกับ session ที่ผู้ใช้เลือก เพื่อให้ chat, file list, และ workspace state อยู่ในบริบทเดียวกัน
+
 ## [v0.32.8] — 1 เมษายน 2569 · fix
 - fix (frontend/): ล้าง status bar เมื่อ SSE stream จบ, abort, หรือ error แล้ว ป้องกันข้อความค้างเช่น "กำลังตรวจสอบ workspace..."
 - fix (frontend/): ลบการ render ที่ผิดกติกาใน `MessageBubble` ซึ่งเคยส่งทั้ง `dangerouslySetInnerHTML` และ `children` พร้อมกัน

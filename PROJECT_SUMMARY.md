@@ -8,10 +8,10 @@
 **Internal AI Assistant Platform** — ระบบ AI สำหรับพนักงานภายในบริษัทไทย
 พนักงานพิมพ์งานเป็นภาษาไทย → AI เลือก Agent ที่เหมาะสม → สร้างเอกสาร (Draft) → User ยืนยัน → บันทึกเป็นไฟล์จริงในระบบ
 
-- **Version ปัจจุบัน:** v0.32.8 (Frontend status cleanup + message rendering fix)
+- **Version ปัจจุบัน:** v0.32.9 (Sidebar session restore wiring)
 - **สถานะ:** Production-Ready POC + Session Isolation + Multi-Format Export
 - **Branch:** `wsl-experiment`
-- **Last Commit:** v0.32.8 — fix: clear stale frontend status state
+- **Last Commit:** v0.32.9 — fix: restore selected sidebar sessions
 
 ---
 

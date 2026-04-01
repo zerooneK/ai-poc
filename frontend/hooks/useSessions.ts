@@ -7,8 +7,8 @@ export interface SessionJob {
   id: string;
   created_at: string;
   user_input: string;
-  agent: string;
-  output_text: string;
+  agent: string | null;
+  output_text: string | null;
 }
 
 export function useSessions() {

@@ -138,6 +138,8 @@ The file list updates automatically when files are added or removed.
 
 Jobs are grouped into sessions. Each time you start a new chat, a new session begins. You can browse sessions from the history page to find previous conversations.
 
+In the Next.js sidebar, clicking a session now restores all saved user and assistant messages from that session into the main chat area.
+
 ## Changing the Theme
 
 1. Click the theme toggle icon (sun/moon) in the sidebar
