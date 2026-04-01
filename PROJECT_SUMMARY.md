@@ -149,3 +149,4 @@ Browser (index.html)
 - Active sessions in the Next.js sidebar can now be clicked again to restore cleared chat content.
 - The save-format modal now uses the same solid, non-see-through presentation as the workspace picker.
 - The Next.js session cache now preserves real saved history instead of replacing it with empty local UI state.
+- The backend now records failed revise/PM flows accurately, validates more save-related request fields, and falls back safely when orchestrator routing calls fail.

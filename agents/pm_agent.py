@@ -26,10 +26,13 @@ class PMAgent(BaseAgent):
         )
         
         try:
-            result = json.loads(response.choices[0].message.content)
+            content = response.choices[0].message.content if response.choices else None
+            if not content:
+                return []
+            result = json.loads(content)
             subtasks = result.get("subtasks", [])
             # Filter valid agents
             valid_agents = {'hr', 'accounting', 'manager'}
             return [s for s in subtasks if s.get('agent') in valid_agents]
-        except (json.JSONDecodeError, KeyError):
+        except (json.JSONDecodeError, KeyError, IndexError, TypeError, AttributeError):
             return []

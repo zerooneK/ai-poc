@@ -287,6 +287,7 @@ _SAVE_BOUNDARY_RE = re.compile(r'\b(?:ok|save)\b', re.IGNORECASE)
 _SAVE_NEGATIVE_PREFIX = {'ไม่ใช่', 'ไม่ใช้'}
 _DISCARD_KEYWORDS = {'ยกเลิก', 'cancel', 'ไม่เอา', 'ไม่บันทึก', 'ไม่ต้องการ', 'ข้ามไป', 'ลบทิ้ง', 'discard'}
 _EDIT_KEYWORDS = {'แก้ไข', 'แก้', 'ปรับ', 'ปรับปรุง', 'ปรับแก้', 'เพิ่ม', 'ลบ', 'เปลี่ยน', 'แทนที่', 'เพิ่มเติม', 'ตัดออก', 'แก้ตรง', 'ปรับตรง', 'edit', 'modify', 'update', 'change', 'fix', 'adjust', 'add', 'remove', 'delete', 'replace', 'revise'}
+_VALID_FORMATS = {'md', 'txt', 'docx', 'xlsx', 'pdf'}
 
 def _is_save_intent(message: str) -> bool:
     msg = message.lower().strip()
@@ -481,10 +482,16 @@ def chat():
     _raw_doc = request.json.get('pending_doc', '').strip()
     pending_doc = _raw_doc.encode('utf-8')[:_MAX_PENDING_DOC_BYTES].decode('utf-8', errors='ignore')
     pending_agent = request.json.get('pending_agent', '').strip()
-    pending_temp_paths = request.json.get('pending_temp_paths', [])
+    _raw_paths = request.json.get('pending_temp_paths', [])
+    pending_temp_paths = [
+        str(p) for p in _raw_paths
+        if isinstance(p, str) and p.strip()
+    ] if isinstance(_raw_paths, list) else []
     pending_agent_types = request.json.get('agent_types') or []
     session_id = request.json.get('session_id')
-    output_format = request.json.get('output_format', 'md').lower()
+    output_format = str(request.json.get('output_format', 'md')).lower().strip()
+    if output_format not in _VALID_FORMATS:
+        output_format = 'md'
     output_formats = request.json.get('output_formats')
     _raw_overwrite = (request.json.get('overwrite_filename') or '').strip()
     overwrite_filename = _raw_overwrite if _raw_overwrite and re.match(r'^[\w.\-]{1,120}$', _raw_overwrite) else None
@@ -563,12 +570,19 @@ def chat():
                 yield format_sse({'type': 'status', 'message': '🗑️ ยกเลิกเอกสารเดิมแล้ว กำลังดำเนินการคำสั่งใหม่...'})
             elif _is_edit_intent(user_input):
                 text_chunks = []
+                revise_ok = True
                 for event in handle_revise(pending_doc, pending_agent, user_input, history=conversation_history):
                     yield format_sse(event)
                     if event.get('type') == 'text':
                         text_chunks.append(event.get('content', ''))
-                db.complete_job(job_id, ''.join(text_chunks))
-                _job_completed = True
+                    elif event.get('type') == 'error':
+                        revise_ok = False
+                if revise_ok:
+                    db.complete_job(job_id, ''.join(text_chunks))
+                    _job_completed = True
+                else:
+                    db.fail_job(job_id)
+                    _job_failed = True
                 yield format_sse({'type': 'done'})
                 return
             else:
@@ -593,6 +607,7 @@ def chat():
 
                 all_pm_chunks = []
                 pm_temp_paths = []
+                pm_all_ok = True
                 for i, subtask in enumerate(subtasks):
                     sub_agent_type = subtask.get('agent', 'hr')
                     sub_task_desc = subtask.get('task', user_input)
@@ -607,6 +622,7 @@ def chat():
                             yield format_sse({'type': 'text', 'content': chunk})
                             subtask_chunks.append(chunk)
                     except Exception as sub_e:
+                        pm_all_ok = False
                         logger.error("[PM subtask %d] stream_response failed: %s", i + 1, sub_e, exc_info=True)
                         yield format_sse({'type': 'error', 'message': f'Subtask {i + 1} ({sub_agent.name}) เกิดข้อผิดพลาด: กรุณาลองใหม่อีกครั้ง'})
                         yield format_sse({'type': 'subtask_done', 'agent': sub_agent_type, 'index': i, 'total': len(subtasks)})
@@ -626,8 +642,12 @@ def chat():
                         yield format_sse({'type': 'pending_file', 'temp_path': temp_path, 'filename': os.path.basename(temp_path), 'agent': sub_agent_type})
                     yield format_sse({'type': 'subtask_done', 'agent': sub_agent_type, 'index': i, 'total': len(subtasks)})
 
-                db.complete_job(job_id, '\n\n---\n\n'.join(all_pm_chunks))
-                _job_completed = True
+                if pm_all_ok:
+                    db.complete_job(job_id, '\n\n---\n\n'.join(all_pm_chunks))
+                    _job_completed = True
+                else:
+                    db.fail_job(job_id)
+                    _job_failed = True
             else:
                 yield format_sse({'type': 'status', 'message': f'{agent_instance.name} กำลังตรวจสอบ workspace...'})
                 active_tools = LOCAL_AGENT_TOOLS if local_agent_mode else READ_ONLY_TOOLS
@@ -676,7 +696,12 @@ def health():
     return jsonify({'status': 'ok', 'model': MODEL, 'workspace': wp, 'db': db.db_status()})
 
 @app.route('/api/history')
-def history(): return jsonify({'jobs': db.get_history(int(request.args.get('limit', 50))), 'db_available': db.DB_AVAILABLE})
+def history():
+    try:
+        limit = max(1, min(int(request.args.get('limit', 50)), 200))
+    except (ValueError, TypeError):
+        limit = 50
+    return jsonify({'jobs': db.get_history(limit), 'db_available': db.DB_AVAILABLE})
 
 @app.route('/api/history/<job_id>')
 def history_job(job_id: str):

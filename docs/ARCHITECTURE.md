@@ -160,3 +160,5 @@ When an agent generates a document, the content is held in `pending_doc` (single
 - **Local Agent mode is Windows-only** — The standalone `local_agent.py` server is designed for Windows users who want direct local filesystem access. It requires manual startup and is not integrated into the main deployment flow.
 - **No authentication** remains the largest security gap — session-scoped workspaces prevent accidental cross-session mixing inside the app, but they do not replace real user authentication or authorization.
 - Session history management now includes explicit deletion through the Flask API, with SQLite cleanup for both `jobs` and related `saved_files` records.
+- Chat request handling now validates `pending_temp_paths`, clamps invalid `output_format` values back to `md`, and avoids marking revise/PM jobs as completed when an internal sub-flow emitted an error.
+- The orchestrator route path now degrades to the `chat` agent when the upstream model call fails, instead of aborting the whole request.

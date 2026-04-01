@@ -1,6 +1,9 @@
 import json
+import logging
 from core.shared import get_client, get_model, ORCHESTRATOR_MAX_TOKENS
 from core.utils import load_prompt, inject_date
+
+logger = logging.getLogger(__name__)
 
 class Orchestrator:
     def __init__(self):
@@ -16,13 +19,17 @@ class Orchestrator:
             {"role": "user", "content": user_message}
         ]
         
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            response_format={"type": "json_object"},
-            max_tokens=ORCHESTRATOR_MAX_TOKENS,
-            stream=False
-        )
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                response_format={"type": "json_object"},
+                max_tokens=ORCHESTRATOR_MAX_TOKENS,
+                stream=False
+            )
+        except Exception as e:
+            logger.warning("[Orchestrator] API error: %s — defaulting to chat", e)
+            return "chat", "Orchestrator unavailable"
         
         try:
             content = response.choices[0].message.content

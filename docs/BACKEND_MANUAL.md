@@ -581,3 +581,7 @@ FLASK_DEBUG=1 python app.py
 
 Place behind Nginx with appropriate proxy settings for SSE support.
 - `DELETE /api/sessions/<session_id>` removes all persisted jobs and saved-file records for the specified session after validating the session ID.
+- `POST /api/chat` now sanitizes `pending_temp_paths` to a list of non-empty strings and normalizes invalid `output_format` values back to `md`.
+- Revise-mode and PM-mode requests only call `db.complete_job(...)` after their subflows succeed. If revise or any PM subtask emits an error, the job is now marked failed instead of completed.
+- `/api/history` now guards invalid `limit` values and falls back to `50` instead of returning HTTP 500 on bad query input.
+- Orchestrator routing now falls back to `chat` when the upstream completion call raises an exception.

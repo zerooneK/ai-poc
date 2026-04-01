@@ -208,3 +208,4 @@ If you encounter issues or have questions about the system, check the history pa
 - Clicking a selected session in the Next.js sidebar can now restore its messages again if the current chat view was cleared locally.
 - The save-format dialog now also uses a stronger backdrop and a solid dialog surface, so text behind it is no longer visible through the modal.
 - The latest selected session now restores correctly even if the visible chat area was previously cleared, because empty frontend state no longer overwrites the saved session cache.
+- Backend request handling is now stricter for history limits and save-related chat payloads, reducing cases where malformed client input could produce incorrect job state or server errors.
