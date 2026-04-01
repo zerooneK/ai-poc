@@ -36,12 +36,15 @@ function getOrCreateSessionId(): string {
   const storageKey = "ai-poc-session-id";
   const existing = window.localStorage.getItem(storageKey);
   if (existing) return existing;
-  const sessionId =
-    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-      ? crypto.randomUUID()
-      : `session-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  const sessionId = createSessionId();
   window.localStorage.setItem(storageKey, sessionId);
   return sessionId;
+}
+
+function createSessionId(): string {
+  return typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `session-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 export default function Home() {
@@ -193,6 +196,16 @@ export default function Home() {
     [loadSessions, sessionId]
   );
 
+  const handleNewSession = useCallback(() => {
+    const nextSessionId = createSessionId();
+    window.localStorage.setItem("ai-poc-session-id", nextSessionId);
+    setPreviewFile(null);
+    setMessages([]);
+    setConversationHistory([]);
+    setFiles([]);
+    setSessionId(nextSessionId);
+  }, []);
+
   const confirmDelete = () => {
     deleteFileForSession(deleteFilename, sessionId)
       .then(() => {
@@ -212,6 +225,24 @@ export default function Home() {
   return (
     <ErrorBoundary>
       <div className="flex flex-col h-full relative">
+        <header className="h-14 shrink-0 border-b border-border bg-bg-secondary/95 backdrop-blur px-4">
+          <div className="h-full flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-text-primary">
+                AI Workspace Assistant
+              </p>
+              <p className="text-xs text-text-muted">
+                เริ่มเซสชันใหม่เพื่อเปิดหน้าต่างแชทว่างทันที
+              </p>
+            </div>
+            <button
+              onClick={handleNewSession}
+              className="rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
+            >
+              สร้างเซสชันใหม่
+            </button>
+          </div>
+        </header>
         <div className="flex flex-1 min-h-0 overflow-hidden">
           {/* Sidebar */}
           <aside className="w-72 bg-bg-secondary border-r border-border flex flex-col shrink-0">
