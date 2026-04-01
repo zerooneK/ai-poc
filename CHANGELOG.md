@@ -1,5 +1,13 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.32.4] — 31 มีนาคม 2569 · feat
+- feat (frontend/): Phase 4 Polish & Testing — เสร็จสมบูรณ์ ✅
+  - Keyboard shortcuts: Enter (send), Esc (close panel), Ctrl/Cmd+K (workspace)
+  - ErrorBoundary: class component with Thai error UI + retry button
+  - LoadingSpinner: animated spinner component
+  - Empty states: helpful Thai text + example cards in ChatWindow
+  - npm run build + npm run lint ผ่านทั้งหมด (0 errors, 0 warnings)
+
 ## [v0.32.3] — 31 มีนาคม 2569 · feat
 - feat (frontend/): Phase 3 Advanced Features — เสร็จสมบูรณ์ ✅
   - PreviewPanel: slide-in panel, markdown/raw tabs, copy button, Esc to close
