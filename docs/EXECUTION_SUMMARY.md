@@ -96,3 +96,4 @@ The codebase is in good shape after 29 bug fixes across three rounds. All Critic
 - Refined the redesigned UI by fixing the theme toggle sizing, reducing the new-session button footprint, and shrinking the empty-state card.
 - Corrected the redesigned theme switch control so its knob no longer overflows the toggle track.
 - Updated the workspace picker modal styling so the overlay is darker and the dialog body is fully opaque.
+- Reconnected the Next.js save workflow to backend save events so unsaved output can be confirmed through the format modal and saved files appear in the sidebar immediately.

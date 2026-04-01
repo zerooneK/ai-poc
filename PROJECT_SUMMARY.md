@@ -145,3 +145,4 @@ Browser (index.html)
 - The redesigned header and empty-state layout now use tighter spacing for a cleaner, less crowded presentation.
 - The redesigned theme toggle now renders with correct switch alignment.
 - The workspace picker modal now blocks through-visibility with a stronger backdrop and solid dialog surface.
+- The Next.js frontend now supports the expected save-confirm flow for generated content, including format selection and immediate file-list refresh.

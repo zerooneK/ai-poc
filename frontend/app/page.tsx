@@ -50,6 +50,12 @@ function createSessionId(): string {
 
 type ThemeMode = "light" | "dark";
 
+const SAVE_INTENT_RE = /^(save|ok|บันทึก|เซฟ|ตกลง|ได้เลย|โอเค)$/i;
+
+function isSaveIntent(text: string): boolean {
+  return SAVE_INTENT_RE.test(text.trim());
+}
+
 export default function Home() {
   const [sessionId, setSessionId] = useState(() =>
     typeof window !== "undefined" ? getOrCreateSessionId() : ""
@@ -66,18 +72,23 @@ export default function Home() {
   const [workspaceModalOpen, setWorkspaceModalOpen] = useState(false);
   const [previewFile, setPreviewFile] = useState<string | null>(null);
   const [formatModalOpen, setFormatModalOpen] = useState(false);
-  const [pendingFilename, _setPendingFilename] = useState("");
-  const [pendingAgentLabel, _setPendingAgentLabel] = useState("");
+  const [pendingFilename, setPendingFilename] = useState("");
+  const [pendingAgentLabel, setPendingAgentLabel] = useState("");
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteFilename, setDeleteFilename] = useState("");
   const [isSwitchingSession, setIsSwitchingSession] = useState(false);
   const [theme, setTheme] = useState<ThemeMode>("dark");
+  const [pendingDoc, setPendingDoc] = useState("");
+  const [pendingAgent, setPendingAgent] = useState("");
+  const [pendingTempPaths, setPendingTempPaths] = useState<string[]>([]);
+  const [pendingAgentTypes, setPendingAgentTypes] = useState<string[]>([]);
   const sessionCacheRef = useRef<
     Map<string, {
       messages: Message[];
       history: Array<{ role: string; content: string }>;
     }>
   >(new Map());
+  const saveRequestRef = useRef(false);
 
   const {
     outputText,
@@ -85,6 +96,8 @@ export default function Home() {
     isStreaming,
     hasError,
     errorMessage,
+    lastEvent,
+    pendingFiles,
     sendMessage,
   } = useSSE();
 
@@ -128,6 +141,12 @@ export default function Home() {
       if (!selectedSessionId || selectedSessionId === sessionId) return;
       setSelectedSessionId(selectedSessionId);
       setPreviewFile(null);
+      setPendingDoc("");
+      setPendingAgent("");
+      setPendingTempPaths([]);
+      setPendingAgentTypes([]);
+      setPendingFilename("");
+      setPendingAgentLabel("");
       setSessionId(selectedSessionId);
       const cachedSession = sessionCacheRef.current.get(selectedSessionId);
 
@@ -176,23 +195,59 @@ export default function Home() {
 
   const handleStreamComplete = useCallback(
     (outputText: string, agent?: string) => {
-      const assistantMsg: Message = {
-        role: "assistant",
-        content: outputText,
-        agent,
-      };
-      setMessages((prev) => [...prev, assistantMsg]);
-      setConversationHistory((prev) => [
-        ...prev,
-        { role: "assistant", content: outputText },
-      ]);
+      if (outputText.trim()) {
+        const assistantMsg: Message = {
+          role: "assistant",
+          content: outputText,
+          agent,
+        };
+        setMessages((prev) => [...prev, assistantMsg]);
+        setConversationHistory((prev) => [
+          ...prev,
+          { role: "assistant", content: outputText },
+        ]);
+      }
+      if (saveRequestRef.current) {
+        saveRequestRef.current = false;
+        if (!hasError) {
+          setPendingDoc("");
+          setPendingAgent("");
+          setPendingTempPaths([]);
+          setPendingAgentTypes([]);
+          setPendingFilename("");
+          setPendingAgentLabel("");
+          getFilesForSession(sessionId)
+            .then((res) => setFiles(res.files))
+            .catch(() => {});
+        }
+      } else if (pendingFiles.length > 0) {
+        setPendingDoc("");
+        setPendingAgent("");
+        setPendingTempPaths(pendingFiles.map((file) => file.tempPath).filter(Boolean));
+        setPendingAgentTypes(pendingFiles.map((file) => file.agent || "").filter(Boolean));
+        setPendingFilename(pendingFiles.map((file) => file.filename).filter(Boolean).join(", "));
+        setPendingAgentLabel("หลาย agent");
+      } else if (outputText.trim()) {
+        setPendingDoc(outputText);
+        setPendingAgent(agent || "");
+        setPendingTempPaths([]);
+        setPendingAgentTypes([]);
+        setPendingFilename("เอกสารใหม่");
+        setPendingAgentLabel(agent ? agentLabel(agent) : "Assistant");
+      }
       loadSessions();
     },
-    [loadSessions]
+    [hasError, loadSessions, pendingFiles, sessionId]
   );
 
-  const handleSend = useCallback(
-    (text: string) => {
+  const submitMessage = useCallback(
+    (
+      text: string,
+      options?: {
+        outputFormat?: string;
+        forcePendingState?: boolean;
+      }
+    ) => {
       const userMsg: Message = { role: "user", content: text };
       setMessages((prev) => [...prev, userMsg]);
       setConversationHistory((prev) => [
@@ -200,16 +255,46 @@ export default function Home() {
         { role: "user", content: text },
       ]);
 
+      const shouldSendPendingState =
+        options?.forcePendingState ||
+        Boolean(pendingDoc || pendingTempPaths.length > 0);
+
       sendMessage(text, {
         conversationHistory,
         sessionId,
+        pendingDoc: shouldSendPendingState ? pendingDoc : undefined,
+        pendingAgent: shouldSendPendingState ? pendingAgent : undefined,
+        pendingTempPaths: shouldSendPendingState ? pendingTempPaths : undefined,
+        agentTypes: shouldSendPendingState ? pendingAgentTypes : undefined,
+        outputFormat: options?.outputFormat,
         onStreamComplete: (payload) => {
           handleStreamComplete(payload.outputText, payload.agent);
         },
       });
       loadSessions();
     },
-    [conversationHistory, handleStreamComplete, loadSessions, sendMessage, sessionId]
+    [
+      conversationHistory,
+      handleStreamComplete,
+      loadSessions,
+      pendingAgent,
+      pendingAgentTypes,
+      pendingDoc,
+      pendingTempPaths,
+      sendMessage,
+      sessionId,
+    ]
+  );
+
+  const handleSend = useCallback(
+    (text: string) => {
+      if ((pendingDoc || pendingTempPaths.length > 0) && isSaveIntent(text)) {
+        setFormatModalOpen(true);
+        return;
+      }
+      submitMessage(text);
+    },
+    [pendingDoc, pendingTempPaths.length, submitMessage]
   );
 
   const handleWorkspaceSwitch = (path: string) => {
@@ -217,6 +302,12 @@ export default function Home() {
     setFiles([]);
     setConversationHistory([]);
     setMessages([]);
+    setPendingDoc("");
+    setPendingAgent("");
+    setPendingTempPaths([]);
+    setPendingAgentTypes([]);
+    setPendingFilename("");
+    setPendingAgentLabel("");
   };
 
   const handleDeleteFile = (filename: string) => {
@@ -237,6 +328,12 @@ export default function Home() {
         setMessages([]);
         setConversationHistory([]);
         setSelectedSessionId("");
+        setPendingDoc("");
+        setPendingAgent("");
+        setPendingTempPaths([]);
+        setPendingAgentTypes([]);
+        setPendingFilename("");
+        setPendingAgentLabel("");
       }
 
       sessionCacheRef.current.delete(targetSessionId);
@@ -252,6 +349,12 @@ export default function Home() {
     setMessages([]);
     setConversationHistory([]);
     setFiles([]);
+    setPendingDoc("");
+    setPendingAgent("");
+    setPendingTempPaths([]);
+    setPendingAgentTypes([]);
+    setPendingFilename("");
+    setPendingAgentLabel("");
     setSessionId(nextSessionId);
     setSelectedSessionId(nextSessionId);
     setIsSwitchingSession(false);
@@ -283,6 +386,20 @@ export default function Home() {
       history: conversationHistory,
     });
   }, [conversationHistory, messages, sessionId]);
+
+  useEffect(() => {
+    if (lastEvent?.type === "save_failed") {
+      saveRequestRef.current = false;
+    }
+  }, [lastEvent]);
+
+  useEffect(() => {
+    if (pendingFiles.length === 0) return;
+    setPendingTempPaths(pendingFiles.map((file) => file.tempPath).filter(Boolean));
+    setPendingAgentTypes(pendingFiles.map((file) => file.agent || "").filter(Boolean));
+    setPendingFilename(pendingFiles.map((file) => file.filename).filter(Boolean).join(", "));
+    setPendingAgentLabel("หลาย agent");
+  }, [pendingFiles]);
 
   const visibleMessages = useMemo(() => {
     if (!isStreaming || !outputText.trim()) {
@@ -502,7 +619,14 @@ export default function Home() {
           filename={pendingFilename}
           agentLabel={pendingAgentLabel}
           onClose={() => setFormatModalOpen(false)}
-          onConfirm={() => setFormatModalOpen(false)}
+          onConfirm={(format) => {
+            setFormatModalOpen(false);
+            saveRequestRef.current = true;
+            submitMessage("บันทึก", {
+              outputFormat: format,
+              forcePendingState: true,
+            });
+          }}
         />
 
         {/* Delete Confirm Modal */}

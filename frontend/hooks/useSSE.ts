@@ -22,6 +22,8 @@ export interface UseSSEReturn {
   lastEvent: SSEEvent | null;
   /** PM plan subtasks (if PM agent was routed) */
   pmPlan: Array<{ agent: string; task: string }> | null;
+  /** Current pending temp files emitted by the backend */
+  pendingFiles: Array<{ tempPath: string; filename: string; agent?: string }>;
   /** Send a message to start a new SSE stream */
   sendMessage: (message: string, options?: SendMessageOptions) => void;
   /** Abort the current stream */
@@ -75,6 +77,9 @@ export function useSSE(): UseSSEReturn {
   const [pmPlan, setPmPlan] = useState<
     Array<{ agent: string; task: string }> | null
   >(null);
+  const [pendingFiles, setPendingFiles] = useState<
+    Array<{ tempPath: string; filename: string; agent?: string }>
+  >([]);
 
   const abortRef = useRef<AbortController | null>(null);
   const outputRef = useRef("");
@@ -116,6 +121,7 @@ export function useSSE(): UseSSEReturn {
       setErrorMessage(null);
       setLastEvent(null);
       setPmPlan(null);
+      setPendingFiles([]);
       setIsStreaming(true);
       lastAgentRef.current = undefined;
       streamCompletedRef.current = false;
@@ -208,7 +214,14 @@ export function useSSE(): UseSSEReturn {
                   break;
 
                 case "pending_file":
-                  // File was written — UI can track it
+                  setPendingFiles((prev) => [
+                    ...prev,
+                    {
+                      tempPath: String(event.temp_path || ""),
+                      filename: String(event.filename || ""),
+                      agent: event.agent as string | undefined,
+                    },
+                  ]);
                   break;
 
                 case "subtask_done":
@@ -263,6 +276,7 @@ export function useSSE(): UseSSEReturn {
     errorMessage,
     lastEvent,
     pmPlan,
+    pendingFiles,
     sendMessage,
     abort,
   };

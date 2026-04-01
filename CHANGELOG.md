@@ -959,3 +959,4 @@ _ทุก version มี AI disclaimer ท้ายเอกสาร: "⚠️ 
 - fix: tighten header controls and reduce empty-state panel sizing for better spacing
 - fix: correct the redesigned header theme toggle sizing so the knob stays inside the switch
 - fix: make the workspace selection modal fully opaque with a stronger backdrop
+- fix: restore the Next.js save flow so save intents open the format picker and refresh saved files
