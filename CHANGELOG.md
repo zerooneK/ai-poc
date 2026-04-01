@@ -1,5 +1,15 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.32.1] — 31 มีนาคม 2569 · feat
+- feat (frontend/): Phase 1 Setup & Foundation — เสร็จสมบูรณ์ ✅
+  - Next.js 16 + TypeScript + Tailwind CSS v4 + ESLint
+  - Dark theme: slate/zinc/blue palette + agent colors
+  - Inter + JetBrains Mono fonts
+  - lib/api.ts (242 lines) — typed API client สำหรับ 16+ Flask endpoints
+  - lib/utils.ts (119 lines) — helpers: cn, formatBytes, fileIcon, agentLabel, sanitizeHtml
+  - hooks/useSSE.ts (237 lines) — SSE streaming hook พร้อม event parsing
+  - npm run build + npm run lint ผ่านทั้งหมด (exit code 0)
+
 ## [v0.32.0] — 31 มีนาคม 2569 · feat (planned)
 - feat (frontend): วางแผน migrate จาก index.html (3,224 lines) → Next.js App Router + TypeScript + Tailwind
 - docs (plans/nextjs_migration.md): สร้างแผน 4 Phase พร้อม Definition of Done ทุก Phase

@@ -37,6 +37,26 @@
 | 1.6 | Zero TypeScript errors, ESLint passes | `npm run build` and `npm run lint` exit 0 |
 | 1.7 | `npm run dev` starts without errors on `localhost:3000` | Browser opens, no console errors |
 
+### Status: ✅ COMPLETE (31 มีนาคม 2569)
+
+| DoD Item | Status |
+|---|---|
+| 1.1 frontend/ created with Next.js 16, TS, Tailwind v4, ESLint | ✅ Done |
+| 1.2 All dependencies installed (lucide-react, react-markdown, remark-gfm, clsx, tailwind-merge) | ✅ Done |
+| 1.3 Tailwind dark mode configured with custom color tokens | ✅ Done |
+| 1.4 lib/api.ts exports typed functions for all 16+ Flask endpoints | ✅ Done |
+| 1.5 hooks/useSSE.ts connects to Flask SSE, parses events, streams text | ✅ Done |
+| 1.6 Zero TypeScript errors, ESLint passes | ✅ Done — `npm run build` + `npm run lint` exit 0 |
+| 1.7 npm run dev starts without errors | ✅ Verified |
+
+**Files created/modified:**
+- `frontend/app/globals.css` — Dark theme with slate/zinc/blue palette, agent colors, base styles
+- `frontend/app/layout.tsx` — Root layout with Inter + JetBrains Mono fonts, Thai lang
+- `frontend/app/page.tsx` — Minimal placeholder
+- `frontend/lib/api.ts` (242 lines) — Typed API client for all Flask endpoints
+- `frontend/lib/utils.ts` (119 lines) — Helpers: cn, formatBytes, fileIcon, agentLabel, sanitizeHtml
+- `frontend/hooks/useSSE.ts` (237 lines) — SSE streaming hook with event parsing
+
 ---
 
 ## Phase 2 — Core Layout & Chat
