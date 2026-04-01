@@ -355,6 +355,7 @@ export default function Home() {
                 hasError={hasError}
                 errorMessage={errorMessage}
                 isEmpty={messages.length === 0}
+                onQuickAction={handleSend}
               />
             </div>
             <InputArea onSend={handleSend} isStreaming={isStreaming} />

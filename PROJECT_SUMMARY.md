@@ -138,3 +138,4 @@ Browser (index.html)
 - Sidebar session management now supports deleting a single saved session from the Next.js UI.
 - Session history in the Next.js sidebar now updates automatically after new chat activity.
 - The Next.js layout now includes a top navbar with a one-click new-session action.
+- The empty-state quick actions in the Next.js chat view now work as real prompt buttons.

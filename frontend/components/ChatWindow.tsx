@@ -17,7 +17,15 @@ interface ChatWindowProps {
   hasError: boolean;
   errorMessage: string | null;
   isEmpty: boolean;
+  onQuickAction: (prompt: string) => void;
 }
+
+const QUICK_ACTIONS = [
+  { label: "👤 สร้างเอกสาร HR", prompt: "ช่วยสร้างเอกสาร HR ให้หน่อย" },
+  { label: "💰 สร้างรายงานการเงิน", prompt: "ช่วยสร้างรายงานการเงินให้หน่อย" },
+  { label: "📋 คำแนะนำการจัดการ", prompt: "ช่วยให้คำแนะนำด้านการจัดการทีม" },
+  { label: "💬 สนทนาทั่วไป", prompt: "มาคุยกันทั่วไป" },
+];
 
 export default function ChatWindow({
   messages,
@@ -26,6 +34,7 @@ export default function ChatWindow({
   hasError,
   errorMessage,
   isEmpty,
+  onQuickAction,
 }: ChatWindowProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -44,18 +53,16 @@ export default function ChatWindow({
           พิมพ์ข้อความเพื่อเริ่มใช้งาน — ระบบจะเลือก agent ที่เหมาะสมให้อัตโนมัติ
         </p>
         <div className="mt-8 grid grid-cols-2 gap-3 text-xs text-text-muted">
-          <div className="bg-bg-tertiary rounded-lg px-4 py-3">
-            👤 สร้างเอกสาร HR
-          </div>
-          <div className="bg-bg-tertiary rounded-lg px-4 py-3">
-            💰 สร้างรายงานการเงิน
-          </div>
-          <div className="bg-bg-tertiary rounded-lg px-4 py-3">
-            📋 คำแนะนำการจัดการ
-          </div>
-          <div className="bg-bg-tertiary rounded-lg px-4 py-3">
-            💬 สนทนาทั่วไป
-          </div>
+          {QUICK_ACTIONS.map((action) => (
+            <button
+              key={action.label}
+              onClick={() => onQuickAction(action.prompt)}
+              className="rounded-lg bg-bg-tertiary px-4 py-3 text-left transition-colors hover:bg-bg-hover hover:text-text-primary"
+              type="button"
+            >
+              {action.label}
+            </button>
+          ))}
         </div>
       </div>
     );
@@ -88,7 +95,7 @@ export default function ChatWindow({
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         {messages.map((msg, i) => (
           <MessageBubble
             key={i}

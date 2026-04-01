@@ -89,3 +89,4 @@ The codebase is in good shape after 29 bug fixes across three rounds. All Critic
 - Added session deletion support for the Next.js sidebar, including backend cleanup of the selected session's persisted jobs and file records.
 - Updated the Next.js chat flow so the sidebar session list refreshes automatically as new chat history is created.
 - Added a dedicated navbar action for creating a new empty session without reloading the page.
+- Converted the empty-state suggestion cards into working buttons that trigger preset chat prompts.
