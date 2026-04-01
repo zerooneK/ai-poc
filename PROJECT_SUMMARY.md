@@ -143,3 +143,4 @@ Browser (index.html)
 - Saved session switching in the Next.js UI now feels faster through caching and explicit loading feedback.
 - The Next.js frontend now includes a cleaner modern UI treatment and a persistent light/dark theme toggle.
 - The redesigned header and empty-state layout now use tighter spacing for a cleaner, less crowded presentation.
+- The redesigned theme toggle now renders with correct switch alignment.

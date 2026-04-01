@@ -94,3 +94,4 @@ The codebase is in good shape after 29 bug fixes across three rounds. All Critic
 - Improved session switching in the Next.js UI by adding an immediate selection state, a loading screen, and in-memory caching of restored sessions.
 - Refreshed the Next.js visual design with softer surfaces, a cleaner shell, improved chat/composer styling, and a persistent theme switcher.
 - Refined the redesigned UI by fixing the theme toggle sizing, reducing the new-session button footprint, and shrinking the empty-state card.
+- Corrected the redesigned theme switch control so its knob no longer overflows the toggle track.

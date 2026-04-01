@@ -957,3 +957,4 @@ _ทุก version มี AI disclaimer ท้ายเอกสาร: "⚠️ 
 - fix: reduce perceived delay when switching sessions with immediate highlight, cache, and loading state
 - feat: redesign the Next.js interface with a cleaner layout and persistent light/dark theme toggle
 - fix: tighten header controls and reduce empty-state panel sizing for better spacing
+- fix: correct the redesigned header theme toggle sizing so the knob stays inside the switch

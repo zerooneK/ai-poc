@@ -315,17 +315,17 @@ export default function Home() {
               <button
                 type="button"
                 onClick={toggleTheme}
-                className="flex h-10 items-center gap-2 rounded-full border border-border bg-surface px-3 text-sm text-text-secondary transition-colors hover:bg-bg-hover"
+                className="flex h-10 items-center gap-2 rounded-full border border-border bg-surface px-3 pr-2 text-sm text-text-secondary transition-colors hover:bg-bg-hover"
                 aria-label="สลับธีม"
               >
                 <span className="text-sm">{theme === "dark" ? "🌙" : "☀️"}</span>
                 <span className="hidden sm:inline">
                   {theme === "dark" ? "Dark" : "Light"}
                 </span>
-                <span className="relative h-5 w-10 rounded-full bg-bg-tertiary">
+                <span className="relative block h-5 w-10 rounded-full bg-bg-tertiary">
                   <span
-                    className={`absolute top-0.5 h-4 w-4 rounded-full bg-accent transition-transform ${
-                      theme === "dark" ? "translate-x-[1.3rem]" : "translate-x-0.5"
+                    className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-accent transition-transform ${
+                      theme === "dark" ? "translate-x-5" : "translate-x-0"
                     }`}
                   />
                 </span>

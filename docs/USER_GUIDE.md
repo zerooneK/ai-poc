@@ -202,3 +202,4 @@ If you encounter issues or have questions about the system, check the history pa
 - Switching between saved sessions now highlights the target immediately, shows a loading indicator when needed, and restores previously opened sessions faster from local cache.
 - The Next.js UI now has a cleaner layout and a theme toggle in the top bar. Your light/dark choice is saved in the browser and restored automatically on reload.
 - The header controls and welcome panel have been tightened so the main chat area has more visual breathing room.
+- The top-bar theme switch has been corrected so the toggle knob stays aligned properly in the redesigned header.
