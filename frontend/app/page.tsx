@@ -48,6 +48,8 @@ function createSessionId(): string {
     : `session-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+type ThemeMode = "light" | "dark";
+
 export default function Home() {
   const [sessionId, setSessionId] = useState(() =>
     typeof window !== "undefined" ? getOrCreateSessionId() : ""
@@ -69,6 +71,7 @@ export default function Home() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteFilename, setDeleteFilename] = useState("");
   const [isSwitchingSession, setIsSwitchingSession] = useState(false);
+  const [theme, setTheme] = useState<ThemeMode>("dark");
   const sessionCacheRef = useRef<
     Map<string, {
       messages: Message[];
@@ -108,6 +111,17 @@ export default function Home() {
   useEffect(() => {
     loadSessions();
   }, [loadSessions]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const currentTheme = root.dataset.theme === "light" ? "light" : "dark";
+    setTheme(currentTheme);
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    window.localStorage.setItem("ai-poc-theme", theme);
+  }, [theme]);
 
   const handleSessionSelect = useCallback(
     async (selectedSessionId: string) => {
@@ -243,6 +257,10 @@ export default function Home() {
     setIsSwitchingSession(false);
   }, []);
 
+  const toggleTheme = useCallback(() => {
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  }, []);
+
   const confirmDelete = () => {
     deleteFileForSession(deleteFilename, sessionId)
       .then(() => {
@@ -282,60 +300,83 @@ export default function Home() {
 
   return (
     <ErrorBoundary>
-      <div className="flex flex-col h-full relative">
-        <header className="h-14 shrink-0 border-b border-border bg-bg-secondary/95 backdrop-blur px-4">
-          <div className="h-full flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-text-primary">
+      <div className="app-shell relative flex h-full flex-col">
+        <header className="shrink-0 border-b border-border bg-bg-secondary/80 px-4 backdrop-blur-xl">
+          <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold tracking-tight text-text-primary">
                 AI Workspace Assistant
               </p>
-              <p className="text-xs text-text-muted">
-                เริ่มเซสชันใหม่เพื่อเปิดหน้าต่างแชทว่างทันที
+              <p className="truncate text-xs text-text-muted">
+                พื้นที่ทำงานสนทนาแบบสะอาดตา พร้อมสลับธีมและจัดการเซสชันได้ทันที
               </p>
             </div>
-            <button
-              onClick={handleNewSession}
-              className="rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
-            >
-              สร้างเซสชันใหม่
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="flex items-center gap-3 rounded-full border border-border bg-surface px-3 py-2 text-sm text-text-secondary transition-colors hover:bg-bg-hover"
+                aria-label="สลับธีม"
+              >
+                <span className="text-base">{theme === "dark" ? "🌙" : "☀️"}</span>
+                <span className="hidden sm:inline">
+                  {theme === "dark" ? "Dark" : "Light"}
+                </span>
+                <span className="relative h-6 w-11 rounded-full bg-bg-tertiary">
+                  <span
+                    className={`absolute top-1 h-4 w-4 rounded-full bg-accent transition-transform ${
+                      theme === "dark" ? "translate-x-6" : "translate-x-1"
+                    }`}
+                  />
+                </span>
+              </button>
+              <button
+                onClick={handleNewSession}
+                className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white transition-all hover:bg-accent-hover hover:shadow-[0_12px_28px_rgba(45,108,223,0.3)]"
+              >
+                สร้างเซสชันใหม่
+              </button>
+            </div>
           </div>
         </header>
-        <div className="flex flex-1 min-h-0 overflow-hidden">
+        <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 overflow-hidden px-3 pb-3 pt-3 sm:px-4">
           {/* Sidebar */}
-          <aside className="w-72 bg-bg-secondary border-r border-border flex flex-col shrink-0">
-            <div className="px-4 py-3 border-b border-border">
+          <aside className="flex w-72 shrink-0 flex-col overflow-hidden rounded-[30px] border border-border bg-bg-secondary/70 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl">
+            <div className="border-b border-border px-4 py-4">
               <button
                 onClick={() => setWorkspaceModalOpen(true)}
-                className="w-full flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
+                className="w-full rounded-2xl bg-bg-tertiary/70 px-3 py-3 text-left text-sm text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary"
               >
-                <span className="truncate">
+                <span className="mb-1 block text-[11px] uppercase tracking-[0.16em] text-text-muted">
+                  Workspace
+                </span>
+                <span className="block truncate">
                   {workspacePath || "เลือก workspace..."}
                 </span>
               </button>
             </div>
 
             <div className="flex-1 overflow-y-auto">
-              <div className="px-4 py-2 border-b border-border">
-                <span className="text-xs font-medium text-text-muted uppercase tracking-wide">
+              <div className="border-b border-border px-4 py-3">
+                <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-text-muted">
                   ไฟล์ ({files.length})
                 </span>
               </div>
               {files.length === 0 && (
-                <p className="text-xs text-text-muted px-4 py-3 text-center">
+                <p className="px-4 py-6 text-center text-xs text-text-muted">
                   ยังไม่มีไฟล์
                 </p>
               )}
-              <div className="px-2">
+              <div className="px-2 py-2">
                 {files.map((f) => (
                   <div
                     key={f.name}
-                    className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-bg-hover cursor-pointer group"
+                    className="group flex cursor-pointer items-center gap-2 rounded-2xl px-2 py-2 hover:bg-bg-hover/70"
                   >
                     <span className="text-sm">{fileIcon(f.name)}</span>
                     <button
                       onClick={() => setPreviewFile(f.name)}
-                      className="flex-1 text-left text-sm text-text-primary truncate"
+                      className="flex-1 truncate text-left text-sm text-text-primary"
                     >
                       {f.name}
                     </button>
@@ -353,35 +394,35 @@ export default function Home() {
                 ))}
               </div>
 
-              <div className="px-4 py-2 border-b border-border mt-2">
-                <span className="text-xs font-medium text-text-muted uppercase tracking-wide">
+              <div className="mt-2 border-b border-border px-4 py-3">
+                <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-text-muted">
                   เซสชัน ({sessions.length})
                 </span>
               </div>
               {sessions.length === 0 && (
-                <p className="text-xs text-text-muted px-4 py-3 text-center">
+                <p className="px-4 py-6 text-center text-xs text-text-muted">
                   ยังไม่มีเซสชัน
                 </p>
               )}
-              <div className="px-2 pb-4">
+              <div className="px-2 pb-4 pt-2">
                 {sessions.map((s) => (
                   <div
                     key={s.session_id}
-                    className={`w-full text-left px-2 py-2 rounded transition-colors ${
+                    className={`w-full rounded-2xl px-2 py-2 text-left transition-colors ${
                       s.session_id === selectedSessionId
-                        ? "bg-accent/10 text-accent"
-                        : "hover:bg-bg-hover"
+                        ? "bg-bg-active text-accent"
+                        : "hover:bg-bg-hover/70"
                     }`}
                   >
                     <div className="flex items-start gap-2">
                       <button
                         onClick={() => void handleSessionSelect(s.session_id)}
-                        className="flex-1 min-w-0 text-left"
+                        className="min-w-0 flex-1 text-left"
                       >
-                        <p className="text-sm text-text-primary truncate">
+                        <p className="truncate text-sm text-text-primary">
                           {s.first_message.slice(0, 40)}
                         </p>
-                        <p className="text-[10px] text-text-muted mt-0.5">
+                        <p className="mt-1 text-[10px] text-text-muted">
                           {agentLabel(s.last_agent)} · {s.job_count} งาน
                         </p>
                       </button>
@@ -404,7 +445,22 @@ export default function Home() {
           </aside>
 
           {/* Chat area */}
-          <div className="flex flex-col flex-1 min-h-0">
+          <div className="ml-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[34px] border border-border bg-surface/70 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-xl">
+            <div className="border-b border-border px-6 py-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-text-primary">
+                    ห้องสนทนา
+                  </p>
+                  <p className="text-xs text-text-muted">
+                    ตอบแบบสตรีมมิง จัดเก็บเป็นเซสชัน และทำงานตาม workspace ปัจจุบัน
+                  </p>
+                </div>
+                <div className="hidden rounded-full border border-border bg-bg-tertiary/70 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-text-muted sm:block">
+                  {theme === "dark" ? "Night Mode" : "Day Mode"}
+                </div>
+              </div>
+            </div>
             <div className="flex-1 min-h-0 overflow-hidden">
               <ChatWindow
                 messages={visibleMessages}

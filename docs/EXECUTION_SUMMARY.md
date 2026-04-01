@@ -92,3 +92,4 @@ The codebase is in good shape after 29 bug fixes across three rounds. All Critic
 - Converted the empty-state suggestion cards into working buttons that trigger preset chat prompts.
 - Updated the Next.js chat view to display streaming assistant text incrementally instead of waiting for the full response.
 - Improved session switching in the Next.js UI by adding an immediate selection state, a loading screen, and in-memory caching of restored sessions.
+- Refreshed the Next.js visual design with softer surfaces, a cleaner shell, improved chat/composer styling, and a persistent theme switcher.

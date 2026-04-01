@@ -200,3 +200,4 @@ If you encounter issues or have questions about the system, check the history pa
 - The quick-action cards on the empty chat screen are now clickable and send preset starter prompts.
 - Assistant replies in the Next.js chat now appear progressively while the response is streaming.
 - Switching between saved sessions now highlights the target immediately, shows a loading indicator when needed, and restores previously opened sessions faster from local cache.
+- The Next.js UI now has a cleaner layout and a theme toggle in the top bar. Your light/dark choice is saved in the browser and restored automatically on reload.

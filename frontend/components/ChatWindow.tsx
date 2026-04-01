@@ -22,10 +22,10 @@ interface ChatWindowProps {
 }
 
 const QUICK_ACTIONS = [
-  { label: "👤 สร้างเอกสาร HR", prompt: "ช่วยสร้างเอกสาร HR ให้หน่อย" },
-  { label: "💰 สร้างรายงานการเงิน", prompt: "ช่วยสร้างรายงานการเงินให้หน่อย" },
-  { label: "📋 คำแนะนำการจัดการ", prompt: "ช่วยให้คำแนะนำด้านการจัดการทีม" },
-  { label: "💬 สนทนาทั่วไป", prompt: "มาคุยกันทั่วไป" },
+  { label: "สร้างเอกสาร HR", icon: "👤", prompt: "ช่วยสร้างเอกสาร HR ให้หน่อย" },
+  { label: "สร้างรายงานการเงิน", icon: "💰", prompt: "ช่วยสร้างรายงานการเงินให้หน่อย" },
+  { label: "คำแนะนำการจัดการ", icon: "📋", prompt: "ช่วยให้คำแนะนำด้านการจัดการทีม" },
+  { label: "สนทนาทั่วไป", icon: "💬", prompt: "มาคุยกันทั่วไป" },
 ];
 
 export default function ChatWindow({
@@ -47,7 +47,7 @@ export default function ChatWindow({
   if (isLoadingSession) {
     return (
       <div className="flex h-full items-center justify-center px-4 text-center">
-        <div>
+        <div className="rounded-[28px] border border-border bg-surface px-8 py-10 shadow-[0_20px_60px_rgba(15,23,42,0.1)] backdrop-blur-xl">
           <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-border border-t-accent" />
           <p className="text-sm font-medium text-text-primary">
             กำลังโหลดเซสชัน...
@@ -62,25 +62,42 @@ export default function ChatWindow({
 
   if (isEmpty) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-center px-4">
-        <div className="text-5xl mb-4">🤖</div>
-        <h2 className="text-xl font-semibold text-text-primary mb-2">
-          สวัสดี! มีอะไรให้ช่วยไหม?
-        </h2>
-        <p className="text-text-secondary text-sm max-w-md">
-          พิมพ์ข้อความเพื่อเริ่มใช้งาน — ระบบจะเลือก agent ที่เหมาะสมให้อัตโนมัติ
-        </p>
-        <div className="mt-8 grid grid-cols-2 gap-3 text-xs text-text-muted">
+      <div className="flex h-full items-center justify-center px-4 py-8">
+        <div className="w-full max-w-3xl rounded-[36px] border border-border bg-surface px-6 py-10 text-center shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:px-10">
+          <div className="mx-auto mb-5 flex h-18 w-18 items-center justify-center rounded-[28px] bg-bg-tertiary text-5xl shadow-inner">
+            🤖
+          </div>
+          <h2 className="mb-3 text-3xl font-semibold tracking-tight text-text-primary">
+            สวัสดี มีอะไรให้ช่วยไหม?
+          </h2>
+          <p className="mx-auto max-w-xl text-sm leading-7 text-text-secondary">
+            พิมพ์ข้อความเพื่อเริ่มใช้งาน หรือเลือกแนวทางด้านล่าง ระบบจะเลือก agent
+            ที่เหมาะสมให้อัตโนมัติ
+          </p>
+          <div className="mt-8 grid grid-cols-1 gap-3 text-left sm:grid-cols-2">
           {QUICK_ACTIONS.map((action) => (
             <button
               key={action.label}
               onClick={() => onQuickAction(action.prompt)}
-              className="rounded-lg bg-bg-tertiary px-4 py-3 text-left transition-colors hover:bg-bg-hover hover:text-text-primary"
+              className="group rounded-[24px] border border-border bg-bg-secondary/70 px-4 py-4 transition-all hover:-translate-y-0.5 hover:border-accent/40 hover:bg-bg-hover/80"
               type="button"
             >
-              {action.label}
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-bg-tertiary text-lg">
+                  {action.icon}
+                </span>
+                <div>
+                  <p className="text-sm font-medium text-text-primary">
+                    {action.label}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-text-secondary">
+                    เปิดบทสนทนาด้วยคำสั่งตัวอย่างที่เหมาะกับงานนี้
+                  </p>
+                </div>
+              </div>
             </button>
           ))}
+          </div>
         </div>
       </div>
     );
@@ -92,8 +109,10 @@ export default function ChatWindow({
       {(statusMessage || hasError) && (
         <div
           className={cn(
-            "flex items-center gap-2 px-4 py-2 text-xs border-b border-border shrink-0",
-            hasError ? "bg-error/10 text-error" : "bg-bg-secondary text-text-secondary"
+            "mx-4 mt-4 flex shrink-0 items-center gap-2 rounded-2xl border px-4 py-3 text-xs shadow-sm",
+            hasError
+              ? "border-error/30 bg-error/10 text-error"
+              : "border-border bg-surface text-text-secondary"
           )}
         >
           {hasError ? (
@@ -113,7 +132,7 @@ export default function ChatWindow({
       )}
 
       {/* Messages */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
+      <div className="flex-1 min-h-0 overflow-y-auto pt-4">
         {messages.map((msg, i) => (
           <MessageBubble
             key={i}

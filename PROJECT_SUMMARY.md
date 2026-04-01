@@ -141,3 +141,4 @@ Browser (index.html)
 - The empty-state quick actions in the Next.js chat view now work as real prompt buttons.
 - Assistant output in the Next.js chat now renders live as SSE chunks arrive.
 - Saved session switching in the Next.js UI now feels faster through caching and explicit loading feedback.
+- The Next.js frontend now includes a cleaner modern UI treatment and a persistent light/dark theme toggle.

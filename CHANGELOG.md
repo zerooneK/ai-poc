@@ -955,3 +955,4 @@ _ทุก version มี AI disclaimer ท้ายเอกสาร: "⚠️ 
 - fix: make the Next.js empty-state quick actions clickable
 - fix: render assistant messages progressively while SSE text is streaming
 - fix: reduce perceived delay when switching sessions with immediate highlight, cache, and loading state
+- feat: redesign the Next.js interface with a cleaner layout and persistent light/dark theme toggle

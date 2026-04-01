@@ -22,27 +22,27 @@ export default function MessageBubble({
   return (
     <div
       className={cn(
-        "flex gap-3 px-4 py-3 max-w-4xl mx-auto",
+        "mx-auto flex max-w-4xl gap-3 px-4 py-3",
         isUser ? "justify-end" : "justify-start"
       )}
     >
       {!isUser && (
-        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-bg-tertiary flex items-center justify-center text-sm">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-border bg-surface-elevated text-sm shadow-sm">
           {agent ? agentIcon(agent) : "🤖"}
         </div>
       )}
 
       <div
         className={cn(
-          "rounded-lg px-4 py-3 max-w-[80%] text-sm leading-relaxed",
+          "max-w-[80%] rounded-[22px] border px-4 py-3 text-sm leading-relaxed shadow-[0_10px_30px_rgba(15,23,42,0.08)]",
           isUser
-            ? "bg-accent text-white"
-            : "bg-bg-tertiary text-text-primary"
+            ? "border-transparent bg-accent text-white"
+            : "border-border bg-surface-elevated text-text-primary"
         )}
       >
         {!isUser && agent && (
-          <div className="flex items-center gap-1.5 mb-2 pb-2 border-b border-border-light">
-            <span className="text-xs font-medium text-text-secondary">
+          <div className="mb-2 flex items-center gap-1.5 border-b border-border-light pb-2">
+            <span className="text-xs font-medium uppercase tracking-[0.14em] text-text-secondary">
               {agentIcon(agent)} {agentLabel(agent)}
             </span>
           </div>
@@ -52,7 +52,7 @@ export default function MessageBubble({
           <p className="whitespace-pre-wrap">{content}</p>
         ) : (
           <div
-            className="prose prose-invert prose-sm max-w-none
+            className="prose prose-sm max-w-none
               prose-headings:text-text-primary
               prose-p:text-text-primary
               prose-code:text-accent
@@ -72,7 +72,7 @@ export default function MessageBubble({
         )}
 
         {isStreaming && !isUser && (
-          <span className="inline-block w-2 h-4 bg-text-secondary animate-pulse ml-1" />
+          <span className="ml-1 inline-block h-4 w-2 animate-pulse rounded-full bg-text-secondary" />
         )}
       </div>
     </div>
