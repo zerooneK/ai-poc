@@ -62,35 +62,35 @@ export default function ChatWindow({
 
   if (isEmpty) {
     return (
-      <div className="flex h-full items-center justify-center px-4 py-8">
-        <div className="w-full max-w-3xl rounded-[36px] border border-border bg-surface px-6 py-10 text-center shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:px-10">
-          <div className="mx-auto mb-5 flex h-18 w-18 items-center justify-center rounded-[28px] bg-bg-tertiary text-5xl shadow-inner">
+      <div className="flex h-full items-center justify-center px-4 py-6">
+        <div className="w-full max-w-2xl rounded-[30px] border border-border bg-surface px-6 py-8 text-center shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:px-8">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[22px] bg-bg-tertiary text-4xl shadow-inner">
             🤖
           </div>
-          <h2 className="mb-3 text-3xl font-semibold tracking-tight text-text-primary">
+          <h2 className="mb-2 text-2xl font-semibold tracking-tight text-text-primary">
             สวัสดี มีอะไรให้ช่วยไหม?
           </h2>
-          <p className="mx-auto max-w-xl text-sm leading-7 text-text-secondary">
+          <p className="mx-auto max-w-lg text-sm leading-6 text-text-secondary">
             พิมพ์ข้อความเพื่อเริ่มใช้งาน หรือเลือกแนวทางด้านล่าง ระบบจะเลือก agent
             ที่เหมาะสมให้อัตโนมัติ
           </p>
-          <div className="mt-8 grid grid-cols-1 gap-3 text-left sm:grid-cols-2">
+          <div className="mt-6 grid grid-cols-1 gap-3 text-left sm:grid-cols-2">
           {QUICK_ACTIONS.map((action) => (
             <button
               key={action.label}
               onClick={() => onQuickAction(action.prompt)}
-              className="group rounded-[24px] border border-border bg-bg-secondary/70 px-4 py-4 transition-all hover:-translate-y-0.5 hover:border-accent/40 hover:bg-bg-hover/80"
+              className="group rounded-[20px] border border-border bg-bg-secondary/70 px-4 py-3 transition-all hover:-translate-y-0.5 hover:border-accent/40 hover:bg-bg-hover/80"
               type="button"
             >
               <div className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-bg-tertiary text-lg">
+                <span className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-bg-tertiary text-base">
                   {action.icon}
                 </span>
                 <div>
                   <p className="text-sm font-medium text-text-primary">
                     {action.label}
                   </p>
-                  <p className="mt-1 text-xs leading-5 text-text-secondary">
+                  <p className="mt-1 text-xs leading-4 text-text-secondary">
                     เปิดบทสนทนาด้วยคำสั่งตัวอย่างที่เหมาะกับงานนี้
                   </p>
                 </div>

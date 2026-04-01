@@ -311,28 +311,28 @@ export default function Home() {
                 พื้นที่ทำงานสนทนาแบบสะอาดตา พร้อมสลับธีมและจัดการเซสชันได้ทันที
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={toggleTheme}
-                className="flex items-center gap-3 rounded-full border border-border bg-surface px-3 py-2 text-sm text-text-secondary transition-colors hover:bg-bg-hover"
+                className="flex h-10 items-center gap-2 rounded-full border border-border bg-surface px-3 text-sm text-text-secondary transition-colors hover:bg-bg-hover"
                 aria-label="สลับธีม"
               >
-                <span className="text-base">{theme === "dark" ? "🌙" : "☀️"}</span>
+                <span className="text-sm">{theme === "dark" ? "🌙" : "☀️"}</span>
                 <span className="hidden sm:inline">
                   {theme === "dark" ? "Dark" : "Light"}
                 </span>
-                <span className="relative h-6 w-11 rounded-full bg-bg-tertiary">
+                <span className="relative h-5 w-10 rounded-full bg-bg-tertiary">
                   <span
-                    className={`absolute top-1 h-4 w-4 rounded-full bg-accent transition-transform ${
-                      theme === "dark" ? "translate-x-6" : "translate-x-1"
+                    className={`absolute top-0.5 h-4 w-4 rounded-full bg-accent transition-transform ${
+                      theme === "dark" ? "translate-x-[1.3rem]" : "translate-x-0.5"
                     }`}
                   />
                 </span>
               </button>
               <button
                 onClick={handleNewSession}
-                className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-white transition-all hover:bg-accent-hover hover:shadow-[0_12px_28px_rgba(45,108,223,0.3)]"
+                className="h-10 rounded-full bg-accent px-3 text-sm font-medium text-white transition-all hover:bg-accent-hover hover:shadow-[0_12px_28px_rgba(45,108,223,0.3)]"
               >
                 สร้างเซสชันใหม่
               </button>
