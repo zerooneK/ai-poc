@@ -52,6 +52,7 @@ The codebase is in good shape after 29 bug fixes across three rounds. All Critic
 
 - **Backend:** `python -m py_compile ...` passed for the modified backend files, and `test_workspace_isolation.py` passed against a live Flask server. `smoke_test_phase0.py` was updated to remove Windows-only path assumptions, but the LLM-dependent chat scenarios were not re-run in this change set.
 - **Frontend:** `npm run lint` passed. `npm run build` was blocked by sandbox network restrictions because `next/font` tried to fetch Google Fonts (`Inter`, `JetBrains Mono`).
+- **Frontend runtime follow-up:** the React crash caused by `MessageBubble` passing both `children` and `dangerouslySetInnerHTML` was fixed, and the SSE status banner now clears when a stream ends so stale "กำลังตรวจสอบ workspace..." messages do not remain visible after the answer is complete.
 - **Spec coverage:** This fix set specifically added coverage for session-scoped workspace/file APIs: workspace set/get, file list, preview, delete, and file isolation across two session IDs.
 
 ## Correction Loop Log

@@ -1,5 +1,9 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.32.8] — 1 เมษายน 2569 · fix
+- fix (frontend/): ล้าง status bar เมื่อ SSE stream จบ, abort, หรือ error แล้ว ป้องกันข้อความค้างเช่น "กำลังตรวจสอบ workspace..."
+- fix (frontend/): ลบการ render ที่ผิดกติกาใน `MessageBubble` ซึ่งเคยส่งทั้ง `dangerouslySetInnerHTML` และ `children` พร้อมกัน
+
 ## [v0.32.7] — 1 เมษายน 2569 · fix
 - fix (app.py): ทำให้ทุก route ที่แตะ workspace ใช้ session workspace เดียวกันกับ `chat()` แล้ว
   - `GET /api/health`, `GET /api/files`, `GET /api/files/stream`, `GET /api/preview`, `GET /api/serve/<filename>`, `POST /api/delete`, `GET /api/workspace`, `POST /api/workspace`, `POST /api/workspace/new`

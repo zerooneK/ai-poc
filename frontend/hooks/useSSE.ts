@@ -87,6 +87,7 @@ export function useSSE(): UseSSEReturn {
     if (streamCompletedRef.current) return;
     streamCompletedRef.current = true;
     setIsStreaming(false);
+    setStatusMessage("");
     if (optionsRef.current?.onStreamComplete) {
       optionsRef.current.onStreamComplete({
         outputText: stripFakeToolCalls(outputRef.current),
@@ -101,6 +102,7 @@ export function useSSE(): UseSSEReturn {
       abortRef.current = null;
     }
     setIsStreaming(false);
+    setStatusMessage("");
   }, []);
 
   const sendMessage = useCallback(
@@ -246,6 +248,7 @@ export function useSSE(): UseSSEReturn {
             setHasError(true);
             setErrorMessage(err.message || "เกิดข้อผิดพลาดในการเชื่อมต่อ");
             setIsStreaming(false);
+            setStatusMessage("");
           }
         });
     },

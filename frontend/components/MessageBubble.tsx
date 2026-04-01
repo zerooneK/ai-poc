@@ -2,7 +2,7 @@
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { cn, agentLabel, agentIcon, sanitizeHtml } from "@/lib/utils";
+import { cn, agentLabel, agentIcon } from "@/lib/utils";
 
 interface MessageBubbleProps {
   role: "user" | "assistant";
@@ -64,13 +64,6 @@ export default function MessageBubble({
               prose-table:text-text-primary
               prose-th:border prose-th:border-border
               prose-td:border prose-td:border-border"
-            dangerouslySetInnerHTML={{
-              __html: sanitizeHtml(
-                // We'll use react-markdown for safe rendering
-                // This is a fallback — the real rendering is below
-                ""
-              ),
-            }}
           >
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {content}

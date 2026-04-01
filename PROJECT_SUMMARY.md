@@ -8,14 +8,14 @@
 **Internal AI Assistant Platform** — ระบบ AI สำหรับพนักงานภายในบริษัทไทย
 พนักงานพิมพ์งานเป็นภาษาไทย → AI เลือก Agent ที่เหมาะสม → สร้างเอกสาร (Draft) → User ยืนยัน → บันทึกเป็นไฟล์จริงในระบบ
 
-- **Version ปัจจุบัน:** v0.32.7 (Session-scoped file APIs + frontend session propagation fixes)
+- **Version ปัจจุบัน:** v0.32.8 (Frontend status cleanup + message rendering fix)
 - **สถานะ:** Production-Ready POC + Session Isolation + Multi-Format Export
 - **Branch:** `wsl-experiment`
-- **Last Commit:** v0.32.7 — fix: harden session-scoped workspace and file handling
+- **Last Commit:** v0.32.8 — fix: clear stale frontend status state
 
 ---
 
-## ฟีเจอร์ที่มีแล้ว (v0.32.7)
+## ฟีเจอร์ที่มีแล้ว (v0.32.8)
 
 | ฟีเจอร์ | สถานะ | หมายเหตุ |
 |---|---|---|
