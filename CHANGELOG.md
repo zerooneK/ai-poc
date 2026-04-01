@@ -1,5 +1,11 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.32.5] — 31 มีนาคม 2569 · feat
+- feat (start.sh): รันทั้ง Flask backend (port 5000) และ Next.js frontend (port 3000) ด้วยคำสั่งเดียว
+  - Ctrl+C หยุดเซิร์ฟเวอร์ทั้งหมดพร้อมกัน
+  - ตรวจสอบ .env, venv, dependencies ทั้ง backend และ frontend
+  - ถ้าไม่มี frontend/ จะรันเฉพาะ backend
+
 ## [v0.32.4] — 31 มีนาคม 2569 · feat
 - feat (frontend/): Phase 4 Polish & Testing — เสร็จสมบูรณ์ ✅
   - Keyboard shortcuts: Enter (send), Esc (close panel), Ctrl/Cmd+K (workspace)
