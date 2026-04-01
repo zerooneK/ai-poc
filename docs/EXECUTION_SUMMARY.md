@@ -97,3 +97,4 @@ The codebase is in good shape after 29 bug fixes across three rounds. All Critic
 - Corrected the redesigned theme switch control so its knob no longer overflows the toggle track.
 - Updated the workspace picker modal styling so the overlay is darker and the dialog body is fully opaque.
 - Reconnected the Next.js save workflow to backend save events so unsaved output can be confirmed through the format modal and saved files appear in the sidebar immediately.
+- Fixed a session-restore edge case so re-clicking the active sidebar session repopulates the chat if the visible conversation was previously cleared.

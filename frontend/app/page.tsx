@@ -138,7 +138,15 @@ export default function Home() {
 
   const handleSessionSelect = useCallback(
     async (selectedSessionId: string) => {
-      if (!selectedSessionId || selectedSessionId === sessionId) return;
+      if (!selectedSessionId) return;
+      const shouldReloadCurrentSession =
+        selectedSessionId === sessionId &&
+        messages.length === 0 &&
+        conversationHistory.length === 0;
+
+      if (selectedSessionId === sessionId && !shouldReloadCurrentSession) {
+        return;
+      }
       setSelectedSessionId(selectedSessionId);
       setPreviewFile(null);
       setPendingDoc("");
@@ -190,7 +198,7 @@ export default function Home() {
         setIsSwitchingSession(false);
       }
     },
-    [loadSessionJobs, sessionId]
+    [conversationHistory.length, loadSessionJobs, messages.length, sessionId]
   );
 
   const handleStreamComplete = useCallback(

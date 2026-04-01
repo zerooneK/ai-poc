@@ -960,3 +960,4 @@ _ทุก version มี AI disclaimer ท้ายเอกสาร: "⚠️ 
 - fix: correct the redesigned header theme toggle sizing so the knob stays inside the switch
 - fix: make the workspace selection modal fully opaque with a stronger backdrop
 - fix: restore the Next.js save flow so save intents open the format picker and refresh saved files
+- fix: allow the selected session to restore its messages again when the chat view was cleared locally
