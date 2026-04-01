@@ -95,3 +95,4 @@ The codebase is in good shape after 29 bug fixes across three rounds. All Critic
 - Refreshed the Next.js visual design with softer surfaces, a cleaner shell, improved chat/composer styling, and a persistent theme switcher.
 - Refined the redesigned UI by fixing the theme toggle sizing, reducing the new-session button footprint, and shrinking the empty-state card.
 - Corrected the redesigned theme switch control so its knob no longer overflows the toggle track.
+- Updated the workspace picker modal styling so the overlay is darker and the dialog body is fully opaque.

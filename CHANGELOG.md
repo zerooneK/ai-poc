@@ -958,3 +958,4 @@ _ทุก version มี AI disclaimer ท้ายเอกสาร: "⚠️ 
 - feat: redesign the Next.js interface with a cleaner layout and persistent light/dark theme toggle
 - fix: tighten header controls and reduce empty-state panel sizing for better spacing
 - fix: correct the redesigned header theme toggle sizing so the knob stays inside the switch
+- fix: make the workspace selection modal fully opaque with a stronger backdrop
