@@ -131,7 +131,7 @@ export default function Home() {
   return (
     <ErrorBoundary>
       <div className="flex flex-col h-full relative">
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 min-h-0 overflow-hidden">
           {/* Sidebar */}
           <aside className="w-72 bg-bg-secondary border-r border-border flex flex-col shrink-0">
             <div className="px-4 py-3 border-b border-border">
@@ -212,8 +212,8 @@ export default function Home() {
           </aside>
 
           {/* Chat area */}
-          <div className="flex flex-col flex-1 min-w-0">
-            <div className="flex-1 overflow-hidden">
+          <div className="flex flex-col flex-1 min-h-0">
+            <div className="flex-1 min-h-0 overflow-hidden">
               <ChatWindow
                 messages={messages}
                 isStreaming={isStreaming}

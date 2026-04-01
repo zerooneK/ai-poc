@@ -1,5 +1,11 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.32.6] — 31 มีนาคม 2569 · fix
+- fix (frontend/): แก้ UI layout ไม่เต็มจอ — เปลี่ยน root div จาก `h-screen` → `h-full` ให้ inherit จาก body `h-screen` ป้องกัน overflow
+  - html/body มี `height: 100vh` ชัดเจน
+  - body มี `h-screen overflow-hidden`
+  - Sidebar, ChatWindow, InputArea ใช้ flex layout ถูกต้อง
+
 ## [v0.32.5] — 31 มีนาคม 2569 · feat
 - feat (start.sh): รันทั้ง Flask backend (port 5000) และ Next.js frontend (port 3000) ด้วยคำสั่งเดียว
   - Ctrl+C หยุดเซิร์ฟเวอร์ทั้งหมดพร้อมกัน
