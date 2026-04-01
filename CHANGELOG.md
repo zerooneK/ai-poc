@@ -1,5 +1,17 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.32.0] — 31 มีนาคม 2569 · feat (planned)
+- feat (frontend): วางแผน migrate จาก index.html (3,224 lines) → Next.js App Router + TypeScript + Tailwind
+- docs (plans/nextjs_migration.md): สร้างแผน 4 Phase พร้อม Definition of Done ทุก Phase
+  - Phase 1: Setup & Foundation — สร้าง frontend/, config Tailwind, สร้าง useSSE hook, API client
+  - Phase 2: Core Layout & Chat — Sidebar, ChatWindow, MessageBubble, InputArea, wire SSE streaming
+  - Phase 3: Advanced Features — PreviewPanel, WorkspaceModal, FormatModal, ConfirmBar, session management
+  - Phase 4: Polish & Testing — Keyboard shortcuts, error boundaries, docs update, backend tests
+- docs (AGENTS.md): เพิ่ม Mandatory Workflow Rules 7 ข้อ (v0.31.1)
+- fix (index.html): block `data:` URIs ใน `_sanitizeHtml` (v0.31.1)
+- fix (index.html): เปลี่ยน error messages จาก `innerHTML` → `textContent` (v0.31.1)
+- fix (db.py): ลบ dead function `_handle_corrupt_db()` (v0.31.1)
+
 ## [v0.31.1] — 31 มีนาคม 2569 · docs/fix
 - docs (AGENTS.md): เพิ่ม Mandatory Workflow Rules 7 ข้อ — ห้ามแตะ .env, ถามให้ชัดก่อนทำ, วางแผนก่อนแก้, ทำตามแผน, อัปเดต docs ทุกครั้ง, commit ทุกอย่าง, สรุปให้ user เข้าใจง่าย
 - fix (index.html): block `data:` URIs in `_sanitizeHtml` — ป้องกัน XSS ผ่าน data: URI payload
