@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X, FolderPlus, Check, Folder } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getWorkspaces, setWorkspace, createWorkspace, type WorkspaceInfo } from "@/lib/api";
@@ -8,6 +8,7 @@ import { getWorkspaces, setWorkspace, createWorkspace, type WorkspaceInfo } from
 interface WorkspaceModalProps {
   isOpen: boolean;
   currentPath: string;
+  sessionId?: string;
   onClose: () => void;
   onSwitch: (path: string) => void;
 }
@@ -15,32 +16,30 @@ interface WorkspaceModalProps {
 export default function WorkspaceModal({
   isOpen,
   currentPath,
+  sessionId,
   onClose,
   onSwitch,
 }: WorkspaceModalProps) {
   const [workspaces, setWorkspaces] = useState<WorkspaceInfo[]>([]);
-  const [loading, setLoading] = useState(false);
   const [newName, setNewName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
-  if (isOpen && workspaces.length === 0) {
-    setLoading(true);
+  useEffect(() => {
+    if (!isOpen || workspaces.length > 0) return;
     getWorkspaces()
-      .then((res) => {
-        setWorkspaces(
-          res.workspaces.map((w) => ({
-            ...w,
-            active: w.path === currentPath,
-          }))
-        );
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }
+      .then((res) => setWorkspaces(res.workspaces))
+      .catch((err) => setError(err.message))
+  }, [isOpen, workspaces.length]);
+
+  const loading = isOpen && workspaces.length === 0 && !error;
+  const decoratedWorkspaces = workspaces.map((ws) => ({
+    ...ws,
+    active: ws.path === currentPath,
+  }));
 
   const handleSwitch = (ws: WorkspaceInfo) => {
-    setWorkspace({ path: ws.path })
+    setWorkspace({ path: ws.path, session_id: sessionId })
       .then(() => {
         onSwitch(ws.path);
         onClose();
@@ -52,8 +51,13 @@ export default function WorkspaceModal({
     if (!newName.trim()) return;
     setCreating(true);
     setError(null);
-    createWorkspace({ name: newName.trim() })
+    createWorkspace({ name: newName.trim(), session_id: sessionId })
       .then((res) => {
+        setWorkspaces((prev) =>
+          prev.some((ws) => ws.path === res.workspace)
+            ? prev
+            : [...prev, { name: newName.trim(), path: res.workspace }]
+        );
         onSwitch(res.workspace);
         setNewName("");
         setCreating(false);
@@ -95,7 +99,7 @@ export default function WorkspaceModal({
             </p>
           )}
           <div className="space-y-1">
-            {workspaces.map((ws) => (
+            {decoratedWorkspaces.map((ws) => (
               <button
                 key={ws.path}
                 onClick={() => handleSwitch(ws)}

@@ -80,6 +80,20 @@ export function useSSE(): UseSSEReturn {
   const outputRef = useRef("");
   const optionsRef = useRef<SendMessageOptions | undefined>(undefined);
   const lastEventRef = useRef<SSEEvent | null>(null);
+  const lastAgentRef = useRef<string | undefined>(undefined);
+  const streamCompletedRef = useRef(false);
+
+  const finalizeStream = useCallback(() => {
+    if (streamCompletedRef.current) return;
+    streamCompletedRef.current = true;
+    setIsStreaming(false);
+    if (optionsRef.current?.onStreamComplete) {
+      optionsRef.current.onStreamComplete({
+        outputText: stripFakeToolCalls(outputRef.current),
+        agent: lastAgentRef.current,
+      });
+    }
+  }, []);
 
   const abort = useCallback(() => {
     if (abortRef.current) {
@@ -101,6 +115,8 @@ export function useSSE(): UseSSEReturn {
       setLastEvent(null);
       setPmPlan(null);
       setIsStreaming(true);
+      lastAgentRef.current = undefined;
+      streamCompletedRef.current = false;
 
       const controller = new AbortController();
       abortRef.current = controller;
@@ -159,7 +175,6 @@ export function useSSE(): UseSSEReturn {
 
               setLastEvent(event);
               lastEventRef.current = event;
-              lastEventRef.current = event;
 
               switch (event.type) {
                 case "status":
@@ -167,6 +182,7 @@ export function useSSE(): UseSSEReturn {
                   break;
 
                 case "agent":
+                  lastAgentRef.current = event.agent as string | undefined;
                   setStatusMessage(
                     event.reason
                       ? `${event.agent} — ${event.reason}`
@@ -216,26 +232,14 @@ export function useSSE(): UseSSEReturn {
                   break;
 
                 case "done":
-                  setIsStreaming(false);
-                  if (optionsRef.current?.onStreamComplete) {
-                    optionsRef.current.onStreamComplete({
-                      outputText: stripFakeToolCalls(outputRef.current),
-                      agent: (event.agent as string) || undefined,
-                    });
-                  }
+                  finalizeStream();
                   break;
               }
             }
           }
 
           // Stream ended without explicit "done" event
-          setIsStreaming(false);
-          if (optionsRef.current?.onStreamComplete) {
-            optionsRef.current.onStreamComplete({
-              outputText: stripFakeToolCalls(outputRef.current),
-              agent: (lastEventRef.current?.agent as string) || undefined,
-            });
-          }
+          finalizeStream();
         })
         .catch((err) => {
           if (err.name !== "AbortError") {
@@ -245,7 +249,7 @@ export function useSSE(): UseSSEReturn {
           }
         });
     },
-    []
+    [finalizeStream]
   );
 
   return {

@@ -7,11 +7,12 @@ const API_BASE =
     ? process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
     : "http://localhost:5000";
 
-export function useFileSSE() {
+export function useFileSSE(sessionId?: string) {
   const [fileChanged, setFileChanged] = useState(0);
   const abortRef = useRef<AbortController | null>(null);
 
   const connect = useCallback(() => {
+    if (!sessionId) return;
     if (abortRef.current) {
       abortRef.current.abort();
     }
@@ -21,7 +22,7 @@ export function useFileSSE() {
 
     const connectStream = async () => {
       try {
-        const response = await fetch(`${API_BASE}/api/files/stream`, {
+        const response = await fetch(`${API_BASE}/api/files/stream?session_id=${encodeURIComponent(sessionId)}`, {
           signal: controller.signal,
         });
 
@@ -66,7 +67,7 @@ export function useFileSSE() {
     };
 
     connectStream();
-  }, []);
+  }, [sessionId]);
 
   useEffect(() => {
     connect();

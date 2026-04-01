@@ -8,7 +8,7 @@
 
 | Item | Detail |
 |---|---|
-| Date | 2026-03-31 |
+| Date | 2026-04-01 |
 | Backend Framework | Flask 3.0+ with Gunicorn 21.2+ (gevent workers) |
 | Frontend Framework | Vanilla HTML/JS/CSS SPA (no framework) |
 | Database | SQLite 3 (WAL mode) |
@@ -50,9 +50,9 @@ The codebase is in good shape after 29 bug fixes across three rounds. All Critic
 
 ## Testing Results
 
-- **Backend:** All script-based integration tests pass. `smoke_test_phase0.py` (health check), `test_cases.py` (routed-agent flow with SSE parsing), `test_concurrency_pm.py` (4 PM concurrency scenarios), and `quick-demo-check.py` (demo readiness) all exit with code 0.
-- **Frontend:** No automated frontend tests. Manual testing performed across Chrome and Firefox for UI rendering, SSE streaming, theme toggling, and modal flows.
-- **Spec coverage:** All core user flows covered — single-agent document generation, PM multi-agent decomposition, save/discard/edit confirmation flow, workspace switching, file listing, and history browsing.
+- **Backend:** `python -m py_compile ...` passed for the modified backend files, and `test_workspace_isolation.py` passed against a live Flask server. `smoke_test_phase0.py` was updated to remove Windows-only path assumptions, but the LLM-dependent chat scenarios were not re-run in this change set.
+- **Frontend:** `npm run lint` passed. `npm run build` was blocked by sandbox network restrictions because `next/font` tried to fetch Google Fonts (`Inter`, `JetBrains Mono`).
+- **Spec coverage:** This fix set specifically added coverage for session-scoped workspace/file APIs: workspace set/get, file list, preview, delete, and file isolation across two session IDs.
 
 ## Correction Loop Log
 
@@ -69,12 +69,13 @@ The codebase is in good shape after 29 bug fixes across three rounds. All Critic
 - **Vanilla frontend over React/Vue** — A single HTML file with inline CSS and JS eliminates build complexity, dependency management, and deployment overhead. The trade-off is a large file (~3224 lines) but no toolchain to maintain.
 - **OpenRouter as AI gateway** — Using OpenRouter instead of a direct provider API allows model switching without code changes. The default model (Claude Sonnet 4.5) can be changed via a single environment variable.
 - **Read-only tools for agents** — Agents receive only `list_files`, `read_file`, and `web_search`. Write operations are gated behind the user confirmation flow in `app.py`, ensuring no file is modified without explicit user approval.
-- **Workspace captured once per request** — To avoid a race condition where concurrent workspace changes affect in-flight requests, `get_workspace()` is called once at the start of the SSE generator and passed as a parameter throughout.
+- **Workspace captured once per request** — To avoid a race condition where concurrent workspace changes affect in-flight requests, the effective workspace is resolved once at the start of the SSE generator and passed as a parameter throughout.
+- **Session scope extended to file APIs** — In v0.32.7 the same session-aware workspace resolution now applies to preview, raw serve, delete, file list, file-change SSE, health, and workspace routes, eliminating mixed global/session behavior.
 
 ## Known Limitations
 
 - **No authentication** — The application has no login or role-based access control. Anyone with network access to port 5000 can use it.
-- **Per-session workspace isolation** — Fully implemented in v0.31.0. Each session has its own isolated workspace via `set_session_workspace()` and `get_session_workspace()`. The `_session_workspaces` dict has no TTL eviction, which is minor and only matters at very high session counts.
+- **Per-session workspace isolation** — The route coverage is now consistent across chat and file APIs, but the `_session_workspaces` dict still has no TTL eviction and the system still lacks real authentication.
 - **No CSRF protection** — The application does not include CSRF tokens on form submissions.
 - **Single LLM provider dependency** — The system depends entirely on OpenRouter. If the API is unavailable, all features stop working.
 - **No formal test framework** — Tests are script-based and require the server to be running. No pytest, unittest, or CI pipeline is configured.

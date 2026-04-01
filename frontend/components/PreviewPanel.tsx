@@ -1,45 +1,49 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { X, Copy, FileText, Code } from "lucide-react";
 import { cn, fileIcon } from "@/lib/utils";
-import { getPreview } from "@/lib/api";
+import { getPreviewForSession } from "@/lib/api";
 
 interface PreviewPanelProps {
   filename: string | null;
+  sessionId?: string;
   onClose: () => void;
 }
 
-export default function PreviewPanel({ filename, onClose }: PreviewPanelProps) {
+export default function PreviewPanel({ filename, sessionId, onClose }: PreviewPanelProps) {
   const [content, setContent] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadedFilename, setLoadedFilename] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"rendered" | "raw">("rendered");
 
-  const loadContent = useCallback(() => {
+  useEffect(() => {
     if (!filename) return;
-    setLoading(true);
-    setError(null);
-    setContent("");
-    getPreview(filename)
+    let cancelled = false;
+    getPreviewForSession(filename, sessionId)
       .then((res) => {
+        if (cancelled) return;
         setContent(res.content);
-        setLoading(false);
+        setError(null);
+        setLoadedFilename(filename);
       })
       .catch((err) => {
+        if (cancelled) return;
         setError(err.message);
-        setLoading(false);
+        setLoadedFilename(filename);
       });
-  }, [filename]);
-
-  loadContent();
+    return () => {
+      cancelled = true;
+    };
+  }, [filename, sessionId]);
 
   if (!filename) return null;
 
   const ext = filename.split(".").pop()?.toLowerCase() || "";
   const isMarkdown = ["md", "txt"].includes(ext);
+  const loading = loadedFilename !== filename && !error;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(content);

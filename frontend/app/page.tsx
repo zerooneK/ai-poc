@@ -12,7 +12,11 @@ import WorkspaceModal from "@/components/WorkspaceModal";
 import FormatModal from "@/components/FormatModal";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import { getFiles, deleteFile } from "@/lib/api";
+import {
+  deleteFileForSession,
+  getFilesForSession,
+  getWorkspaceForSession,
+} from "@/lib/api";
 import { fileIcon, formatBytes, agentLabel } from "@/lib/utils";
 
 interface Message {
@@ -27,7 +31,22 @@ interface WorkspaceFile {
   modified: string;
 }
 
+function getOrCreateSessionId(): string {
+  const storageKey = "ai-poc-session-id";
+  const existing = window.localStorage.getItem(storageKey);
+  if (existing) return existing;
+  const sessionId =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `session-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  window.localStorage.setItem(storageKey, sessionId);
+  return sessionId;
+}
+
 export default function Home() {
+  const [sessionId] = useState(() =>
+    typeof window !== "undefined" ? getOrCreateSessionId() : ""
+  );
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationHistory, setConversationHistory] = useState<
     Array<{ role: string; content: string }>
@@ -50,15 +69,24 @@ export default function Home() {
     sendMessage,
   } = useSSE();
 
-  const { fileChanged } = useFileSSE();
+  const { fileChanged } = useFileSSE(sessionId);
   const { sessions, loadSessions } = useSessions();
+
+  // Load session workspace on mount
+  useEffect(() => {
+    if (!sessionId) return;
+    getWorkspaceForSession(sessionId)
+      .then((res) => setWorkspacePath(res.workspace))
+      .catch(() => {});
+  }, [sessionId]);
 
   // Load files on mount and when fileChanged updates
   useEffect(() => {
-    getFiles()
+    if (!sessionId) return;
+    getFilesForSession(sessionId)
       .then((res) => setFiles(res.files))
       .catch(() => {});
-  }, [fileChanged]);
+  }, [fileChanged, sessionId]);
 
   // Load sessions on mount
   useEffect(() => {
@@ -92,12 +120,13 @@ export default function Home() {
 
       sendMessage(text, {
         conversationHistory,
+        sessionId,
         onStreamComplete: (payload) => {
           handleStreamComplete(payload.outputText, payload.agent);
         },
       });
     },
-    [conversationHistory, sendMessage, handleStreamComplete]
+    [conversationHistory, handleStreamComplete, sendMessage, sessionId]
   );
 
   const handleWorkspaceSwitch = (path: string) => {
@@ -113,10 +142,10 @@ export default function Home() {
   };
 
   const confirmDelete = () => {
-    deleteFile(deleteFilename)
+    deleteFileForSession(deleteFilename, sessionId)
       .then(() => {
         setDeleteModalOpen(false);
-        getFiles()
+        getFilesForSession(sessionId)
           .then((res) => setFiles(res.files))
           .catch(() => {});
       })
@@ -230,7 +259,9 @@ export default function Home() {
         {/* Preview Panel */}
         {previewFile && (
           <PreviewPanel
+            key={previewFile}
             filename={previewFile}
+            sessionId={sessionId}
             onClose={() => setPreviewFile(null)}
           />
         )}
@@ -239,6 +270,7 @@ export default function Home() {
         <WorkspaceModal
           isOpen={workspaceModalOpen}
           currentPath={workspacePath}
+          sessionId={sessionId}
           onClose={() => setWorkspaceModalOpen(false)}
           onSwitch={handleWorkspaceSwitch}
         />

@@ -8,14 +8,14 @@
 **Internal AI Assistant Platform** — ระบบ AI สำหรับพนักงานภายในบริษัทไทย
 พนักงานพิมพ์งานเป็นภาษาไทย → AI เลือก Agent ที่เหมาะสม → สร้างเอกสาร (Draft) → User ยืนยัน → บันทึกเป็นไฟล์จริงในระบบ
 
-- **Version ปัจจุบัน:** v0.31.0 (Per-session workspace isolation + 6 workspace/file management routes)
+- **Version ปัจจุบัน:** v0.32.7 (Session-scoped file APIs + frontend session propagation fixes)
 - **สถานะ:** Production-Ready POC + Session Isolation + Multi-Format Export
 - **Branch:** `wsl-experiment`
-- **Last Commit:** v0.31.0 — feat: per-session workspace isolation and workspace management routes
+- **Last Commit:** v0.32.7 — fix: harden session-scoped workspace and file handling
 
 ---
 
-## ฟีเจอร์ที่มีแล้ว (v0.31.0)
+## ฟีเจอร์ที่มีแล้ว (v0.32.7)
 
 | ฟีเจอร์ | สถานะ | หมายเหตุ |
 |---|---|---|
@@ -23,8 +23,8 @@
 | Orchestrator — เลือก Agent อัตโนมัติจากคำถาม | ✅ ทำงานได้ | |
 | Streaming response ผ่าน SSE | ✅ ทำงานได้ | |
 | บันทึกไฟล์ใน server workspace | ✅ ทำงานได้ | |
-| Per-session workspace isolation | ✅ ทำงานได้ | เพิ่มใน v0.31.0 — แต่ละ session มี workspace แยกกัน |
-| 6 workspace/file management routes | ✅ ทำงานได้ | เพิ่มใน v0.31.0 — create, rename, move, copy, upload, download |
+| Per-session workspace isolation | ✅ ทำงานได้ | v0.32.7 ทำให้ file APIs ใช้ session scope ตรงกับ chat แล้ว |
+| Workspace/file management routes | ✅ ทำงานได้ | `health/files/preview/serve/delete/workspace` รองรับ session workspace แล้ว |
 | Local Agent Mode — ไฟล์บน Windows โดยตรง | ✅ ทำงานได้ | เพิ่มใน v0.23.0 |
 | Sidebar แสดงไฟล์ใน workspace | ✅ ทำงานได้ | |
 | Sidebar พับ/ขยายได้ (collapsible) | ✅ ทำงานได้ | |
@@ -91,7 +91,7 @@ Browser (index.html)
 
 - **Backend:** Flask (Python 3.11) + Gunicorn (gevent workers)
 - **AI:** OpenRouter API (Claude 4.5 Sonnet)
-- **Frontend:** Vanilla HTML/JS/CSS (Silent Concierge Design)
+- **Frontend:** Vanilla HTML/JS/CSS เป็นตัวหลัก + มี Next.js frontend ระหว่าง migration
 - **Persistence:** SQLite (db.py, WAL mode) + Workspace Filesystem
 - **Streaming:** SSE (Server-Sent Events) + `stream_with_context`
 - **Local Agent:** `local_agent.py` (stdlib only) + browser middleware
@@ -110,6 +110,7 @@ Browser (index.html)
 - **PDF character limit** — PDF export จำกัดที่ 100,000 characters
 - **Local Agent mode is Windows-only** — `local_agent.py` ออกแบบสำหรับ Windows
 - **`_session_workspaces` dict has no TTL eviction** — memory grows with session count (minor, only matters at very high concurrency)
+- **Next.js build ยังพึ่ง Google Fonts** — ใน environment ที่ออก internet ไม่ได้ `npm run build` จะ fail จนกว่าจะเปลี่ยน font strategy
 
 ---
 

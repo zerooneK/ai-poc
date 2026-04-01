@@ -113,7 +113,8 @@ def fs_read_file(workspace: str, filename: str) -> str:
 
 def fs_update_file(workspace: str, filename: str, content: str) -> str:
     path = _validate_path(workspace, filename)
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"ไม่พบไฟล์ '{filename}' กรุณาใช้ action=create สำหรับสร้างไฟล์ใหม่")
     with open(path, "w", encoding="utf-8") as f:
         f.write(content)
     return f"✅ อัปเดตไฟล์ '{filename}' สำเร็จ ({len(content)} ตัวอักษร)"

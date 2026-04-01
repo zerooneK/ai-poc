@@ -73,10 +73,16 @@ export interface WorkspaceRequest {
 
 export interface NewWorkspaceRequest {
   name: string;
+  session_id?: string;
 }
 
 export interface DeleteRequest {
   filename: string;
+  session_id?: string;
+}
+
+export interface SessionScopedRequest {
+  session_id?: string;
 }
 
 // ─── Config ──────────────────────────────────────────────────────────
@@ -99,6 +105,12 @@ async function request<T>(
   }
 
   return res.json();
+}
+
+function withSessionId(path: string, sessionId?: string): string {
+  if (!sessionId) return path;
+  const separator = path.includes("?") ? "&" : "?";
+  return `${path}${separator}session_id=${encodeURIComponent(sessionId)}`;
 }
 
 // ─── Health & Info ───────────────────────────────────────────────────
@@ -198,8 +210,21 @@ export async function getFiles(): Promise<{ files: Array<{ name: string; size: n
   return request("/api/files");
 }
 
+export async function getFilesForSession(
+  sessionId?: string
+): Promise<{ files: Array<{ name: string; size: number; modified: string }> }> {
+  return request(withSessionId("/api/files", sessionId));
+}
+
 export async function getPreview(filename: string): Promise<PreviewResponse> {
   return request(`/api/preview?file=${encodeURIComponent(filename)}`);
+}
+
+export async function getPreviewForSession(
+  filename: string,
+  sessionId?: string
+): Promise<PreviewResponse> {
+  return request(withSessionId(`/api/preview?file=${encodeURIComponent(filename)}`, sessionId));
 }
 
 export async function deleteFile(filename: string): Promise<{ success: boolean; filename: string }> {
@@ -209,14 +234,34 @@ export async function deleteFile(filename: string): Promise<{ success: boolean; 
   });
 }
 
+export async function deleteFileForSession(
+  filename: string,
+  sessionId?: string
+): Promise<{ success: boolean; filename: string }> {
+  return request("/api/delete", {
+    method: "POST",
+    body: JSON.stringify({ filename, session_id: sessionId }),
+  });
+}
+
 export function getFileUrl(filename: string): string {
   return `${API_BASE}/api/serve/${encodeURIComponent(filename)}`;
+}
+
+export function getFileUrlForSession(filename: string, sessionId?: string): string {
+  return `${API_BASE}${withSessionId(`/api/serve/${encodeURIComponent(filename)}`, sessionId)}`;
 }
 
 // ─── Workspace ───────────────────────────────────────────────────────
 
 export async function getWorkspace(): Promise<{ workspace: string }> {
   return request("/api/workspace");
+}
+
+export async function getWorkspaceForSession(
+  sessionId?: string
+): Promise<{ workspace: string }> {
+  return request(withSessionId("/api/workspace", sessionId));
 }
 
 export async function setWorkspace(

@@ -111,6 +111,7 @@ The file list updates automatically when files are added or removed.
 2. A list of available workspaces will appear
 3. Click on a workspace to switch to it
 4. Your conversation history will be reset for the new workspace
+5. In the Next.js frontend, the workspace switch is now tied to your current browser session, so preview, file list, delete, and download all stay in the same workspace as your chat
 
 ### Creating a New Workspace
 
@@ -186,7 +187,7 @@ A: Yes. You can download saved files directly from the file list in the sidebar.
 A: The generation will continue on the server, but you will not see the result. When you reopen the application, you can check the history page to see if the job completed.
 
 **Q: Can multiple people use this at the same time?**
-A: Yes. Each user session has its own isolated workspace, so workspace changes in one session do not affect other users. If one person switches workspaces, other sessions continue using their own workspace independently.
+A: Yes. Each user session has its own isolated workspace, and the file APIs now use the same session scope as chat generation. If one person switches workspaces, other sessions continue using their own workspace independently.
 
 ## Getting Help
 

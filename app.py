@@ -76,6 +76,39 @@ def _is_allowed_workspace_path(path: str) -> bool:
     except ValueError:
         return False
 
+
+_SESSION_ID_RE = re.compile(r'^[\w\-]{8,64}$')
+
+
+def _get_request_session_id() -> str | None:
+    """Read and validate session_id from query string or JSON body."""
+    session_id = (request.args.get('session_id') or '').strip()
+    if not session_id and request.is_json:
+        payload = request.get_json(silent=True) or {}
+        session_id = str(payload.get('session_id') or '').strip()
+    if not session_id:
+        return None
+    if not _SESSION_ID_RE.match(session_id):
+        return None
+    return session_id
+
+
+def _has_invalid_request_session_id() -> bool:
+    """Return True when a session_id was provided but failed validation."""
+    query_session_id = (request.args.get('session_id') or '').strip()
+    body_session_id = ''
+    if request.is_json:
+        payload = request.get_json(silent=True) or {}
+        body_session_id = str(payload.get('session_id') or '').strip()
+    raw_session_id = query_session_id or body_session_id
+    return bool(raw_session_id and not _SESSION_ID_RE.match(raw_session_id))
+
+
+def _get_request_workspace() -> str:
+    """Resolve workspace for the current request, preferring session scope."""
+    session_id = _get_request_session_id()
+    return get_session_workspace(session_id) if session_id else get_workspace()
+
 # ─── MCP Tool Definitions (OpenAI function calling format) ────────────────────
 
 MCP_TOOLS = [
@@ -637,7 +670,9 @@ def chat():
 
 @app.route('/api/health')
 def health():
-    wp = get_workspace()
+    if _has_invalid_request_session_id():
+        return jsonify({'error': 'invalid session_id'}), 400
+    wp = _get_request_workspace()
     return jsonify({'status': 'ok', 'model': MODEL, 'workspace': wp, 'db': db.db_status()})
 
 @app.route('/api/history')
@@ -653,7 +688,9 @@ def serve_workspace_file(filename: str):
     """Serve a raw file from the current workspace (used for PDF/image inline preview)."""
     if not re.match(r'^[\w.\-]{1,200}$', filename):
         return jsonify({'error': 'invalid filename'}), 400
-    workspace = get_workspace()
+    if _has_invalid_request_session_id():
+        return jsonify({'error': 'invalid session_id'}), 400
+    workspace = _get_request_workspace()
     filepath = os.path.join(workspace, filename)
     real_workspace = os.path.realpath(workspace)
     real_filepath = os.path.realpath(filepath)
@@ -669,7 +706,9 @@ def preview_file():
     filename = (request.args.get('file') or '').strip()
     if not filename or not re.match(r'^[\w.\-]{1,200}$', filename):
         return jsonify({'error': 'invalid filename'}), 400
-    workspace = get_workspace()
+    if _has_invalid_request_session_id():
+        return jsonify({'error': 'invalid session_id'}), 400
+    workspace = _get_request_workspace()
     filepath = os.path.join(workspace, filename)
     if not os.path.realpath(filepath).startswith(os.path.realpath(workspace)):
         return jsonify({'error': 'access denied'}), 403
@@ -691,7 +730,10 @@ def delete_file_api():
     filename = (data.get('filename') or '').strip()
     if not filename or not re.match(r'^[\w.\-]{1,120}$', filename):
         return jsonify({'error': 'invalid filename'}), 400
-    workspace = get_workspace()
+    session_id = _get_request_session_id()
+    if data.get('session_id') and not session_id:
+        return jsonify({'error': 'invalid session_id'}), 400
+    workspace = get_session_workspace(session_id) if session_id else get_workspace()
     result = execute_tool(workspace, 'delete_file', {'filename': filename})
     if _tool_result_is_error(result):
         return jsonify({'error': result}), 400
@@ -707,7 +749,7 @@ def list_sessions():
 
 @app.route('/api/sessions/<session_id>')
 def get_session_api(session_id: str):
-    if not re.match(r'^[\w\-]{8,64}$', session_id):
+    if not _SESSION_ID_RE.match(session_id):
         return jsonify({'error': 'invalid session_id'}), 400
     return jsonify({'jobs': db.get_session_jobs(session_id)})
 
@@ -717,7 +759,9 @@ def get_session_api(session_id: str):
 @app.route('/api/files')
 def api_list_files():
     """Return list of files in the current workspace."""
-    workspace = get_workspace()
+    if _has_invalid_request_session_id():
+        return jsonify({'error': 'invalid session_id'}), 400
+    workspace = _get_request_workspace()
     files = fs_list_files(workspace)
     return jsonify({'files': files})
 
@@ -725,7 +769,9 @@ def api_list_files():
 @app.route('/api/files/stream')
 def api_stream_files():
     """SSE endpoint — subscribe to workspace change notifications."""
-    workspace = get_workspace()
+    if _has_invalid_request_session_id():
+        return jsonify({'error': 'invalid session_id'}), 400
+    workspace = _get_request_workspace()
 
     def generate():
         q = queue.Queue()
@@ -749,7 +795,9 @@ def api_stream_files():
 @app.route('/api/workspace')
 def api_get_workspace():
     """Return the current workspace path."""
-    return jsonify({'workspace': get_workspace()})
+    if _has_invalid_request_session_id():
+        return jsonify({'error': 'invalid session_id'}), 400
+    return jsonify({'workspace': _get_request_workspace()})
 
 
 @app.route('/api/workspace', methods=['POST'])
@@ -764,7 +812,9 @@ def api_set_workspace():
     if not _is_allowed_workspace_path(normalized):
         return jsonify({'error': f'ไม่อนุญาต: path อยู่นอก allowed roots'}), 400
     os.makedirs(normalized, exist_ok=True)
-    session_id = request.json.get('session_id')
+    session_id = str(request.json.get('session_id') or '').strip()
+    if session_id and not _SESSION_ID_RE.match(session_id):
+        return jsonify({'error': 'invalid session_id'}), 400
     if session_id:
         set_session_workspace(session_id, normalized)
     else:
@@ -804,7 +854,14 @@ def api_create_workspace():
     if not _is_allowed_workspace_path(new_path):
         return jsonify({'error': f'ไม่อนุญาต: path อยู่นอก allowed roots'}), 400
     os.makedirs(new_path, exist_ok=True)
-    set_workspace(new_path)
+    session_id = str(request.json.get('session_id') or '').strip()
+    if session_id and not _SESSION_ID_RE.match(session_id):
+        return jsonify({'error': 'invalid session_id'}), 400
+    if session_id:
+        set_session_workspace(session_id, new_path)
+    else:
+        logger.warning("[api_create_workspace] no session_id provided — falling back to global workspace")
+        set_workspace(new_path)
     return jsonify({'workspace': new_path}), 201
 
 

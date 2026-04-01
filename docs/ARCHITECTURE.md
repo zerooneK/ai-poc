@@ -96,13 +96,15 @@ The backend follows a modular Flask pattern with clear separation of concerns:
 
 ## Frontend Structure
 
-The frontend is a single-page application in `index.html` with no build tools or frameworks:
+The primary production frontend remains the single-page application in `index.html` with no build tools or frameworks:
 
 - **HTML** — Semantic layout with sidebar (navigation, agent badges, file list), main chat area (messages, output), and input bar (textarea, send button, format selector).
 - **CSS** — CSS custom properties (design tokens) for theming. Dark mode default with light mode toggle. Thai font support via Google Fonts (Sarabun).
 - **JavaScript** — All logic in a single `<script>` block. Uses the `EventSource` API for SSE consumption, `fetch` for POST requests, and `marked.js` (CDN) for Markdown rendering. State is managed through module-scoped variables (no framework).
 
 A separate `history.html` provides a job history viewer that queries `/api/history`.
+
+There is also an in-progress Next.js frontend under `frontend/` used for the migration effort. Its file/workspace APIs are now session-scoped in the same way as the Flask chat flow, so it no longer falls back to the process-global workspace during preview, delete, file streaming, or workspace switching.
 
 ## Data Flow
 
@@ -141,7 +143,7 @@ When an agent generates a document, the content is held in `pending_doc` (single
 ## Key Design Decisions
 
 - **Graceful degradation in db.py** — Every database function catches its own exceptions. If SQLite is unavailable, the chat still works; only history is lost.
-- **Per-session workspace isolation (v0.31.0)** — `api_set_workspace` uses `set_session_workspace(session_id, path)` when a session_id is provided, and the `chat()` route uses `get_session_workspace(session_id)` instead of the global. The global fallback only applies when no session_id is present (backward compatibility).
+- **Per-session workspace isolation (strengthened in v0.32.7)** — All workspace-sensitive routes now resolve the effective workspace through the same session-aware path as `chat()`: health, file listing, file-change SSE, preview, raw file serving, delete, workspace read, workspace set, and workspace creation. If a client supplies an invalid `session_id`, the server returns `400` instead of silently falling back to the global workspace.
 - **Workspace captured once per request** — The workspace path is captured at the start of `generate()` and passed as a parameter. This avoids a race condition where a concurrent workspace change would affect an in-flight request.
 - **Read-only tools for agents** — Agents receive `READ_ONLY_TOOLS` (list_files, read_file, web_search). Write operations (create_file, update_file, delete_file) are only available through the confirmation flow in `app.py`, ensuring user approval before any file modification.
 - **SSE event bus** — Workspace changes trigger notifications through a queue-based event bus (`_ws_change_queues`), allowing multiple SSE clients watching `/api/files/stream` to receive real-time updates.
@@ -156,3 +158,4 @@ When an agent generates a document, the content is held in `pending_doc` (single
 - **No linting or formatting tools** — No pylint, flake8, black, or mypy is configured. Code style relies on manual consistency.
 - **PDF character limit** — PDF export is capped at 100,000 characters to prevent WeasyPrint from hanging on very large documents.
 - **Local Agent mode is Windows-only** — The standalone `local_agent.py` server is designed for Windows users who want direct local filesystem access. It requires manual startup and is not integrated into the main deployment flow.
+- **No authentication** remains the largest security gap — session-scoped workspaces prevent accidental cross-session mixing inside the app, but they do not replace real user authentication or authorization.

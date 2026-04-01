@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import socket
+import os
 import sys
 import time
 import urllib.error
@@ -28,8 +29,10 @@ BASIC_CHAT_RETRY_DELAY_SECONDS = 1
 
 TH_SAVE = "\u0e1a\u0e31\u0e19\u0e17\u0e36\u0e01"
 TH_DISCARD = "\u0e22\u0e01\u0e40\u0e25\u0e34\u0e01"
-WORKSPACE_PATH = r"D:\ai-poc\workspace"
-BLOCKED_WORKSPACE_PATH = r"C:\Windows\Temp"
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+WORKSPACE_PATH = os.path.join(PROJECT_ROOT, "workspace", "smoke_phase0_workspace")
+BLOCKED_WORKSPACE_PATH = os.path.join(os.path.dirname(PROJECT_ROOT), "blocked_smoke_phase0_workspace")
+SMOKE_SESSION_ID = "smoke-phase0-session"
 
 
 def _request_json(method: str, path: str, payload: dict | None = None) -> tuple[int, str]:
@@ -96,8 +99,8 @@ def check_health() -> bool:
 
 
 def check_workspace_guard() -> bool:
-    allowed_status, _ = _request_json("POST", "/api/workspace", {"path": WORKSPACE_PATH})
-    blocked_status, _ = _request_json("POST", "/api/workspace", {"path": BLOCKED_WORKSPACE_PATH})
+    allowed_status, _ = _request_json("POST", "/api/workspace", {"path": WORKSPACE_PATH, "session_id": SMOKE_SESSION_ID})
+    blocked_status, _ = _request_json("POST", "/api/workspace", {"path": BLOCKED_WORKSPACE_PATH, "session_id": SMOKE_SESSION_ID})
     ok = allowed_status == 200 and blocked_status == 400
     detail = f"allowed={allowed_status}, blocked={blocked_status}"
     return _print_result("workspace guard", ok, detail)

@@ -1,5 +1,18 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.32.7] — 1 เมษายน 2569 · fix
+- fix (app.py): ทำให้ทุก route ที่แตะ workspace ใช้ session workspace เดียวกันกับ `chat()` แล้ว
+  - `GET /api/health`, `GET /api/files`, `GET /api/files/stream`, `GET /api/preview`, `GET /api/serve/<filename>`, `POST /api/delete`, `GET /api/workspace`, `POST /api/workspace`, `POST /api/workspace/new`
+  - ถ้าส่ง `session_id` ไม่ถูกต้อง จะตอบ `400 invalid session_id` แทนการ fallback ไป global workspace
+- fix (frontend/): ส่ง `session_id` ไปทุก workspace/file API ใน Next.js frontend
+  - สร้าง session id คงที่ใน browser
+  - file SSE, preview, delete, workspace switch/create ใช้ session scope เดียวกัน
+- fix (frontend/): แก้ duplicate assistant message จาก `useSSE` เรียก completion callback ซ้ำ 2 รอบ
+- fix (frontend/): ย้าย network side effects ออกจาก render path ใน `WorkspaceModal` และ `PreviewPanel`
+- fix (local_agent.py): ทำให้ `update` ล้มเหลวเมื่อไฟล์ยังไม่มีอยู่จริง ให้ behavior ตรงกับ `mcp_server.py`
+- test (smoke_test_phase0.py): เอา path แบบ Windows-only ออก ใช้ path ใต้ repo แทน
+- test (test_workspace_isolation.py): เพิ่ม integration test สำหรับ session-scoped workspace/file APIs
+
 ## [v0.32.6] — 31 มีนาคม 2569 · fix
 - fix (frontend/): แก้ UI layout ไม่เต็มจอ — เปลี่ยน root div จาก `h-screen` → `h-full` ให้ inherit จาก body `h-screen` ป้องกัน overflow
   - html/body มี `height: 100vh` ชัดเจน

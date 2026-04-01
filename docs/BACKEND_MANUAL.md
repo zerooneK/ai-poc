@@ -127,8 +127,13 @@ Delete a file from the workspace. Rate limited to 20 requests per minute per IP.
 **Request body:**
 
 ```json
-{ "filename": "hr_contract_20260331_120000.md" }
+{
+  "filename": "hr_contract_20260331_120000.md",
+  "session_id": "abc-123-def"
+}
 ```
+
+If `session_id` is provided, deletion is performed against that session's active workspace. Invalid session IDs return `400`.
 
 **Response 200:**
 
@@ -148,6 +153,12 @@ Delete a file from the workspace. Rate limited to 20 requests per minute per IP.
 
 List all files in the current workspace.
 
+**Optional query parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `session_id` | string | No | Resolve files from the session-scoped workspace instead of the global fallback |
+
 **Response 200:**
 
 ```json
@@ -164,6 +175,12 @@ List all files in the current workspace.
 #### GET /api/files/stream
 
 SSE endpoint for real-time workspace change notifications. Clients receive a `files_changed` event whenever a file is created, updated, or deleted in the current workspace.
+
+**Optional query parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `session_id` | string | No | Subscribe to file-change events for one session workspace |
 
 **SSE events:**
 
@@ -185,6 +202,7 @@ Preview a file's content from the workspace. Binary files (docx, xlsx, pdf) are 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `file` | string | Yes | Filename to preview |
+| `session_id` | string | No | Resolve preview from the session-scoped workspace |
 
 **Response 200:**
 
@@ -211,6 +229,12 @@ Preview a file's content from the workspace. Binary files (docx, xlsx, pdf) are 
 #### GET /api/serve/<filename>
 
 Serve a raw file from the workspace for inline preview (PDF, images, etc.).
+
+**Optional query parameters:**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `session_id` | string | No | Resolve the file from the session-scoped workspace |
 
 **Response 200:** File content with appropriate MIME type.
 
@@ -354,6 +378,8 @@ Get all completed jobs for a specific session, ordered oldest first.
 
 Get the current workspace path.
 
+If `session_id` is provided as a query parameter, this returns that session's active workspace.
+
 **Response 200:**
 
 ```json
@@ -379,6 +405,8 @@ Set the workspace path. Validates against allowed workspace roots.
 |---|---|---|---|
 | `path` | string | Yes | Absolute or relative path to workspace |
 | `session_id` | string | No | If provided, sets per-session workspace |
+
+If `session_id` is omitted, the server falls back to the legacy global workspace for backward compatibility. New clients should always send `session_id`.
 
 **Response 200:**
 
@@ -414,6 +442,8 @@ List all available workspace directories under allowed roots.
 #### POST /api/workspace/new
 
 Create a new workspace directory and set it as the current workspace.
+
+If `session_id` is provided, the new directory becomes that session's active workspace. New clients should send `session_id` to avoid mutating the global fallback workspace.
 
 **Request body:**
 
