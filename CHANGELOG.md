@@ -953,3 +953,4 @@ _ทุก version มี AI disclaimer ท้ายเอกสาร: "⚠️ 
 - fix: refresh the Next.js session list immediately after sending and completing chat messages
 - fix: add a top navbar and a new-session button to reset the Next.js chat view
 - fix: make the Next.js empty-state quick actions clickable
+- fix: render assistant messages progressively while SSE text is streaming

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useSSE } from "@/hooks/useSSE";
 import { useFileSSE } from "@/hooks/useFileSSE";
 import { useSessions } from "@/hooks/useSessions";
@@ -66,6 +66,7 @@ export default function Home() {
   const [deleteFilename, setDeleteFilename] = useState("");
 
   const {
+    outputText,
     statusMessage,
     isStreaming,
     hasError,
@@ -222,6 +223,20 @@ export default function Home() {
     onOpenWorkspace: () => setWorkspaceModalOpen(true),
   });
 
+  const visibleMessages = useMemo(() => {
+    if (!isStreaming || !outputText.trim()) {
+      return messages;
+    }
+
+    return [
+      ...messages,
+      {
+        role: "assistant" as const,
+        content: outputText,
+      },
+    ];
+  }, [isStreaming, messages, outputText]);
+
   return (
     <ErrorBoundary>
       <div className="flex flex-col h-full relative">
@@ -349,12 +364,12 @@ export default function Home() {
           <div className="flex flex-col flex-1 min-h-0">
             <div className="flex-1 min-h-0 overflow-hidden">
               <ChatWindow
-                messages={messages}
+                messages={visibleMessages}
                 isStreaming={isStreaming}
                 statusMessage={statusMessage}
                 hasError={hasError}
                 errorMessage={errorMessage}
-                isEmpty={messages.length === 0}
+                isEmpty={visibleMessages.length === 0}
                 onQuickAction={handleSend}
               />
             </div>

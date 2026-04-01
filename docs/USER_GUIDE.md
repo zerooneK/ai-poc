@@ -198,3 +198,4 @@ If you encounter issues or have questions about the system, check the history pa
 - The Next.js sidebar now refreshes session history automatically after you send a message and when the assistant reply completes.
 - The Next.js interface now includes a top navbar with a "สร้างเซสชันใหม่" button that opens a fresh empty chat session.
 - The quick-action cards on the empty chat screen are now clickable and send preset starter prompts.
+- Assistant replies in the Next.js chat now appear progressively while the response is streaming.

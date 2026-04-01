@@ -90,3 +90,4 @@ The codebase is in good shape after 29 bug fixes across three rounds. All Critic
 - Updated the Next.js chat flow so the sidebar session list refreshes automatically as new chat history is created.
 - Added a dedicated navbar action for creating a new empty session without reloading the page.
 - Converted the empty-state suggestion cards into working buttons that trigger preset chat prompts.
+- Updated the Next.js chat view to display streaming assistant text incrementally instead of waiting for the full response.

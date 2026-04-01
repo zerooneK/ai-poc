@@ -139,3 +139,4 @@ Browser (index.html)
 - Session history in the Next.js sidebar now updates automatically after new chat activity.
 - The Next.js layout now includes a top navbar with a one-click new-session action.
 - The empty-state quick actions in the Next.js chat view now work as real prompt buttons.
+- Assistant output in the Next.js chat now renders live as SSE chunks arrive.
