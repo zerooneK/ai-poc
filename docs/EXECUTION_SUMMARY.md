@@ -98,3 +98,4 @@ The codebase is in good shape after 29 bug fixes across three rounds. All Critic
 - Updated the workspace picker modal styling so the overlay is darker and the dialog body is fully opaque.
 - Reconnected the Next.js save workflow to backend save events so unsaved output can be confirmed through the format modal and saved files appear in the sidebar immediately.
 - Fixed a session-restore edge case so re-clicking the active sidebar session repopulates the chat if the visible conversation was previously cleared.
+- Applied the same opacity/backdrop treatment to the save-format modal so background content no longer shows through it.

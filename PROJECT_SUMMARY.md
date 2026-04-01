@@ -147,3 +147,4 @@ Browser (index.html)
 - The workspace picker modal now blocks through-visibility with a stronger backdrop and solid dialog surface.
 - The Next.js frontend now supports the expected save-confirm flow for generated content, including format selection and immediate file-list refresh.
 - Active sessions in the Next.js sidebar can now be clicked again to restore cleared chat content.
+- The save-format modal now uses the same solid, non-see-through presentation as the workspace picker.

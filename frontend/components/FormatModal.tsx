@@ -32,8 +32,8 @@ export default function FormatModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-bg-secondary rounded-xl border border-border w-[400px] shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-sm">
+      <div className="w-[400px] rounded-xl border border-border bg-surface-strong shadow-[0_28px_80px_rgba(15,23,42,0.28)]">
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div>
             <h2 className="text-base font-semibold text-text-primary">
