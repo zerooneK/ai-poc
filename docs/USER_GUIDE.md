@@ -207,3 +207,4 @@ If you encounter issues or have questions about the system, check the history pa
 - In the Next.js chat, when a generated document is waiting to be saved, typing `save` or `บันทึก` now opens the file-format picker first. After confirmation, the file is saved and the sidebar file list refreshes automatically.
 - Clicking a selected session in the Next.js sidebar can now restore its messages again if the current chat view was cleared locally.
 - The save-format dialog now also uses a stronger backdrop and a solid dialog surface, so text behind it is no longer visible through the modal.
+- The latest selected session now restores correctly even if the visible chat area was previously cleared, because empty frontend state no longer overwrites the saved session cache.

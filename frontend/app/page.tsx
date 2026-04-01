@@ -157,8 +157,12 @@ export default function Home() {
       setPendingAgentLabel("");
       setSessionId(selectedSessionId);
       const cachedSession = sessionCacheRef.current.get(selectedSessionId);
+      const hasCachedContent = Boolean(
+        cachedSession &&
+        (cachedSession.messages.length > 0 || cachedSession.history.length > 0)
+      );
 
-      if (cachedSession) {
+      if (hasCachedContent) {
         setMessages(cachedSession.messages);
         setConversationHistory(cachedSession.history);
         return;
@@ -389,10 +393,16 @@ export default function Home() {
   });
 
   useEffect(() => {
-    sessionCacheRef.current.set(sessionId, {
-      messages,
-      history: conversationHistory,
-    });
+    if (!sessionId) return;
+    const existing = sessionCacheRef.current.get(sessionId);
+    const hasVisibleContent = messages.length > 0 || conversationHistory.length > 0;
+
+    if (hasVisibleContent || !existing) {
+      sessionCacheRef.current.set(sessionId, {
+        messages,
+        history: conversationHistory,
+      });
+    }
   }, [conversationHistory, messages, sessionId]);
 
   useEffect(() => {
