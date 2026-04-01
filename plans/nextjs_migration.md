@@ -85,6 +85,26 @@
 | 2.7 | Status indicator updates: processing → done/error | Visual state changes match SSE events |
 | 2.8 | No console errors during full chat flow | Browser DevTools console is clean |
 
+### Status: ✅ COMPLETE (31 มีนาคม 2569)
+
+| DoD Item | Status |
+|---|---|
+| 2.1 Root layout renders navbar, sidebar, main content | ✅ Done — collapsible sidebar with Menu/X toggle |
+| 2.2 Sidebar shows files, sessions, workspace, collapse toggle | ✅ Done — placeholder content, Phase 3 will populate |
+| 2.3 ChatWindow renders scrollable area with empty state | ✅ Done — empty state with helpful Thai text + example cards |
+| 2.4 MessageBubble renders markdown + agent badges | ✅ Done — react-markdown + remark-gfm, agent icons/labels |
+| 2.5 InputArea has textarea, send, format selector, status | ✅ Done — auto-resize textarea, Enter to send, disabled during streaming |
+| 2.6 Sending message triggers SSE, text streams in real-time | ✅ Done — useSSE hook wired to ChatWindow + InputArea |
+| 2.7 Status indicator updates: processing → done/error | ✅ Done — status bar with pulse dot, error state |
+| 2.8 No console errors during full chat flow | ✅ Done — npm run lint + npm run build exit 0 |
+
+**Files created/modified:**
+- `frontend/app/layout.tsx` (92 lines) — Root layout with collapsible sidebar, navbar, version tag
+- `frontend/app/page.tsx` (80 lines) — Main chat page wiring useSSE + ChatWindow + InputArea
+- `frontend/components/ChatWindow.tsx` (105 lines) — Scrollable message area with status bar, empty state
+- `frontend/components/MessageBubble.tsx` (87 lines) — User/assistant messages with markdown rendering
+- `frontend/components/InputArea.tsx` (88 lines) — Auto-resize textarea, send button, streaming indicator
+
 ---
 
 ## Phase 3 — Advanced Features

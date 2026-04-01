@@ -1,5 +1,15 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.32.2] — 31 มีนาคม 2569 · feat
+- feat (frontend/): Phase 2 Core Layout & Chat — เสร็จสมบูรณ์ ✅
+  - Root layout: collapsible sidebar + navbar + main content area
+  - ChatWindow: scrollable message area, empty state with Thai helpful text
+  - MessageBubble: react-markdown + remark-gfm, agent badges/icons
+  - InputArea: auto-resize textarea, Enter to send, streaming indicator
+  - Full SSE streaming wired: send message → stream → render → finalize
+  - Status bar: processing (pulse dot), done (green), error (red)
+  - npm run build + npm run lint ผ่านทั้งหมด (exit code 0)
+
 ## [v0.32.1] — 31 มีนาคม 2569 · feat
 - feat (frontend/): Phase 1 Setup & Foundation — เสร็จสมบูรณ์ ✅
   - Next.js 16 + TypeScript + Tailwind CSS v4 + ESLint

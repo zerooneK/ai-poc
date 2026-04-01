@@ -28,6 +28,13 @@ export interface UseSSEReturn {
   abort: () => void;
 }
 
+export interface StreamCompletePayload {
+  outputText: string;
+  agent?: string;
+}
+
+export type OnStreamComplete = (payload: StreamCompletePayload) => void;
+
 export interface SendMessageOptions {
   conversationHistory?: Array<{ role: string; content: string }>;
   sessionId?: string;
@@ -39,6 +46,7 @@ export interface SendMessageOptions {
   outputFormats?: string[];
   overwriteFilename?: string;
   localAgentMode?: boolean;
+  onStreamComplete?: OnStreamComplete;
 }
 
 // ─── Fake tool-call regex (strips LLM hallucinated tool JSON) ────────
@@ -70,6 +78,8 @@ export function useSSE(): UseSSEReturn {
 
   const abortRef = useRef<AbortController | null>(null);
   const outputRef = useRef("");
+  const optionsRef = useRef<SendMessageOptions | undefined>(undefined);
+  const lastEventRef = useRef<SSEEvent | null>(null);
 
   const abort = useCallback(() => {
     if (abortRef.current) {
@@ -81,6 +91,7 @@ export function useSSE(): UseSSEReturn {
 
   const sendMessage = useCallback(
     (message: string, options?: SendMessageOptions) => {
+      optionsRef.current = options;
       // Reset state
       outputRef.current = "";
       setOutputText("");
@@ -147,6 +158,8 @@ export function useSSE(): UseSSEReturn {
               }
 
               setLastEvent(event);
+              lastEventRef.current = event;
+              lastEventRef.current = event;
 
               switch (event.type) {
                 case "status":
@@ -204,6 +217,12 @@ export function useSSE(): UseSSEReturn {
 
                 case "done":
                   setIsStreaming(false);
+                  if (optionsRef.current?.onStreamComplete) {
+                    optionsRef.current.onStreamComplete({
+                      outputText: stripFakeToolCalls(outputRef.current),
+                      agent: (event.agent as string) || undefined,
+                    });
+                  }
                   break;
               }
             }
@@ -211,6 +230,12 @@ export function useSSE(): UseSSEReturn {
 
           // Stream ended without explicit "done" event
           setIsStreaming(false);
+          if (optionsRef.current?.onStreamComplete) {
+            optionsRef.current.onStreamComplete({
+              outputText: stripFakeToolCalls(outputRef.current),
+              agent: (lastEventRef.current?.agent as string) || undefined,
+            });
+          }
         })
         .catch((err) => {
           if (err.name !== "AbortError") {
