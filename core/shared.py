@@ -70,10 +70,15 @@ def get_session_workspace(session_id: str) -> str:
         return _session_workspaces.get(session_id, WORKSPACE_PATH)
 
 def set_session_workspace(session_id: str, path: str):
-    """Set the workspace path for a specific session and persist it."""
+    """Set the workspace path for a specific session."""
     with _session_ws_lock:
         _session_workspaces[session_id] = path
-    _persist_workspace(path)
+
+
+def remove_session_workspace(session_id: str):
+    """Remove a session-specific workspace mapping."""
+    with _session_ws_lock:
+        _session_workspaces.pop(session_id, None)
 
 # Event bus for workspace changes
 _ws_change_queues = {} # workspace_path -> [queue.Queue]
@@ -88,18 +93,21 @@ except ValueError:
     _TIMEOUT = 60.0
 
 _client = None
+_client_lock = threading.Lock()
 
 def get_client():
     global _client
     if _client is None:
-        if not OPENROUTER_API_KEY:
-            raise RuntimeError("OPENROUTER_API_KEY is not set. Copy .env.example to .env and set your key.")
-        from openai import OpenAI
-        _client = OpenAI(
-            base_url="https://openrouter.ai/api/v1",
-            api_key=OPENROUTER_API_KEY,
-            timeout=_TIMEOUT,
-        )
+        with _client_lock:
+            if _client is None:
+                if not OPENROUTER_API_KEY:
+                    raise RuntimeError("OPENROUTER_API_KEY is not set. Copy .env.example to .env and set your key.")
+                from openai import OpenAI
+                _client = OpenAI(
+                    base_url="https://openrouter.ai/api/v1",
+                    api_key=OPENROUTER_API_KEY,
+                    timeout=_TIMEOUT,
+                )
     return _client
 
 # Temp directory

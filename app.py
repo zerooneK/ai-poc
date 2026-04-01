@@ -20,6 +20,7 @@ from core.shared import (
     MODEL, OPENROUTER_API_KEY, _ALLOWED_ROOTS,
     _DEFAULT_WORKSPACE, _workspace_lock, _ws_change_queues, _ws_change_lock,
     TEMP_DIR, _notify_workspace_changed, get_workspace, get_session_workspace, set_workspace, set_session_workspace,
+    remove_session_workspace,
     AGENT_MAX_TOKENS, CHAT_MAX_TOKENS
 )
 from core.utils import load_prompt, execute_tool, format_sse
@@ -788,6 +789,7 @@ def delete_session_api(session_id: str):
     if not deleted:
         return jsonify({'error': 'ไม่พบเซสชันที่ต้องการลบ'}), 404
 
+    remove_session_workspace(session_id)
     return jsonify({'success': True, 'session_id': session_id})
 
 
@@ -816,8 +818,11 @@ def api_stream_files():
             _ws_change_queues.setdefault(workspace, []).append(q)
         try:
             while True:
-                q.get()  # blocks until notified
-                yield format_sse({'type': 'files_changed'})
+                try:
+                    q.get(timeout=30)
+                    yield format_sse({'type': 'files_changed'})
+                except queue.Empty:
+                    yield format_sse({'type': 'heartbeat'})
         except GeneratorExit:
             raise
         finally:

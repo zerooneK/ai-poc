@@ -150,3 +150,4 @@ Browser (index.html)
 - The save-format modal now uses the same solid, non-see-through presentation as the workspace picker.
 - The Next.js session cache now preserves real saved history instead of replacing it with empty local UI state.
 - The backend now records failed revise/PM flows accurately, validates more save-related request fields, and falls back safely when orchestrator routing calls fail.
+- Shared backend state is now safer under concurrent load and long-running sessions through locked client initialization, session workspace cleanup, and heartbeat-protected file-stream SSE.

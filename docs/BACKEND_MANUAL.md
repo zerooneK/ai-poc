@@ -585,3 +585,6 @@ Place behind Nginx with appropriate proxy settings for SSE support.
 - Revise-mode and PM-mode requests only call `db.complete_job(...)` after their subflows succeed. If revise or any PM subtask emits an error, the job is now marked failed instead of completed.
 - `/api/history` now guards invalid `limit` values and falls back to `50` instead of returning HTTP 500 on bad query input.
 - Orchestrator routing now falls back to `chat` when the upstream completion call raises an exception.
+- `get_client()` now uses a double-checked lock to avoid concurrent lazy initialization races under gevent workers.
+- Session-specific workspace changes no longer overwrite the persisted global workspace state, and deleting a session also removes its in-memory workspace mapping.
+- `/api/files/stream` now sends periodic `heartbeat` SSE events when idle so zombie subscribers can be cleaned up instead of blocking forever on `q.get()`.

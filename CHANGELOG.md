@@ -964,3 +964,4 @@ _ทุก version มี AI disclaimer ท้ายเอกสาร: "⚠️ 
 - fix: make the save-format modal fully opaque with a stronger backdrop
 - fix: prevent the active session cache from overwriting saved history with an empty chat snapshot
 - fix: harden backend job status tracking and request validation for revise, PM, orchestrator, and history flows
+- fix: harden shared client/session state and file-stream SSE against races and leaks

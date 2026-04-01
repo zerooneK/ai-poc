@@ -162,3 +162,4 @@ When an agent generates a document, the content is held in `pending_doc` (single
 - Session history management now includes explicit deletion through the Flask API, with SQLite cleanup for both `jobs` and related `saved_files` records.
 - Chat request handling now validates `pending_temp_paths`, clamps invalid `output_format` values back to `md`, and avoids marking revise/PM jobs as completed when an internal sub-flow emitted an error.
 - The orchestrator route path now degrades to the `chat` agent when the upstream model call fails, instead of aborting the whole request.
+- Shared backend state now protects lazy OpenAI client initialization with a lock, keeps per-session workspace updates in memory only, removes session workspace mappings on session deletion, and emits file-stream heartbeats so stale SSE subscribers do not block forever.
