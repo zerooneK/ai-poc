@@ -947,3 +947,6 @@
 ---
 
 _ทุก version มี AI disclaimer ท้ายเอกสาร: "⚠️ เอกสารฉบับร่างนี้จัดทำโดย AI — กรุณาตรวจสอบความถูกต้องก่อนนำไปใช้งานจริง"_
+# Unreleased
+
+- fix: add session deletion from the Next.js sidebar with a matching backend API

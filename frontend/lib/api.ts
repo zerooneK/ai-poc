@@ -204,6 +204,14 @@ export async function getSessionJobs(
   return request(`/api/sessions/${sessionId}`);
 }
 
+export async function deleteSession(
+  sessionId: string
+): Promise<{ success: boolean; session_id: string }> {
+  return request(`/api/sessions/${sessionId}`, {
+    method: "DELETE",
+  });
+}
+
 // ─── Files ───────────────────────────────────────────────────────────
 
 export async function getFiles(): Promise<{ files: Array<{ name: string; size: number; modified: string }> }> {

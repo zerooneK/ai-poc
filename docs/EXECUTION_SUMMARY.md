@@ -86,3 +86,4 @@ The codebase is in good shape after 29 bug fixes across three rounds. All Critic
 - **Local Agent mode is Windows-only** — The standalone `local_agent.py` server is designed for Windows users and requires manual startup.
 - **Basic client-side sanitization** — The `_sanitizeHtml()` function handles common XSS vectors but is not as comprehensive as a dedicated library like DOMPurify.
 - **No accessibility audit** — ARIA labels and keyboard navigation have not been formally tested.
+- Added session deletion support for the Next.js sidebar, including backend cleanup of the selected session's persisted jobs and file records.

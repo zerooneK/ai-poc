@@ -135,3 +135,4 @@ Browser (index.html)
 5.  **Modular:** ห้ามใส่ Business Logic ยาวๆ ใน `app.py` ให้แยกเป็น Agent หรือ Core โมดูล
 6.  **SSE Safety:** generators ทั้งหมดต้อง wrap ด้วย `stream_with_context` — ป้องกัน crash บน Gunicorn
 7.  **Error Messages:** ห้าม leak `str(e)` ออก frontend — ใช้ Thai user-friendly message + log traceback
+- Sidebar session management now supports deleting a single saved session from the Next.js UI.

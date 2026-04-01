@@ -159,3 +159,4 @@ When an agent generates a document, the content is held in `pending_doc` (single
 - **PDF character limit** — PDF export is capped at 100,000 characters to prevent WeasyPrint from hanging on very large documents.
 - **Local Agent mode is Windows-only** — The standalone `local_agent.py` server is designed for Windows users who want direct local filesystem access. It requires manual startup and is not integrated into the main deployment flow.
 - **No authentication** remains the largest security gap — session-scoped workspaces prevent accidental cross-session mixing inside the app, but they do not replace real user authentication or authorization.
+- Session history management now includes explicit deletion through the Flask API, with SQLite cleanup for both `jobs` and related `saved_files` records.

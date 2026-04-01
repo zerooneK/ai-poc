@@ -580,3 +580,4 @@ FLASK_DEBUG=1 python app.py
 ```
 
 Place behind Nginx with appropriate proxy settings for SSE support.
+- `DELETE /api/sessions/<session_id>` removes all persisted jobs and saved-file records for the specified session after validating the session ID.

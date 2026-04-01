@@ -317,6 +317,29 @@ def get_session_jobs(session_id: str) -> list:
         return []
 
 
+def delete_session(session_id: str) -> bool:
+    """Delete all jobs and file records for a session."""
+    if not DB_AVAILABLE:
+        return False
+    try:
+        with _db_write_lock:
+            with _connect() as conn:
+                conn.execute("""
+                    DELETE FROM saved_files
+                    WHERE job_id IN (
+                        SELECT id FROM jobs WHERE session_id = ?
+                    )
+                """, (session_id,))
+                result = conn.execute(
+                    "DELETE FROM jobs WHERE session_id = ?",
+                    (session_id,)
+                )
+                return result.rowcount > 0
+    except Exception as e:
+        logger.warning(f"[db] delete_session failed: {e}")
+        return False
+
+
 def db_status() -> dict:
     """Return DB health info for /api/health endpoint."""
     return {

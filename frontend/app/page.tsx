@@ -13,6 +13,7 @@ import FormatModal from "@/components/FormatModal";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import {
+  deleteSession,
   deleteFileForSession,
   getFilesForSession,
   getWorkspaceForSession,
@@ -171,6 +172,25 @@ export default function Home() {
     setDeleteModalOpen(true);
   };
 
+  const handleDeleteSession = useCallback(
+    async (targetSessionId: string) => {
+      if (!window.confirm("ลบเซสชันนี้และประวัติแชททั้งหมดใช่หรือไม่?")) {
+        return;
+      }
+
+      await deleteSession(targetSessionId);
+      setPreviewFile(null);
+
+      if (targetSessionId === sessionId) {
+        setMessages([]);
+        setConversationHistory([]);
+      }
+
+      loadSessions();
+    },
+    [loadSessions, sessionId]
+  );
+
   const confirmDelete = () => {
     deleteFileForSession(deleteFilename, sessionId)
       .then(() => {
@@ -254,22 +274,39 @@ export default function Home() {
               )}
               <div className="px-2 pb-4">
                 {sessions.map((s) => (
-                  <button
+                  <div
                     key={s.session_id}
-                    onClick={() => void handleSessionSelect(s.session_id)}
                     className={`w-full text-left px-2 py-2 rounded transition-colors ${
                       s.session_id === sessionId
                         ? "bg-accent/10 text-accent"
                         : "hover:bg-bg-hover"
                     }`}
                   >
-                    <p className="text-sm text-text-primary truncate">
-                      {s.first_message.slice(0, 40)}
-                    </p>
-                    <p className="text-[10px] text-text-muted mt-0.5">
-                      {agentLabel(s.last_agent)} · {s.job_count} งาน
-                    </p>
-                  </button>
+                    <div className="flex items-start gap-2">
+                      <button
+                        onClick={() => void handleSessionSelect(s.session_id)}
+                        className="flex-1 min-w-0 text-left"
+                      >
+                        <p className="text-sm text-text-primary truncate">
+                          {s.first_message.slice(0, 40)}
+                        </p>
+                        <p className="text-[10px] text-text-muted mt-0.5">
+                          {agentLabel(s.last_agent)} · {s.job_count} งาน
+                        </p>
+                      </button>
+                      <button
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void handleDeleteSession(s.session_id);
+                        }}
+                        className="shrink-0 text-text-muted hover:text-error transition-colors px-1"
+                        aria-label={`ลบเซสชัน ${s.first_message.slice(0, 20)}`}
+                        title="ลบเซสชัน"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>

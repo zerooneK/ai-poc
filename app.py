@@ -754,6 +754,18 @@ def get_session_api(session_id: str):
     return jsonify({'jobs': db.get_session_jobs(session_id)})
 
 
+@app.route('/api/sessions/<session_id>', methods=['DELETE'])
+def delete_session_api(session_id: str):
+    if not _SESSION_ID_RE.match(session_id):
+        return jsonify({'error': 'invalid session_id'}), 400
+
+    deleted = db.delete_session(session_id)
+    if not deleted:
+        return jsonify({'error': 'ไม่พบเซสชันที่ต้องการลบ'}), 404
+
+    return jsonify({'success': True, 'session_id': session_id})
+
+
 # ─── Workspace & File Management Routes ──────────────────────────────────────
 
 @app.route('/api/files')
