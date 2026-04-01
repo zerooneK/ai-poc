@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useMemo } from "react";
+import { useRef } from "react";
 import { useSSE } from "@/hooks/useSSE";
 import { useFileSSE } from "@/hooks/useFileSSE";
 import { useSessions } from "@/hooks/useSessions";
@@ -51,6 +52,9 @@ export default function Home() {
   const [sessionId, setSessionId] = useState(() =>
     typeof window !== "undefined" ? getOrCreateSessionId() : ""
   );
+  const [selectedSessionId, setSelectedSessionId] = useState(() =>
+    typeof window !== "undefined" ? getOrCreateSessionId() : ""
+  );
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationHistory, setConversationHistory] = useState<
     Array<{ role: string; content: string }>
@@ -64,6 +68,13 @@ export default function Home() {
   const [pendingAgentLabel, _setPendingAgentLabel] = useState("");
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteFilename, setDeleteFilename] = useState("");
+  const [isSwitchingSession, setIsSwitchingSession] = useState(false);
+  const sessionCacheRef = useRef<
+    Map<string, {
+      messages: Message[];
+      history: Array<{ role: string; content: string }>;
+    }>
+  >(new Map());
 
   const {
     outputText,
@@ -101,29 +112,50 @@ export default function Home() {
   const handleSessionSelect = useCallback(
     async (selectedSessionId: string) => {
       if (!selectedSessionId || selectedSessionId === sessionId) return;
-      const response = await loadSessionJobs(selectedSessionId);
-      const restoredMessages: Message[] = [];
-      const restoredHistory: Array<{ role: string; content: string }> = [];
+      setSelectedSessionId(selectedSessionId);
+      setPreviewFile(null);
+      setSessionId(selectedSessionId);
+      const cachedSession = sessionCacheRef.current.get(selectedSessionId);
 
-      for (const job of response.jobs) {
-        if (job.user_input) {
-          restoredMessages.push({ role: "user", content: job.user_input });
-          restoredHistory.push({ role: "user", content: job.user_input });
-        }
-        if (job.output_text) {
-          restoredMessages.push({
-            role: "assistant",
-            content: job.output_text,
-            agent: job.agent || undefined,
-          });
-          restoredHistory.push({ role: "assistant", content: job.output_text });
-        }
+      if (cachedSession) {
+        setMessages(cachedSession.messages);
+        setConversationHistory(cachedSession.history);
+        return;
       }
 
-      setPreviewFile(null);
-      setMessages(restoredMessages);
-      setConversationHistory(restoredHistory);
-      setSessionId(selectedSessionId);
+      setIsSwitchingSession(true);
+      setMessages([]);
+      setConversationHistory([]);
+
+      try {
+        const response = await loadSessionJobs(selectedSessionId);
+        const restoredMessages: Message[] = [];
+        const restoredHistory: Array<{ role: string; content: string }> = [];
+
+        for (const job of response.jobs) {
+          if (job.user_input) {
+            restoredMessages.push({ role: "user", content: job.user_input });
+            restoredHistory.push({ role: "user", content: job.user_input });
+          }
+          if (job.output_text) {
+            restoredMessages.push({
+              role: "assistant",
+              content: job.output_text,
+              agent: job.agent || undefined,
+            });
+            restoredHistory.push({ role: "assistant", content: job.output_text });
+          }
+        }
+
+        sessionCacheRef.current.set(selectedSessionId, {
+          messages: restoredMessages,
+          history: restoredHistory,
+        });
+        setMessages(restoredMessages);
+        setConversationHistory(restoredHistory);
+      } finally {
+        setIsSwitchingSession(false);
+      }
     },
     [loadSessionJobs, sessionId]
   );
@@ -190,8 +222,10 @@ export default function Home() {
       if (targetSessionId === sessionId) {
         setMessages([]);
         setConversationHistory([]);
+        setSelectedSessionId("");
       }
 
+      sessionCacheRef.current.delete(targetSessionId);
       loadSessions();
     },
     [loadSessions, sessionId]
@@ -205,6 +239,8 @@ export default function Home() {
     setConversationHistory([]);
     setFiles([]);
     setSessionId(nextSessionId);
+    setSelectedSessionId(nextSessionId);
+    setIsSwitchingSession(false);
   }, []);
 
   const confirmDelete = () => {
@@ -222,6 +258,13 @@ export default function Home() {
     onClosePanel: previewFile ? () => setPreviewFile(null) : undefined,
     onOpenWorkspace: () => setWorkspaceModalOpen(true),
   });
+
+  useEffect(() => {
+    sessionCacheRef.current.set(sessionId, {
+      messages,
+      history: conversationHistory,
+    });
+  }, [conversationHistory, messages, sessionId]);
 
   const visibleMessages = useMemo(() => {
     if (!isStreaming || !outputText.trim()) {
@@ -325,7 +368,7 @@ export default function Home() {
                   <div
                     key={s.session_id}
                     className={`w-full text-left px-2 py-2 rounded transition-colors ${
-                      s.session_id === sessionId
+                      s.session_id === selectedSessionId
                         ? "bg-accent/10 text-accent"
                         : "hover:bg-bg-hover"
                     }`}
@@ -371,6 +414,7 @@ export default function Home() {
                 errorMessage={errorMessage}
                 isEmpty={visibleMessages.length === 0}
                 onQuickAction={handleSend}
+                isLoadingSession={isSwitchingSession}
               />
             </div>
             <InputArea onSend={handleSend} isStreaming={isStreaming} />

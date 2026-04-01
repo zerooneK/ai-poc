@@ -18,6 +18,7 @@ interface ChatWindowProps {
   errorMessage: string | null;
   isEmpty: boolean;
   onQuickAction: (prompt: string) => void;
+  isLoadingSession?: boolean;
 }
 
 const QUICK_ACTIONS = [
@@ -35,12 +36,29 @@ export default function ChatWindow({
   errorMessage,
   isEmpty,
   onQuickAction,
+  isLoadingSession = false,
 }: ChatWindowProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, statusMessage]);
+
+  if (isLoadingSession) {
+    return (
+      <div className="flex h-full items-center justify-center px-4 text-center">
+        <div>
+          <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-border border-t-accent" />
+          <p className="text-sm font-medium text-text-primary">
+            กำลังโหลดเซสชัน...
+          </p>
+          <p className="mt-1 text-xs text-text-muted">
+            กำลังกู้คืนประวัติแชทและข้อมูล workspace
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (isEmpty) {
     return (

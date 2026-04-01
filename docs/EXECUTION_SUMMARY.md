@@ -91,3 +91,4 @@ The codebase is in good shape after 29 bug fixes across three rounds. All Critic
 - Added a dedicated navbar action for creating a new empty session without reloading the page.
 - Converted the empty-state suggestion cards into working buttons that trigger preset chat prompts.
 - Updated the Next.js chat view to display streaming assistant text incrementally instead of waiting for the full response.
+- Improved session switching in the Next.js UI by adding an immediate selection state, a loading screen, and in-memory caching of restored sessions.
