@@ -39,9 +39,41 @@ export default function ChatWindow({
   isLoadingSession = false,
 }: ChatWindowProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const userScrolledUpRef = useRef(false);
+  const programmaticScrollRef = useRef(false);
 
+  // Detect user-initiated scrolls (ignore programmatic ones)
   useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const handleScroll = () => {
+      if (programmaticScrollRef.current) return;
+      const threshold = 80;
+      const atBottom =
+        container.scrollTop + container.clientHeight >=
+        container.scrollHeight - threshold;
+      userScrolledUpRef.current = !atBottom;
+    };
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Reset scroll lock when user sends a new message
+  useEffect(() => {
+    if (messages.length > 0 && messages[messages.length - 1].role === "user") {
+      userScrolledUpRef.current = false;
+    }
+  }, [messages.length]);
+
+  // Auto-scroll only when user hasn't scrolled up
+  useEffect(() => {
+    if (userScrolledUpRef.current) return;
+    programmaticScrollRef.current = true;
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    requestAnimationFrame(() => {
+      programmaticScrollRef.current = false;
+    });
   }, [messages, statusMessage]);
 
   if (isLoadingSession) {
@@ -132,7 +164,7 @@ export default function ChatWindow({
       )}
 
       {/* Messages */}
-      <div className="flex-1 min-h-0 overflow-y-auto pt-4">
+      <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto pt-4">
         {messages.map((msg, i) => (
           <MessageBubble
             key={i}

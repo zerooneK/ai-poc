@@ -1,5 +1,10 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.32.13] — 2 เมษายน 2569 · feat/fix
+- feat (app.py): ลบ route `GET /` และ `GET /history` ที่ serve index.html/history.html ออก — Flask เป็น API-only backend แล้ว, Next.js (port 3000) เป็น frontend
+- fix (frontend/components/ChatWindow.tsx): แก้ auto-scroll บังคับ scroll ลงขณะ streaming — เพิ่ม `userScrolledUpRef` และ `programmaticScrollRef` ป้องกัน scroll event จาก code นับเป็น user scroll
+- fix (frontend/components/PreviewPanel.tsx): แก้ PDF preview แสดงเป็น text แทน PDF viewer — ไฟล์ `.pdf` ใช้ `<iframe>` กับ `getFileUrlForSession()` (มี session_id) แทนการโหลด text content
+
 ## [v0.32.12] — 2 เมษายน 2569 · fix
 - fix (app.py): เพิ่มหมวดคำศัพท์สั่งบันทึกไฟล์ (เช่น 'เอาตามนี้', 'ตกลงตามนี้', 'จัดเก็บ', 'คอนเฟิร์ม', 'ถูกต้อง', 'ดีเลย') และ regex ภาษาอังกฤษ (confirm, accept, done, export, keep) ให้ครอบคลุมทุกเจตนาของผู้ใช้
 - fix (app.py): ขยาย negative prefix (เช่น 'อย่าเพิ่ง', 'ยังไม่', 'เดี๋ยวก่อน') ป้องกัน false positive ตอน user ปฏิเสธการบันทึก

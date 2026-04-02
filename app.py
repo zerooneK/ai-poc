@@ -472,12 +472,6 @@ limiter = Limiter(
 def handle_rate_limit(e):
     return jsonify({'error': 'คุณส่งคำสั่งบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่'}), 429
 
-@app.route('/')
-def index(): return send_file('index.html')
-
-@app.route('/history')
-def history_page(): return send_file('history.html')
-
 @app.route('/api/chat', methods=['POST'])
 @limiter.limit(os.getenv("CHAT_RATE_LIMIT", "10 per minute"))
 def chat():
