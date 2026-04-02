@@ -6,6 +6,8 @@ The AI Assistant Internal POC is a bilingual (Thai/English) chat-based applicati
 
 When a user sends a message through the browser, the request flows through a confirmation-flow interceptor (which handles pending document save/discard/edit states), then to the Orchestrator which calls the LLM to determine which agent should handle the request. The selected agent — HR, Accounting, Manager, PM, Chat, or Document — processes the request using a tool-calling agentic loop that can read files, search the web, and generate content. All responses stream back to the browser as SSE events. Generated documents enter a confirmation workflow where the user must explicitly approve saving, discarding, or revising before any file is written to the workspace.
 
+Recent backend hardening tightened three weak points in that flow: PM planning now degrades safely when its upstream API call fails, PM "no plan" errors now still terminate the SSE stream with a `done` event, and truncated tool-call payloads in `BaseAgent.run_with_tools()` are rejected before incomplete JSON arguments can be parsed.
+
 ## Component Diagram
 
 ```

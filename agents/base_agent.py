@@ -103,6 +103,8 @@ class BaseAgent:
                 yield {"type": "status", "message": f"{self.name}: คำตอบถูกตัดเนื่องจากความยาวเกิน กำลังดำเนินการต่อ..."}
                 if not tool_calls_acc:
                     return
+                yield {"type": "error", "message": "AI ส่งคำสั่งเครื่องมือไม่ครบถ้วน กรุณาลองใหม่อีกครั้ง"}
+                return
 
             # Detect and strip fake tool-call JSON leaked into text stream
             if _FAKE_TOOL_CALL_RE.search(text_streamed):

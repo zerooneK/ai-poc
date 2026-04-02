@@ -16,15 +16,19 @@ class PMAgent(BaseAgent):
             *(history or []),
             {"role": "user", "content": user_message}
         ]
-        
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            response_format={"type": "json_object"},
-            max_tokens=2048,
-            stream=False
-        )
-        
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                response_format={"type": "json_object"},
+                max_tokens=2048,
+                stream=False
+            )
+        except Exception as e:
+            logger.warning("[PMAgent] API error: %s — returning no subtasks", e)
+            return []
+
         try:
             content = response.choices[0].message.content if response.choices else None
             if not content:

@@ -8,10 +8,10 @@
 **Internal AI Assistant Platform** — ระบบ AI สำหรับพนักงานภายในบริษัทไทย
 พนักงานพิมพ์งานเป็นภาษาไทย → AI เลือก Agent ที่เหมาะสม → สร้างเอกสาร (Draft) → User ยืนยัน → บันทึกเป็นไฟล์จริงในระบบ
 
-- **Version ปัจจุบัน:** v0.32.9 (Sidebar session restore wiring)
-- **สถานะ:** Production-Ready POC + Session Isolation + Multi-Format Export
+- **Version ปัจจุบัน:** v0.32.10 (Backend SSE + PM hardening)
+- **สถานะ:** Production-Ready POC + Session Isolation + Multi-Format Export + Backend safety hardening
 - **Branch:** `wsl-experiment`
-- **Last Commit:** v0.32.9 — fix: restore selected sidebar sessions
+- **Last Commit:** v0.32.10 — fix: harden pm and streaming edge cases
 
 ---
 
@@ -44,7 +44,7 @@
 | CORS lockdown บน local_agent.py | ✅ ทำงานได้ | |
 | Workspace path validation (defense-in-depth) | ✅ ทำงานได้ | |
 | Job save status correctness (fail vs complete) | ✅ ทำงานได้ | |
-| Bug fixes (29 fixes across 3 review rounds) | ✅ เสร็จแล้ว | Critical + High + Medium severity |
+| Bug fixes (review rounds + backend follow-up hardening) | ✅ เสร็จแล้ว | PM API fallback, SSE termination, path validation, save-format validation |
 
 ---
 

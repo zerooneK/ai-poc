@@ -86,7 +86,7 @@ Main chat endpoint. Accepts a user message and returns an SSE stream of events. 
 | `pending_agent` | string | No | Agent that created the pending document |
 | `pending_temp_paths` | array | No | Temp file paths from PM subtasks awaiting save |
 | `output_format` | string | No | Desired format: `md`, `txt`, `docx`, `xlsx`, `pdf` (default: `md`) |
-| `output_formats` | array | No | Per-file format list for PM multi-file save |
+| `output_formats` | array | No | Per-file format list for PM multi-file save. Each entry is validated against `md`, `txt`, `docx`, `xlsx`, `pdf`; invalid values fall back to `output_format` |
 | `overwrite_filename` | string | No | Existing filename to overwrite instead of creating new |
 | `local_agent_mode` | boolean | No | If true, agents use LOCAL_AGENT_TOOLS only |
 
@@ -108,6 +108,11 @@ Main chat endpoint. Accepts a user message and returns an SSE stream of events. 
 | `done` | `{}` | Response complete |
 | `local_delete` | `{ filename: string }` | Local agent file deletion triggered |
 | `delete_request` | `{ filename: string }` | User confirmation required for file deletion |
+
+Notes:
+- PM planning API failures are treated as "no subtasks" instead of uncaught server errors.
+- PM flows that cannot produce subtasks now still emit `error` followed by `done`, so SSE clients do not remain in a loading state.
+- Edit intent while PM temp files are pending no longer marks the job as discarded; it only returns the save-or-discard instruction.
 
 **Error responses (non-SSE):**
 

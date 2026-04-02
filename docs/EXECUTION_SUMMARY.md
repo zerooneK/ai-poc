@@ -46,11 +46,12 @@
 | Maintainability | 8/10 |
 | Security | 7/10 |
 
-The codebase is in good shape after 29 bug fixes across three rounds. All Critical and High severity issues have been resolved. Three Medium issues remain (two client-side sanitization edge cases and one dead function), none of which block documentation generation. The architecture is clean, security controls are comprehensive, and the SSE streaming pipeline is stable.
+The codebase is in good shape after the earlier review rounds plus a follow-up backend hardening pass for PM planning, preview path validation, SSE completion, and truncated tool-call handling. The architecture is clean, security controls are stronger than the initial POC baseline, and the SSE streaming pipeline is more consistent under failure conditions.
 
 ## Testing Results
 
 - **Backend:** `python -m py_compile ...` passed for the modified backend files, and `test_workspace_isolation.py` passed against a live Flask server. `smoke_test_phase0.py` was updated to remove Windows-only path assumptions, but the LLM-dependent chat scenarios were not re-run in this change set.
+- **Backend follow-up hardening:** `python -m py_compile app.py agents/pm_agent.py agents/base_agent.py` passed after adding PM API fallback, output-format list validation, preview path hardening, missing-PM-plan `done` emission, and truncated tool-call rejection.
 - **Frontend:** `npm run lint` passed. `npm run build` was blocked by sandbox network restrictions because `next/font` tried to fetch Google Fonts (`Inter`, `JetBrains Mono`).
 - **Frontend runtime follow-up:** the React crash caused by `MessageBubble` passing both `children` and `dangerouslySetInnerHTML` was fixed, and the SSE status banner now clears when a stream ends so stale "กำลังตรวจสอบ workspace..." messages do not remain visible after the answer is complete.
 - **Frontend session restore:** the Next.js sidebar session list now restores the full saved conversation for the selected session into the main chat panel instead of being a non-functional placeholder.

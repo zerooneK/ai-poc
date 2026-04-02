@@ -1,5 +1,13 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.32.10] — 2 เมษายน 2569 · fix
+- fix (agents/pm_agent.py): ครอบ PM planning API call ด้วย `try/except` แล้ว fallback เป็น `[]` เมื่อ upstream error แทนการ throw
+- fix (app.py): `/api/preview` ใช้ path traversal guard แบบเดียวกับ `/api/serve` แล้ว ปิดช่อง `startswith(workspace)` ที่ขาด `os.sep`
+- fix (app.py): validate `output_formats` รายไฟล์ด้วย whitelist เดียวกับ `output_format` ป้องกัน extension ที่ไม่อนุญาต
+- fix (app.py): PM path ที่ `plan()` คืนค่าว่างจะส่ง SSE `done` ก่อน `return` แล้ว ป้องกัน frontend ค้าง loading
+- fix (app.py): ลบการ mark job เป็น `discarded` ผิดกรณีตอนผู้ใช้พิมพ์คำสั่งแก้ไขขณะยังมีไฟล์ PM รอบันทึก
+- fix (agents/base_agent.py): กัน truncated tool-call args เมื่อ `finish_reason='length'` โดยส่ง `error` และหยุด loop ก่อน parse JSON ที่ไม่ครบ
+
 ## [v0.32.9] — 1 เมษายน 2569 · fix
 - fix (frontend/): กด session ใน sidebar แล้วโหลดบทสนทนาทั้งหมดของ session นั้นกลับมาแสดงในหน้าจอ
 - fix (frontend/): เปลี่ยน active session ของหน้าให้ตรงกับ session ที่ผู้ใช้เลือก เพื่อให้ chat, file list, และ workspace state อยู่ในบริบทเดียวกัน

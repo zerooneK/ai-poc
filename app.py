@@ -493,7 +493,15 @@ def chat():
     output_format = str(request.json.get('output_format', 'md')).lower().strip()
     if output_format not in _VALID_FORMATS:
         output_format = 'md'
-    output_formats = request.json.get('output_formats')
+    _raw_output_formats = request.json.get('output_formats')
+    output_formats = [
+        fmt if fmt in _VALID_FORMATS else output_format
+        for fmt in (
+            str(item).lower().strip()
+            for item in _raw_output_formats
+            if isinstance(item, str) and item.strip()
+        )
+    ] if isinstance(_raw_output_formats, list) else None
     _raw_overwrite = (request.json.get('overwrite_filename') or '').strip()
     overwrite_filename = _raw_overwrite if _raw_overwrite and re.match(r'^[\w.\-]{1,120}$', _raw_overwrite) else None
     if _raw_overwrite and not overwrite_filename:
@@ -532,8 +540,6 @@ def chat():
                 yield format_sse({'type': 'done'})
                 return
             if _is_edit_intent(user_input) and not _is_discard_intent(user_input):
-                db.discard_job(job_id)
-                _job_completed = True
                 yield format_sse({'type': 'text', 'content': 'คุณมีไฟล์รอบันทึกอยู่ กรุณาพิมพ์ **บันทึก** เพื่อบันทึกไฟล์ก่อน หรือ **ยกเลิก** เพื่อยกเลิกแล้วส่งคำสั่งใหม่'})
                 yield format_sse({'type': 'done'})
                 return
@@ -603,6 +609,7 @@ def chat():
                 subtasks = agent_instance.plan(user_input, conversation_history)
                 if not subtasks:
                     yield format_sse({'type': 'error', 'message': 'PM Agent ไม่สามารถแบ่งงานได้'})
+                    yield format_sse({'type': 'done'})
                     return
                 yield format_sse({'type': 'pm_plan', 'subtasks': subtasks})
 
@@ -736,7 +743,9 @@ def preview_file():
         return jsonify({'error': 'invalid session_id'}), 400
     workspace = _get_request_workspace()
     filepath = os.path.join(workspace, filename)
-    if not os.path.realpath(filepath).startswith(os.path.realpath(workspace)):
+    real_workspace = os.path.realpath(workspace)
+    real_filepath = os.path.realpath(filepath)
+    if not real_filepath.startswith(real_workspace + os.sep) and real_filepath != real_workspace:
         return jsonify({'error': 'access denied'}), 403
     if not os.path.isfile(filepath):
         return jsonify({'error': 'not found'}), 404

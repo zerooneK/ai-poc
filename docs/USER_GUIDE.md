@@ -58,6 +58,7 @@ The sidebar contains shortcut buttons for common tasks. Click any shortcut to au
 
 1. If you do not want to save the document, type **ยกเลิก** (cancel)
 2. The document will be discarded and you can send a new request
+3. If you type an edit instruction while PM-generated files are still waiting to be saved, the system now only reminds you to save or discard first. It does not record that step as a real discard action.
 
 ### Editing a Document Before Saving
 
@@ -79,6 +80,7 @@ When your request involves multiple departments or document types, the Project M
 4. When all subtasks are complete, you will see a prompt to save all files
 5. Type **บันทึก** and select a format for each file individually
 6. Click **บันทึกทั้งหมด** to save all files at once
+7. If the PM agent cannot break the work into subtasks, the app now ends that response cleanly instead of leaving the interface stuck in a loading state.
 
 ## Viewing Files
 
