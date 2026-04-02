@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
-import { useRef } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useSSE, type ToolEvent } from "@/hooks/useSSE";
 import { useFileSSE } from "@/hooks/useFileSSE";
 import { useSessions } from "@/hooks/useSessions";
@@ -105,7 +104,7 @@ export default function Home() {
     sendMessage,
   } = useSSE();
 
-  const { fileChanged } = useFileSSE(sessionId);
+  const { fileChanged, reconnect: reconnectFileSSE } = useFileSSE(sessionId);
   const { sessions, loadSessions, loadSessionJobs } = useSessions();
 
   // Load session workspace on mount
@@ -209,6 +208,11 @@ export default function Home() {
     [conversationHistory.length, loadSessionJobs, messages.length, sessionId]
   );
 
+  // Always-current ref so onStreamComplete (stored in useSSE's optionsRef at sendMessage time)
+  // never calls a stale closure — avoids hasError / pendingFiles staleness bugs.
+  const hasErrorRef = useRef(hasError);
+  hasErrorRef.current = hasError;
+
   const handleStreamComplete = useCallback(
     (outputText: string, agent?: string, toolEvents?: ToolEvent[]) => {
       if (outputText.trim()) {
@@ -226,7 +230,7 @@ export default function Home() {
       }
       if (saveRequestRef.current) {
         saveRequestRef.current = false;
-        if (!hasError) {
+        if (!hasErrorRef.current) {
           setPendingDoc("");
           setPendingAgent("");
           setPendingTempPaths([]);
@@ -254,8 +258,13 @@ export default function Home() {
       }
       loadSessions();
     },
-    [hasError, loadSessions, pendingFiles, sessionId]
+    [loadSessions, pendingFiles, sessionId]
   );
+
+  // Ref keeps onStreamComplete always calling the latest handleStreamComplete,
+  // even though useSSE captures options at sendMessage call time.
+  const handleStreamCompleteRef = useRef(handleStreamComplete);
+  handleStreamCompleteRef.current = handleStreamComplete;
 
   const submitMessage = useCallback(
     (
@@ -285,14 +294,13 @@ export default function Home() {
         agentTypes: shouldSendPendingState ? pendingAgentTypes : undefined,
         outputFormat: options?.outputFormat,
         onStreamComplete: (payload) => {
-          handleStreamComplete(payload.outputText, payload.agent, payload.toolEvents);
+          handleStreamCompleteRef.current(payload.outputText, payload.agent, payload.toolEvents);
         },
       });
       loadSessions();
     },
     [
       conversationHistory,
-      handleStreamComplete,
       loadSessions,
       pendingAgent,
       pendingAgentTypes,
@@ -325,6 +333,8 @@ export default function Home() {
     setPendingAgentTypes([]);
     setPendingFilename("");
     setPendingAgentLabel("");
+    // Reconnect SSE so it watches the new workspace directory
+    reconnectFileSSE();
   };
 
   const handleDeleteFile = (filename: string) => {

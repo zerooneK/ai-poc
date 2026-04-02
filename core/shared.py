@@ -60,25 +60,55 @@ def _persist_workspace(path: str):
 WORKSPACE_PATH = _load_persisted_workspace()
 _workspace_lock = threading.Lock()
 
-# Per-session workspace state (thread-safe)
-_session_workspaces: dict = {}
+# Per-session workspace state (thread-safe, persisted across restarts)
+_SESSION_WS_STATE_FILE = os.path.join(_PROJECT_ROOT, 'data', '.session_workspaces.json')
 _session_ws_lock = threading.Lock()
+
+
+def _load_session_workspaces() -> dict:
+    """Load persisted session→workspace mappings. Drops entries whose directories no longer exist."""
+    try:
+        with open(_SESSION_WS_STATE_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        if not isinstance(data, dict):
+            return {}
+        return {k: v for k, v in data.items()
+                if isinstance(k, str) and isinstance(v, str) and os.path.isdir(v)}
+    except (OSError, ValueError):
+        return {}
+
+
+def _persist_session_workspaces(snapshot: dict) -> None:
+    """Write current session→workspace mappings to disk (called under _session_ws_lock)."""
+    try:
+        os.makedirs(os.path.dirname(_SESSION_WS_STATE_FILE), exist_ok=True)
+        with open(_SESSION_WS_STATE_FILE, 'w', encoding='utf-8') as f:
+            json.dump(snapshot, f, indent=2)
+    except OSError as e:
+        _logging.getLogger(__name__).warning("[shared] Failed to persist session workspaces: %s", e)
+
+
+_session_workspaces: dict = _load_session_workspaces()
+
 
 def get_session_workspace(session_id: str) -> str:
     """Return the workspace path for a specific session, falling back to the global."""
     with _session_ws_lock:
         return _session_workspaces.get(session_id, WORKSPACE_PATH)
 
-def set_session_workspace(session_id: str, path: str):
-    """Set the workspace path for a specific session."""
+
+def set_session_workspace(session_id: str, path: str) -> None:
+    """Set the workspace path for a specific session and persist to disk."""
     with _session_ws_lock:
         _session_workspaces[session_id] = path
+        _persist_session_workspaces(dict(_session_workspaces))
 
 
-def remove_session_workspace(session_id: str):
-    """Remove a session-specific workspace mapping."""
+def remove_session_workspace(session_id: str) -> None:
+    """Remove a session-specific workspace mapping and persist to disk."""
     with _session_ws_lock:
         _session_workspaces.pop(session_id, None)
+        _persist_session_workspaces(dict(_session_workspaces))
 
 # Event bus for workspace changes
 _ws_change_queues = {} # workspace_path -> [queue.Queue]

@@ -1,5 +1,10 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.32.15] — 2 เมษายน 2569 · fix
+- fix (core/shared.py): persist session→workspace mappings to `data/.session_workspaces.json` — ป้องกัน mapping หายทุกครั้ง server restart ทำให้ไฟล์ไปบันทึกที่ workspace/ root แทน session subdirectory
+- fix (frontend/app/page.tsx): เรียก `reconnectFileSSE()` หลังเปลี่ยน workspace — SSE stream เดิมยัง watch workspace เก่า ทำให้ sidebar ไม่อัปเดตอัตโนมัติหลังบันทึกไฟล์
+- fix (frontend/app/page.tsx): แก้ stale closure ใน `handleStreamComplete` — `hasError` capture ไว้ตอน `sendMessage` อาจเป็น `true` จาก error ก่อนหน้า ทำให้ข้าม `getFilesForSession` หลัง save สำเร็จ — แก้ด้วย `hasErrorRef` + `handleStreamCompleteRef`
+
 ## [v0.32.14] — 2 เมษายน 2569 · feature
 - feat (frontend/hooks/useSSE.ts): เพิ่ม `ToolEvent` interface และ `currentToolEvents` state — รองรับ SSE event type `tool_result` และ `web_search_sources` ที่ backend ส่งมา แทนที่จะ ignore
 - feat (frontend/components/MessageBubble.tsx): เพิ่ม AI Action Log UI แสดงเหนือเนื้อหาหลักในทุก assistant bubble — `tool_result` แสดงเป็น icon + label + ชื่อไฟล์, `web_search_sources` แสดงเป็น query + source chips
