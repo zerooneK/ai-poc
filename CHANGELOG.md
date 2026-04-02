@@ -1,5 +1,8 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.32.11] — 2 เมษายน 2569 · feat
+- feat (frontend/app/page.tsx): เพิ่ม sidebar แบบพับ/ขยายได้ใน Next.js frontend โดยยังคงใช้งาน workspace, file list, session list และลบ session ได้ในโหมดย่อ
+
 ## [v0.32.10] — 2 เมษายน 2569 · fix
 - fix (agents/pm_agent.py): ครอบ PM planning API call ด้วย `try/except` แล้ว fallback เป็น `[]` เมื่อ upstream error แทนการ throw
 - fix (app.py): `/api/preview` ใช้ path traversal guard แบบเดียวกับ `/api/serve` แล้ว ปิดช่อง `startswith(workspace)` ที่ขาด `os.sep`

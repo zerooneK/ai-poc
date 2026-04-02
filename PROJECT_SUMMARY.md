@@ -8,10 +8,10 @@
 **Internal AI Assistant Platform** — ระบบ AI สำหรับพนักงานภายในบริษัทไทย
 พนักงานพิมพ์งานเป็นภาษาไทย → AI เลือก Agent ที่เหมาะสม → สร้างเอกสาร (Draft) → User ยืนยัน → บันทึกเป็นไฟล์จริงในระบบ
 
-- **Version ปัจจุบัน:** v0.32.10 (Backend SSE + PM hardening)
+- **Version ปัจจุบัน:** v0.32.11 (Next.js collapsible sidebar)
 - **สถานะ:** Production-Ready POC + Session Isolation + Multi-Format Export + Backend safety hardening
 - **Branch:** `wsl-experiment`
-- **Last Commit:** v0.32.10 — fix: harden pm and streaming edge cases
+- **Last Commit:** v0.32.11 — feat: add collapsible next sidebar
 
 ---
 
@@ -27,7 +27,7 @@
 | Workspace/file management routes | ✅ ทำงานได้ | `health/files/preview/serve/delete/workspace` รองรับ session workspace แล้ว |
 | Local Agent Mode — ไฟล์บน Windows โดยตรง | ✅ ทำงานได้ | เพิ่มใน v0.23.0 |
 | Sidebar แสดงไฟล์ใน workspace | ✅ ทำงานได้ | |
-| Sidebar พับ/ขยายได้ (collapsible) | ✅ ทำงานได้ | |
+| Sidebar พับ/ขยายได้ (collapsible) | ✅ ทำงานได้ | รองรับใน Next.js frontend แบบ compact rail |
 | File Preview Panel | ✅ ทำงานได้ | เพิ่มใน v0.29.0 |
 | Session management API | ✅ ทำงานได้ | `GET /api/sessions`, `GET /api/sessions/<session_id>` |
 | Context Injection — inject file list + content ก่อนส่ง AI | ✅ ทำงานได้ | |

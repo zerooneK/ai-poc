@@ -92,6 +92,7 @@ The sidebar shows all files in your current workspace. Each file displays:
 - Last modified date
 
 The file list updates automatically when files are added or removed.
+In the Next.js frontend, you can collapse the sidebar from the top header to free more space for the chat area. In collapsed mode, the same workspace, file, and session actions remain available in compact form.
 
 ### Opening a File
 
