@@ -1933,9 +1933,11 @@
 
   // Auto-scroll lock — stops forcing scroll-to-bottom when user has scrolled up
   let userScrolledUp = false;
+  let _programmaticScroll = false;
   const outputWrapEl = document.getElementById('outputWrap');
   if (outputWrapEl) {
     outputWrapEl.addEventListener('scroll', () => {
+      if (_programmaticScroll) return;
       const threshold = 80;
       const atBottom = outputWrapEl.scrollTop + outputWrapEl.clientHeight >= outputWrapEl.scrollHeight - threshold;
       userScrolledUp = !atBottom;
@@ -1943,7 +1945,11 @@
   }
 
   function _scrollToBottom() {
-    if (!userScrolledUp) outputWrapEl.scrollTop = outputWrapEl.scrollHeight;
+    if (!userScrolledUp) {
+      _programmaticScroll = true;
+      outputWrapEl.scrollTop = outputWrapEl.scrollHeight;
+      requestAnimationFrame(() => { _programmaticScroll = false; });
+    }
   }
 
   let _statusFadeTimer = null;
@@ -2772,16 +2778,25 @@
     if (isPdf) {
       // Use browser's built-in PDF viewer via iframe
       _setPdfMode(true);
-      // Show loading state until iframe is ready
       const wrap = document.getElementById('previewPdfWrap');
-      wrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;width:100%;color:var(--on-surface-2);font-size:13px;opacity:0.5;flex-direction:column;gap:8px"><span class="material-symbols-outlined" style="font-size:32px;opacity:0.4">picture_as_pdf</span>กำลังโหลด PDF...</div>';
+      // Create loading placeholder and iframe, append both to DOM immediately
+      const loadingDiv = document.createElement('div');
+      loadingDiv.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;color:var(--on-surface-2);font-size:13px;opacity:0.5;flex-direction:column;gap:8px';
+      loadingDiv.innerHTML = '<span class="material-symbols-outlined" style="font-size:32px;opacity:0.4">picture_as_pdf</span>กำลังโหลด PDF...';
       const frame = document.createElement('iframe');
       frame.id = 'previewPdfFrame';
       frame.title = 'PDF Preview';
-      frame.style.cssText = 'width:100%;height:100%;border:none;';
-      frame.onload = () => { if (_previewCurrentFile === filename) wrap.replaceChildren(frame); };
+      frame.style.cssText = 'width:100%;height:100%;border:none;display:none;';
+      wrap.replaceChildren(loadingDiv, frame);
+      frame.onload = () => {
+        if (_previewCurrentFile === filename) {
+          loadingDiv.remove();
+          frame.style.display = '';
+        }
+      };
       frame.onerror = () => { if (_previewCurrentFile === filename) closePreview(); };
-      frame.src = `/api/serve/${encodeURIComponent(filename)}`;
+      // Include session_id so backend finds the file in the correct workspace
+      frame.src = `/api/serve/${encodeURIComponent(filename)}?session_id=${encodeURIComponent(_getSessionId())}`;
       _previewContent = '';
       _previewFileSize = -1;
       return;
