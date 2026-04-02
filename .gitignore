@@ -11,3 +11,9 @@ temp/*
 !temp/.gitkeep
 data/*
 !data/.gitkeep
+.codex
+trace
+trace-build
+AGENTS.md
+CLAUDE.md
+README.md
