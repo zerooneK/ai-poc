@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn, agentLabel, agentIcon } from "@/lib/utils";
@@ -115,6 +116,8 @@ function ActionLog({ toolEvents }: { toolEvents: ToolEvent[] }) {
   );
 }
 
+export default React.memo(MessageBubble);
+
 // ─── MessageBubble ───────────────────────────────────────────────────
 
 interface MessageBubbleProps {
@@ -125,7 +128,7 @@ interface MessageBubbleProps {
   toolEvents?: ToolEvent[];
 }
 
-export default function MessageBubble({
+function MessageBubble({
   role,
   content,
   agent,

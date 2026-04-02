@@ -58,12 +58,12 @@ function isSaveIntent(text: string): boolean {
 }
 
 export default function Home() {
-  const [sessionId, setSessionId] = useState(() =>
-    typeof window !== "undefined" ? createSessionId() : ""
-  );
-  const [selectedSessionId, setSelectedSessionId] = useState(() =>
-    typeof window !== "undefined" ? createSessionId() : ""
-  );
+  const [sessionId, setSessionId] = useState(() => {
+    if (typeof window === "undefined") return "";
+    const id = createSessionId();
+    return id;
+  });
+  const [selectedSessionId, setSelectedSessionId] = useState(() => sessionId);
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationHistory, setConversationHistory] = useState<
     Array<{ role: string; content: string }>
