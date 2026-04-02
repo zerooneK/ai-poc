@@ -1,5 +1,9 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.32.12] — 2 เมษายน 2569 · fix
+- fix (app.py): เพิ่มหมวดคำศัพท์สั่งบันทึกไฟล์ (เช่น 'เอาตามนี้', 'ตกลงตามนี้', 'จัดเก็บ', 'คอนเฟิร์ม', 'ถูกต้อง', 'ดีเลย') และ regex ภาษาอังกฤษ (confirm, accept, done, export, keep) ให้ครอบคลุมทุกเจตนาของผู้ใช้
+- fix (app.py): ขยาย negative prefix (เช่น 'อย่าเพิ่ง', 'ยังไม่', 'เดี๋ยวก่อน') ป้องกัน false positive ตอน user ปฏิเสธการบันทึก
+
 ## [v0.32.11] — 2 เมษายน 2569 · feat
 - feat (frontend/app/page.tsx): เพิ่ม sidebar แบบพับ/ขยายได้ใน Next.js frontend โดยยังคงใช้งาน workspace, file list, session list และลบ session ได้ในโหมดย่อ
 - fix (frontend/app/page.tsx): ย้ายปุ่มพับ/ขยายเข้าไปไว้ใน sidebar และย้ายตัวเลือก workspace ไปไว้ด้านล่างของ sidebar ตาม layout ใหม่

@@ -283,9 +283,14 @@ def _tool_result_is_error(result: str) -> bool:
 # are handled via word-boundary regex instead.
 # NOTE: _is_save_intent is only called when pending_doc or pending_temp_paths exists
 # (guarded by outer if-blocks in chat()), so false positives are mitigated.
-_SAVE_KEYWORDS = {'บันทึก', 'เซฟ', 'ยืนยัน', 'ตกลง', 'ได้เลย', 'โอเค', 'บันทึกได้', 'บันทึกเลย', 'บันทึกได้เลย', 'ใช้ได้'}
-_SAVE_BOUNDARY_RE = re.compile(r'\b(?:ok|save)\b', re.IGNORECASE)
-_SAVE_NEGATIVE_PREFIX = {'ไม่ใช่', 'ไม่ใช้'}
+_SAVE_KEYWORDS = {
+    'บันทึก', 'เซฟ', 'ยืนยัน', 'ตกลง', 'ได้เลย', 'โอเค', 'บันทึกได้', 
+    'บันทึกเลย', 'บันทึกได้เลย', 'ใช้ได้', 'เอาตามนี้', 'ตกลงตามนี้', 
+    'จัดเก็บ', 'เซฟเลย', 'เซฟได้เลย', 'คอนเฟิร์ม', 'ถูกต้อง', 'ดีเลย', 
+    'โอเคเลย', 'บันทึกไฟล์'
+}
+_SAVE_BOUNDARY_RE = re.compile(r'\b(?:ok|save|confirm|accept|done|yes|export|download|keep|sure)\b', re.IGNORECASE)
+_SAVE_NEGATIVE_PREFIX = {'ไม่ใช่', 'ไม่ใช้', 'ยังไม่', 'อย่าเพิ่ง', 'เดี๋ยวก่อน'}
 _DISCARD_KEYWORDS = {'ยกเลิก', 'cancel', 'ไม่เอา', 'ไม่บันทึก', 'ไม่ต้องการ', 'ข้ามไป', 'ลบทิ้ง', 'discard'}
 _EDIT_KEYWORDS = {'แก้ไข', 'แก้', 'ปรับ', 'ปรับปรุง', 'ปรับแก้', 'เพิ่ม', 'ลบ', 'เปลี่ยน', 'แทนที่', 'เพิ่มเติม', 'ตัดออก', 'แก้ตรง', 'ปรับตรง', 'edit', 'modify', 'update', 'change', 'fix', 'adjust', 'add', 'remove', 'delete', 'replace', 'revise'}
 _VALID_FORMATS = {'md', 'txt', 'docx', 'xlsx', 'pdf'}
