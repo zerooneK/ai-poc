@@ -27,7 +27,7 @@
 | Workspace/file management routes | ✅ ทำงานได้ | `health/files/preview/serve/delete/workspace` รองรับ session workspace แล้ว |
 | Local Agent Mode — ไฟล์บน Windows โดยตรง | ✅ ทำงานได้ | เพิ่มใน v0.23.0 |
 | Sidebar แสดงไฟล์ใน workspace | ✅ ทำงานได้ | |
-| Sidebar พับ/ขยายได้ (collapsible) | ✅ ทำงานได้ | รองรับใน Next.js frontend แบบ compact rail |
+| Sidebar พับ/ขยายได้ (collapsible) | ✅ ทำงานได้ | รองรับใน Next.js frontend แบบ compact rail และมี workspace selector ด้านล่าง |
 | File Preview Panel | ✅ ทำงานได้ | เพิ่มใน v0.29.0 |
 | Session management API | ✅ ทำงานได้ | `GET /api/sessions`, `GET /api/sessions/<session_id>` |
 | Context Injection — inject file list + content ก่อนส่ง AI | ✅ ทำงานได้ | |

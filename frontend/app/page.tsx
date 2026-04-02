@@ -454,18 +454,6 @@ export default function Home() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={toggleSidebar}
-                className="flex h-10 items-center gap-2 rounded-full border border-border bg-surface px-3 text-sm text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary"
-                aria-label={sidebarCollapsed ? "ขยาย sidebar" : "ย่อ sidebar"}
-                title={sidebarCollapsed ? "ขยาย sidebar" : "ย่อ sidebar"}
-              >
-                <span className="text-base">{sidebarCollapsed ? "☰" : "⇤"}</span>
-                <span className="hidden sm:inline">
-                  {sidebarCollapsed ? "แสดงเมนู" : "ย่อเมนู"}
-                </span>
-              </button>
-              <button
-                type="button"
                 onClick={toggleTheme}
                 className="flex h-10 items-center gap-2 rounded-full border border-border bg-surface px-3 pr-2 text-sm text-text-secondary transition-colors hover:bg-bg-hover"
                 aria-label="สลับธีม"
@@ -498,25 +486,26 @@ export default function Home() {
               sidebarCollapsed ? "w-20" : "w-72"
             }`}
           >
-            <div className={`border-b border-border ${sidebarCollapsed ? "px-2 py-4" : "px-4 py-4"}`}>
+            <div className={`border-b border-border ${sidebarCollapsed ? "px-2 py-3" : "px-4 py-3"}`}>
               <button
-                onClick={() => setWorkspaceModalOpen(true)}
-                className={`w-full rounded-2xl bg-bg-tertiary/70 text-left text-sm text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary ${
-                  sidebarCollapsed ? "flex items-center justify-center px-0 py-3 text-center" : "px-3 py-3"
+                type="button"
+                onClick={toggleSidebar}
+                className={`w-full rounded-2xl border border-border bg-bg-tertiary/70 text-sm text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary ${
+                  sidebarCollapsed
+                    ? "flex items-center justify-center px-0 py-3"
+                    : "flex items-center justify-between gap-2 px-3 py-3"
                 }`}
-                aria-label="เลือก workspace"
-                title={workspacePath || "เลือก workspace"}
+                aria-label={sidebarCollapsed ? "ขยาย sidebar" : "ย่อ sidebar"}
+                title={sidebarCollapsed ? "ขยาย sidebar" : "ย่อ sidebar"}
               >
                 {sidebarCollapsed ? (
-                  <span className="text-xl">📁</span>
+                  <span className="text-lg">☰</span>
                 ) : (
                   <>
-                    <span className="mb-1 block text-[11px] uppercase tracking-[0.16em] text-text-muted">
-                      Workspace
+                    <span className="text-sm font-medium text-text-primary">
+                      ย่อเมนู
                     </span>
-                    <span className="block truncate">
-                      {workspacePath || "เลือก workspace..."}
-                    </span>
+                    <span className="text-base text-text-muted">⇤</span>
                   </>
                 )}
               </button>
@@ -646,6 +635,30 @@ export default function Home() {
                   </div>
                 ))}
               </div>
+            </div>
+
+            <div className={`border-t border-border ${sidebarCollapsed ? "px-2 py-3" : "px-4 py-4"}`}>
+              <button
+                onClick={() => setWorkspaceModalOpen(true)}
+                className={`w-full rounded-2xl bg-bg-tertiary/70 text-left text-sm text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary ${
+                  sidebarCollapsed ? "flex items-center justify-center px-0 py-3 text-center" : "px-3 py-3"
+                }`}
+                aria-label="เลือก workspace"
+                title={workspacePath || "เลือก workspace"}
+              >
+                {sidebarCollapsed ? (
+                  <span className="text-xl">📁</span>
+                ) : (
+                  <>
+                    <span className="mb-1 block text-[11px] uppercase tracking-[0.16em] text-text-muted">
+                      Workspace
+                    </span>
+                    <span className="block truncate">
+                      {workspacePath || "เลือก workspace..."}
+                    </span>
+                  </>
+                )}
+              </button>
             </div>
           </aside>
 
