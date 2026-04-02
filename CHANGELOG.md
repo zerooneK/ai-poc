@@ -1,5 +1,8 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.32.18] — 3 เมษายน 2569 · docs
+- docs: เพิ่ม `docs/PROJECT_RATING.md` — ผลการประเมินโปรเจกต์ครบ 10 มิติ (Architecture, Code Quality, Security, Performance, Testing, Documentation, DevOps, UX, AI/Prompts, Project Mgmt) พร้อม actionable roadmap
+
 ## [v0.32.17] — 3 เมษายน 2569 · feature/fix
 - feat (frontend): Redesign UI ตามหลักการ "The Silent Architect" (อิงจาก `docs/DESIGN.md`)
 - feat (frontend/app/globals.css): เพิ่ม Dark Mode (`Atmospheric Neutrals`) และ Light Mode (`Soft Morning Light`) พร้อม CSS Variables สำหรับ Typography และ Shadows
