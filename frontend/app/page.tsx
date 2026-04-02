@@ -483,102 +483,112 @@ export default function Home() {
           {/* Sidebar */}
           <aside
             className={`flex shrink-0 flex-col overflow-hidden rounded-[30px] border border-border bg-bg-secondary/70 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl transition-[width] duration-200 ${
-              sidebarCollapsed ? "w-20" : "w-72"
+              sidebarCollapsed ? "w-16" : "w-72"
             }`}
           >
-            <div className={`border-b border-border ${sidebarCollapsed ? "px-3 py-3" : "px-4 py-3"}`}>
-              <button
-                type="button"
-                onClick={toggleSidebar}
-                className={`w-full rounded-2xl border border-border bg-bg-tertiary/70 text-sm text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary ${
-                  sidebarCollapsed
-                    ? "flex h-12 items-center justify-center px-0"
-                    : "flex items-center justify-between gap-2 px-3 py-3"
-                }`}
-                aria-label={sidebarCollapsed ? "ขยาย sidebar" : "ย่อ sidebar"}
-                title={sidebarCollapsed ? "ขยาย sidebar" : "ย่อ sidebar"}
-              >
-                {sidebarCollapsed ? (
-                  <span className="text-lg">☰</span>
-                ) : (
-                  <>
-                    <span className="text-sm font-medium text-text-primary">
-                      ย่อเมนู
-                    </span>
-                    <span className="text-base text-text-muted">⇤</span>
-                  </>
-                )}
-              </button>
-            </div>
+            {sidebarCollapsed ? (
+              <>
+                <div className="flex flex-col items-center gap-3 px-2 py-4">
+                  <button
+                    type="button"
+                    onClick={toggleSidebar}
+                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-bg-tertiary/80 text-base text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary"
+                    aria-label="ขยาย sidebar"
+                    title="ขยาย sidebar"
+                  >
+                    ☰
+                  </button>
+                </div>
 
-            <div className="flex-1 overflow-y-auto">
-              {sidebarCollapsed ? (
-                <div className="flex flex-col items-center gap-4 px-3 py-4">
-                  <div className="w-full">
-                    <div className="mb-2 flex items-center justify-center">
-                      <span className="inline-flex min-w-10 items-center justify-center rounded-full border border-border bg-bg-tertiary px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-text-muted">
-                        {files.length}F
+                <div className="flex-1 overflow-y-auto px-2 pb-3">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="flex flex-col items-center gap-2">
+                      <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-text-muted">
+                        Files
                       </span>
-                    </div>
-                    {files.length === 0 ? (
-                      <div className="flex justify-center">
+                      {files.slice(0, 4).map((f) => (
+                        <button
+                          key={f.name}
+                          onClick={() => setPreviewFile(f.name)}
+                          className="flex h-9 w-9 items-center justify-center rounded-xl text-sm text-text-primary transition-colors hover:bg-bg-hover"
+                          title={`${f.name} · ${formatBytes(f.size)}`}
+                          aria-label={`เปิดไฟล์ ${f.name}`}
+                        >
+                          {fileIcon(f.name)}
+                        </button>
+                      ))}
+                      {files.length === 0 && (
                         <span className="text-[10px] text-text-muted">-</span>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center gap-2">
-                        {files.slice(0, 4).map((f) => (
+                      )}
+                    </div>
+
+                    <div className="h-px w-8 bg-border" />
+
+                    <div className="flex flex-col items-center gap-2">
+                      <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-text-muted">
+                        Chat
+                      </span>
+                      {sessions.slice(0, 5).map((s) => {
+                        const isSelected = s.session_id === selectedSessionId;
+                        return (
                           <button
-                            key={f.name}
-                            onClick={() => setPreviewFile(f.name)}
-                            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border bg-bg-secondary/80 text-base text-text-primary transition-all hover:-translate-y-0.5 hover:bg-bg-hover"
-                            title={`${f.name} · ${formatBytes(f.size)}`}
-                            aria-label={`เปิดไฟล์ ${f.name}`}
+                            key={s.session_id}
+                            onClick={() => void handleSessionSelect(s.session_id)}
+                            className={`flex h-9 w-9 items-center justify-center rounded-xl text-xs font-semibold transition-colors ${
+                              isSelected
+                                ? "bg-bg-active text-text-primary"
+                                : "text-text-secondary hover:bg-bg-hover hover:text-text-primary"
+                            }`}
+                            title={`${s.first_message} · ${agentLabel(s.last_agent)}`}
+                            aria-label={`เปิดเซสชัน ${s.first_message.slice(0, 20)}`}
                           >
-                            {fileIcon(f.name)}
+                            {getSessionBadgeLabel(s.first_message)}
                           </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="h-px w-10 bg-border" />
-
-                  <div className="w-full">
-                    <div className="mb-2 flex items-center justify-center">
-                      <span className="inline-flex min-w-10 items-center justify-center rounded-full border border-border bg-bg-tertiary px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-text-muted">
-                        {sessions.length}S
-                      </span>
-                    </div>
-                    {sessions.length === 0 ? (
-                      <div className="flex justify-center">
+                        );
+                      })}
+                      {sessions.length === 0 && (
                         <span className="text-[10px] text-text-muted">-</span>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center gap-2">
-                        {sessions.slice(0, 5).map((s) => {
-                          const isSelected = s.session_id === selectedSessionId;
-                          return (
-                            <button
-                              key={s.session_id}
-                              onClick={() => void handleSessionSelect(s.session_id)}
-                              className={`flex h-11 w-11 items-center justify-center rounded-2xl border text-sm font-semibold transition-all hover:-translate-y-0.5 ${
-                                isSelected
-                                  ? "border-accent/40 bg-bg-active text-text-primary shadow-[0_10px_24px_rgba(45,108,223,0.18)]"
-                                  : "border-border bg-bg-secondary/80 text-text-secondary hover:bg-bg-hover hover:text-text-primary"
-                              }`}
-                              title={`${s.first_message} · ${agentLabel(s.last_agent)} · ${s.job_count} งาน`}
-                              aria-label={`เปิดเซสชัน ${s.first_message.slice(0, 20)}`}
-                            >
-                              {getSessionBadgeLabel(s.first_message)}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
-              ) : (
-                <>
+
+                <div className="border-t border-border px-2 py-3">
+                  <button
+                    onClick={() => setWorkspaceModalOpen(true)}
+                    className="flex h-10 w-full items-center justify-center rounded-xl bg-bg-tertiary/70 text-base text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary"
+                    aria-label="เลือก workspace"
+                    title={workspacePath || "เลือก workspace"}
+                  >
+                    📁
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="border-b border-border px-4 py-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-lg font-semibold tracking-tight text-text-primary">
+                        AI Workspace
+                      </p>
+                      <p className="mt-1 text-xs text-text-muted">
+                        เซสชัน ไฟล์ และ workspace ปัจจุบัน
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={toggleSidebar}
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-bg-tertiary/80 text-base text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary"
+                      aria-label="ย่อ sidebar"
+                      title="ย่อ sidebar"
+                    >
+                      ⇤
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto">
                   <div className="border-b border-border px-4 py-3">
                     <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-text-muted">
                       ไฟล์ ({files.length})
@@ -663,33 +673,25 @@ export default function Home() {
                       </div>
                     ))}
                   </div>
-                </>
-              )}
-            </div>
+                </div>
 
-            <div className={`border-t border-border ${sidebarCollapsed ? "px-2 py-3" : "px-4 py-4"}`}>
-              <button
-                onClick={() => setWorkspaceModalOpen(true)}
-                className={`w-full rounded-2xl bg-bg-tertiary/70 text-left text-sm text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary ${
-                  sidebarCollapsed ? "flex items-center justify-center px-0 py-3 text-center" : "px-3 py-3"
-                }`}
-                aria-label="เลือก workspace"
-                title={workspacePath || "เลือก workspace"}
-              >
-                {sidebarCollapsed ? (
-                  <span className="text-xl">📁</span>
-                ) : (
-                  <>
+                <div className="border-t border-border px-4 py-4">
+                  <button
+                    onClick={() => setWorkspaceModalOpen(true)}
+                    className="w-full rounded-2xl bg-bg-tertiary/70 px-3 py-3 text-left text-sm text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary"
+                    aria-label="เลือก workspace"
+                    title={workspacePath || "เลือก workspace"}
+                  >
                     <span className="mb-1 block text-[11px] uppercase tracking-[0.16em] text-text-muted">
                       Workspace
                     </span>
                     <span className="block truncate">
                       {workspacePath || "เลือก workspace..."}
                     </span>
-                  </>
-                )}
-              </button>
-            </div>
+                  </button>
+                </div>
+              </>
+            )}
           </aside>
 
           {/* Chat area */}
