@@ -1,5 +1,8 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.32.16] — 2 เมษายน 2569 · chore
+- chore: ลบไฟล์ที่ไม่จำเป็นออกจาก repo — `index.html`, `history.html` (legacy SPA ที่ย้ายไป Next.js แล้ว), `PROJECT_SUMMARY.md`, `backup/`, `docs/MANUAL.md` (outdated v0.20.0), `docs/poc-plan.md`, `docs/project-plan.md`, `docs/architect.md` (ซ้ำกับ ARCHITECTURE.md)
+
 ## [v0.32.15] — 2 เมษายน 2569 · fix
 - fix (core/shared.py): persist session→workspace mappings to `data/.session_workspaces.json` — ป้องกัน mapping หายทุกครั้ง server restart ทำให้ไฟล์ไปบันทึกที่ workspace/ root แทน session subdirectory
 - fix (frontend/app/page.tsx): เรียก `reconnectFileSSE()` หลังเปลี่ยน workspace — SSE stream เดิมยัง watch workspace เก่า ทำให้ sidebar ไม่อัปเดตอัตโนมัติหลังบันทึกไฟล์
