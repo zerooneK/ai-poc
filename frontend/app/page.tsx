@@ -33,15 +33,6 @@ interface WorkspaceFile {
   modified: string;
 }
 
-function getOrCreateSessionId(): string {
-  const storageKey = "ai-poc-session-id";
-  const existing = window.localStorage.getItem(storageKey);
-  if (existing) return existing;
-  const sessionId = createSessionId();
-  window.localStorage.setItem(storageKey, sessionId);
-  return sessionId;
-}
-
 function createSessionId(): string {
   return typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
     ? crypto.randomUUID()
@@ -68,10 +59,10 @@ function isSaveIntent(text: string): boolean {
 
 export default function Home() {
   const [sessionId, setSessionId] = useState(() =>
-    typeof window !== "undefined" ? getOrCreateSessionId() : ""
+    typeof window !== "undefined" ? createSessionId() : ""
   );
   const [selectedSessionId, setSelectedSessionId] = useState(() =>
-    typeof window !== "undefined" ? getOrCreateSessionId() : ""
+    typeof window !== "undefined" ? createSessionId() : ""
   );
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationHistory, setConversationHistory] = useState<
@@ -367,7 +358,6 @@ export default function Home() {
 
   const handleNewSession = useCallback(() => {
     const nextSessionId = createSessionId();
-    window.localStorage.setItem("ai-poc-session-id", nextSessionId);
     setPreviewFile(null);
     setMessages([]);
     setConversationHistory([]);

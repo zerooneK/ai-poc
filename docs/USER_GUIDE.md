@@ -93,6 +93,7 @@ The sidebar shows all files in your current workspace. Each file displays:
 
 The file list updates automatically when files are added or removed.
 In the Next.js frontend, you can collapse the sidebar using the control inside the sidebar itself to free more space for the chat area. The workspace selector is available at the bottom of the sidebar, and in collapsed mode the sidebar changes into a compact rail with quick file and session buttons.
+When you reload the page in the Next.js frontend, the app now starts a new empty session automatically. Older sessions remain available in the sidebar and can still be opened manually.
 
 ### Opening a File
 

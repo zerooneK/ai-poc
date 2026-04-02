@@ -49,7 +49,7 @@ Serves the job history viewer page (`history.html`).
 
 **Response:** `text/html` — job history browser.
 
-Note: the in-progress Next.js frontend also includes a client-side collapsible sidebar. The collapse control lives inside the sidebar, the workspace selector is anchored at the bottom, and the collapsed state uses a compact rail UI. This is a presentation-only change and does not alter any backend routes or request formats.
+Note: the in-progress Next.js frontend also includes a client-side collapsible sidebar. The collapse control lives inside the sidebar, the workspace selector is anchored at the bottom, and the collapsed state uses a compact rail UI. That frontend now also starts a fresh client session on browser reload instead of restoring the previous one automatically. These are presentation/session-bootstrap changes only and do not alter backend routes or request formats.
 
 ---
 

@@ -4,6 +4,7 @@
 - feat (frontend/app/page.tsx): เพิ่ม sidebar แบบพับ/ขยายได้ใน Next.js frontend โดยยังคงใช้งาน workspace, file list, session list และลบ session ได้ในโหมดย่อ
 - fix (frontend/app/page.tsx): ย้ายปุ่มพับ/ขยายเข้าไปไว้ใน sidebar และย้ายตัวเลือก workspace ไปไว้ด้านล่างของ sidebar ตาม layout ใหม่
 - fix (frontend/app/page.tsx): ปรับโหมด sidebar แบบย่อให้เป็น compact rail ที่อ่านง่ายขึ้น ลดความรกจากตัวเลข/ปุ่มซ้อนกัน
+- fix (frontend/app/page.tsx): รีโหลดหน้าใน Next.js frontend จะเริ่ม session ใหม่ทุกครั้ง ป้องกันการเลือก session เก่าค้างแต่หน้าจอเปิดเป็นแชทใหม่
 
 ## [v0.32.10] — 2 เมษายน 2569 · fix
 - fix (agents/pm_agent.py): ครอบ PM planning API call ด้วย `try/except` แล้ว fallback เป็น `[]` เมื่อ upstream error แทนการ throw

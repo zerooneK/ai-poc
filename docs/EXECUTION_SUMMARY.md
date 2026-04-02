@@ -92,6 +92,7 @@ The codebase is in good shape after the earlier review rounds plus a follow-up b
 - Added a dedicated navbar action for creating a new empty session without reloading the page.
 - Added a collapsible sidebar to the Next.js shell so users can switch between full navigation and a compact workspace/session rail, with the toggle inside the sidebar and the workspace selector anchored at the bottom.
 - Refined the collapsed sidebar into a cleaner compact rail so files and sessions remain usable without the stacked crowded layout.
+- Changed the Next.js session bootstrap so a browser reload starts a fresh session instead of reviving the previous active session state.
 - Converted the empty-state suggestion cards into working buttons that trigger preset chat prompts.
 - Updated the Next.js chat view to display streaming assistant text incrementally instead of waiting for the full response.
 - Improved session switching in the Next.js UI by adding an immediate selection state, a loading screen, and in-memory caching of restored sessions.
