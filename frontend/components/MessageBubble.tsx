@@ -3,12 +3,126 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn, agentLabel, agentIcon } from "@/lib/utils";
+import type { ToolEvent } from "@/hooks/useSSE";
+
+// ─── Tool icon/label helpers ────────────────────────────────────────
+
+const TOOL_ICONS: Record<string, string> = {
+  read_file: "📖",
+  create_file: "📝",
+  write_file: "✏️",
+  list_files: "📂",
+  delete_file: "🗑️",
+  search_files: "🔍",
+  web_search: "🌐",
+};
+
+const TOOL_LABELS: Record<string, string> = {
+  read_file: "อ่านไฟล์",
+  create_file: "สร้างไฟล์",
+  write_file: "เขียนไฟล์",
+  list_files: "ดูรายการไฟล์",
+  delete_file: "ลบไฟล์",
+  search_files: "ค้นหาไฟล์",
+  web_search: "ค้นหาเว็บ",
+};
+
+function toolIcon(tool: string): string {
+  return TOOL_ICONS[tool] ?? "🔧";
+}
+
+function toolLabel(tool: string): string {
+  return TOOL_LABELS[tool] ?? tool;
+}
+
+// ─── ToolResultRow ───────────────────────────────────────────────────
+
+function ToolResultRow({ event }: { event: ToolEvent }) {
+  const tool = event.tool ?? "unknown";
+  return (
+    <div className="flex items-center gap-2 text-xs text-text-secondary">
+      <span className="shrink-0 text-sm opacity-70">{toolIcon(tool)}</span>
+      <span className="font-medium">{toolLabel(tool)}</span>
+      {event.filename && (
+        <>
+          <span className="opacity-40">·</span>
+          <span className="truncate font-mono text-text-muted">{event.filename}</span>
+        </>
+      )}
+      {event.success === false && (
+        <span className="ml-auto shrink-0 text-[10px] text-error opacity-80">
+          ล้มเหลว
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ─── WebSearchRow ────────────────────────────────────────────────────
+
+function WebSearchRow({ event }: { event: ToolEvent }) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-2 text-xs text-text-secondary">
+        <span className="shrink-0 text-sm opacity-70">🔍</span>
+        <span className="font-medium">ค้นหา</span>
+        {event.query && (
+          <>
+            <span className="opacity-40">·</span>
+            <span className="italic opacity-70">&ldquo;{event.query}&rdquo;</span>
+          </>
+        )}
+      </div>
+      {event.sources && event.sources.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 pl-6">
+          {event.sources.slice(0, 5).map((src, i) => (
+            <a
+              key={i}
+              href={src.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={src.snippet ?? src.title}
+              className="inline-flex max-w-[160px] items-center truncate rounded-full border border-border bg-bg-primary/50 px-2.5 py-0.5 text-[11px] text-text-secondary transition-colors hover:border-accent/40 hover:text-text-primary"
+            >
+              {src.title}
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── ActionLog ───────────────────────────────────────────────────────
+
+function ActionLog({ toolEvents }: { toolEvents: ToolEvent[] }) {
+  if (toolEvents.length === 0) return null;
+  return (
+    <div className="mb-3 rounded-xl border border-border-light bg-bg-primary/30 px-3 py-2.5">
+      <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-text-muted">
+        AI ดำเนินการ
+      </p>
+      <div className="max-h-32 space-y-2 overflow-y-auto">
+        {toolEvents.map((ev, i) =>
+          ev.type === "web_search_sources" ? (
+            <WebSearchRow key={i} event={ev} />
+          ) : (
+            <ToolResultRow key={i} event={ev} />
+          )
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── MessageBubble ───────────────────────────────────────────────────
 
 interface MessageBubbleProps {
   role: "user" | "assistant";
   content: string;
   agent?: string;
   isStreaming?: boolean;
+  toolEvents?: ToolEvent[];
 }
 
 export default function MessageBubble({
@@ -16,6 +130,7 @@ export default function MessageBubble({
   content,
   agent,
   isStreaming = false,
+  toolEvents,
 }: MessageBubbleProps) {
   const isUser = role === "user";
 
@@ -46,6 +161,10 @@ export default function MessageBubble({
               {agentIcon(agent)} {agentLabel(agent)}
             </span>
           </div>
+        )}
+
+        {!isUser && toolEvents && toolEvents.length > 0 && (
+          <ActionLog toolEvents={toolEvents} />
         )}
 
         {isUser ? (

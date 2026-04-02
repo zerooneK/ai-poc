@@ -20,6 +20,7 @@ export default function PreviewPanel({ filename, sessionId, onClose }: PreviewPa
   const [loadedFilename, setLoadedFilename] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"rendered" | "raw">("rendered");
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfError, setPdfError] = useState(false);
 
   const ext = filename?.split(".").pop()?.toLowerCase() || "";
   const isPdf = ext === "pdf";
@@ -48,9 +49,12 @@ export default function PreviewPanel({ filename, sessionId, onClose }: PreviewPa
     };
   }, [filename, sessionId, isPdf]);
 
-  // Reset PDF loading state when filename changes
+  // Reset PDF loading/error state when filename changes
   useEffect(() => {
-    if (isPdf) setPdfLoading(true);
+    if (isPdf) {
+      setPdfLoading(true);
+      setPdfError(false);
+    }
   }, [filename, isPdf]);
 
   if (!filename) return null;
@@ -113,19 +117,27 @@ export default function PreviewPanel({ filename, sessionId, onClose }: PreviewPa
       {/* Body */}
       {isPdf ? (
         <div className="flex-1 relative overflow-hidden">
-          {pdfLoading && (
+          {pdfLoading && !pdfError && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-text-muted text-sm z-10 bg-bg-secondary">
               <span className="text-3xl opacity-40">📄</span>
               กำลังโหลด PDF...
             </div>
           )}
-          <iframe
-            key={filename}
-            src={getFileUrlForSession(filename, sessionId)}
-            className="w-full h-full border-none"
-            title={filename}
-            onLoad={() => setPdfLoading(false)}
-          />
+          {pdfError ? (
+            <div className="flex flex-col items-center justify-center h-full gap-2 text-text-muted text-sm px-6 text-center">
+              <span className="text-3xl opacity-40">❌</span>
+              ไม่สามารถแสดงตัวอย่าง PDF ได้
+            </div>
+          ) : (
+            <iframe
+              key={filename}
+              src={getFileUrlForSession(filename, sessionId)}
+              className="w-full h-full border-none"
+              title={filename}
+              onLoad={() => setPdfLoading(false)}
+              onError={() => { setPdfLoading(false); setPdfError(true); }}
+            />
+          )}
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto p-4">

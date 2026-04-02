@@ -7,6 +7,23 @@ export interface SSEEvent {
   [key: string]: unknown;
 }
 
+export interface ToolEvent {
+  type: "tool_result" | "web_search_sources";
+  /** tool_result: name of the tool called (e.g. "read_file", "create_file") */
+  tool?: string;
+  /** tool_result: filename operated on */
+  filename?: string;
+  /** tool_result: whether the operation succeeded */
+  success?: boolean;
+  /** tool_result: brief result summary */
+  result?: string;
+  /** web_search_sources: the search query string */
+  query?: string;
+  /** web_search_sources: list of source links */
+  sources?: Array<{ title: string; url: string; snippet?: string }>;
+  [key: string]: unknown;
+}
+
 export interface UseSSEReturn {
   /** Accumulated output text from the stream */
   outputText: string;
@@ -24,6 +41,8 @@ export interface UseSSEReturn {
   pmPlan: Array<{ agent: string; task: string }> | null;
   /** Current pending temp files emitted by the backend */
   pendingFiles: Array<{ tempPath: string; filename: string; agent?: string }>;
+  /** Tool/search events accumulated during the current stream */
+  currentToolEvents: ToolEvent[];
   /** Send a message to start a new SSE stream */
   sendMessage: (message: string, options?: SendMessageOptions) => void;
   /** Abort the current stream */
@@ -33,6 +52,7 @@ export interface UseSSEReturn {
 export interface StreamCompletePayload {
   outputText: string;
   agent?: string;
+  toolEvents?: ToolEvent[];
 }
 
 export type OnStreamComplete = (payload: StreamCompletePayload) => void;
@@ -80,9 +100,11 @@ export function useSSE(): UseSSEReturn {
   const [pendingFiles, setPendingFiles] = useState<
     Array<{ tempPath: string; filename: string; agent?: string }>
   >([]);
+  const [currentToolEvents, setCurrentToolEvents] = useState<ToolEvent[]>([]);
 
   const abortRef = useRef<AbortController | null>(null);
   const outputRef = useRef("");
+  const toolEventsRef = useRef<ToolEvent[]>([]);
   const optionsRef = useRef<SendMessageOptions | undefined>(undefined);
   const lastEventRef = useRef<SSEEvent | null>(null);
   const lastAgentRef = useRef<string | undefined>(undefined);
@@ -97,6 +119,7 @@ export function useSSE(): UseSSEReturn {
       optionsRef.current.onStreamComplete({
         outputText: stripFakeToolCalls(outputRef.current),
         agent: lastAgentRef.current,
+        toolEvents: toolEventsRef.current,
       });
     }
   }, []);
@@ -115,6 +138,7 @@ export function useSSE(): UseSSEReturn {
       optionsRef.current = options;
       // Reset state
       outputRef.current = "";
+      toolEventsRef.current = [];
       setOutputText("");
       setStatusMessage("");
       setHasError(false);
@@ -122,6 +146,7 @@ export function useSSE(): UseSSEReturn {
       setLastEvent(null);
       setPmPlan(null);
       setPendingFiles([]);
+      setCurrentToolEvents([]);
       setIsStreaming(true);
       lastAgentRef.current = undefined;
       streamCompletedRef.current = false;
@@ -210,8 +235,12 @@ export function useSSE(): UseSSEReturn {
                   break;
 
                 case "tool_result":
-                  // Tool results are shown inline by the UI
+                case "web_search_sources": {
+                  const toolEv = event as ToolEvent;
+                  toolEventsRef.current = [...toolEventsRef.current, toolEv];
+                  setCurrentToolEvents((prev) => [...prev, toolEv]);
                   break;
+                }
 
                 case "pending_file":
                   setPendingFiles((prev) => [
@@ -277,6 +306,7 @@ export function useSSE(): UseSSEReturn {
     lastEvent,
     pmPlan,
     pendingFiles,
+    currentToolEvents,
     sendMessage,
     abort,
   };

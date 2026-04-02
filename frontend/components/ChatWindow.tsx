@@ -3,11 +3,13 @@
 import { useRef, useEffect } from "react";
 import MessageBubble from "./MessageBubble";
 import { cn } from "@/lib/utils";
+import type { ToolEvent } from "@/hooks/useSSE";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
   agent?: string;
+  toolEvents?: ToolEvent[];
 }
 
 interface ChatWindowProps {
@@ -172,6 +174,7 @@ export default function ChatWindow({
             content={msg.content}
             agent={msg.agent}
             isStreaming={isStreaming && i === messages.length - 1 && msg.role === "assistant"}
+            toolEvents={msg.toolEvents}
           />
         ))}
         <div ref={bottomRef} />

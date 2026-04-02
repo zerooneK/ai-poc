@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { useRef } from "react";
-import { useSSE } from "@/hooks/useSSE";
+import { useSSE, type ToolEvent } from "@/hooks/useSSE";
 import { useFileSSE } from "@/hooks/useFileSSE";
 import { useSessions } from "@/hooks/useSessions";
 import { useShortcuts } from "@/lib/shortcuts";
@@ -25,6 +25,7 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   agent?: string;
+  toolEvents?: ToolEvent[];
 }
 
 interface WorkspaceFile {
@@ -100,6 +101,7 @@ export default function Home() {
     errorMessage,
     lastEvent,
     pendingFiles,
+    currentToolEvents,
     sendMessage,
   } = useSSE();
 
@@ -208,12 +210,13 @@ export default function Home() {
   );
 
   const handleStreamComplete = useCallback(
-    (outputText: string, agent?: string) => {
+    (outputText: string, agent?: string, toolEvents?: ToolEvent[]) => {
       if (outputText.trim()) {
         const assistantMsg: Message = {
           role: "assistant",
           content: outputText,
           agent,
+          toolEvents,
         };
         setMessages((prev) => [...prev, assistantMsg]);
         setConversationHistory((prev) => [
@@ -282,7 +285,7 @@ export default function Home() {
         agentTypes: shouldSendPendingState ? pendingAgentTypes : undefined,
         outputFormat: options?.outputFormat,
         onStreamComplete: (payload) => {
-          handleStreamComplete(payload.outputText, payload.agent);
+          handleStreamComplete(payload.outputText, payload.agent, payload.toolEvents);
         },
       });
       loadSessions();
@@ -434,9 +437,10 @@ export default function Home() {
       {
         role: "assistant" as const,
         content: outputText,
+        toolEvents: currentToolEvents.length > 0 ? currentToolEvents : undefined,
       },
     ];
-  }, [isStreaming, messages, outputText]);
+  }, [isStreaming, messages, outputText, currentToolEvents]);
 
   return (
     <ErrorBoundary>
@@ -723,7 +727,11 @@ export default function Home() {
                 isLoadingSession={isSwitchingSession}
               />
             </div>
-            <InputArea onSend={handleSend} isStreaming={isStreaming} />
+            <InputArea
+              onSend={handleSend}
+              isStreaming={isStreaming}
+              files={files}
+            />
           </div>
         </div>
 

@@ -1,5 +1,11 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.32.14] — 2 เมษายน 2569 · feature
+- feat (frontend/hooks/useSSE.ts): เพิ่ม `ToolEvent` interface และ `currentToolEvents` state — รองรับ SSE event type `tool_result` และ `web_search_sources` ที่ backend ส่งมา แทนที่จะ ignore
+- feat (frontend/components/MessageBubble.tsx): เพิ่ม AI Action Log UI แสดงเหนือเนื้อหาหลักในทุก assistant bubble — `tool_result` แสดงเป็น icon + label + ชื่อไฟล์, `web_search_sources` แสดงเป็น query + source chips
+- feat (frontend/app/page.tsx): merge `currentToolEvents` เข้า streaming message และ persist ไว้ใน Message history หลัง stream จบ
+- feat (frontend/components/ChatWindow.tsx): ส่ง `toolEvents` prop ผ่านไปยัง MessageBubble
+
 ## [v0.32.13] — 2 เมษายน 2569 · feat/fix
 - feat (app.py): ลบ route `GET /` และ `GET /history` ที่ serve index.html/history.html ออก — Flask เป็น API-only backend แล้ว, Next.js (port 3000) เป็น frontend
 - fix (frontend/components/ChatWindow.tsx): แก้ auto-scroll บังคับ scroll ลงขณะ streaming — เพิ่ม `userScrolledUpRef` และ `programmaticScrollRef` ป้องกัน scroll event จาก code นับเป็น user scroll
