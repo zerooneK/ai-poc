@@ -48,6 +48,16 @@ function createSessionId(): string {
     : `session-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+function getSessionBadgeLabel(firstMessage: string): string {
+  const trimmed = firstMessage.trim();
+  const firstChar = trimmed.charAt(0);
+  if (!firstChar) return "•";
+  if (/[A-Za-z0-9]/.test(firstChar)) {
+    return firstChar.toUpperCase();
+  }
+  return firstChar;
+}
+
 type ThemeMode = "light" | "dark";
 
 const SAVE_INTENT_RE = /^(save|ok|บันทึก|เซฟ|ตกลง|ได้เลย|โอเค)$/i;
@@ -486,13 +496,13 @@ export default function Home() {
               sidebarCollapsed ? "w-20" : "w-72"
             }`}
           >
-            <div className={`border-b border-border ${sidebarCollapsed ? "px-2 py-3" : "px-4 py-3"}`}>
+            <div className={`border-b border-border ${sidebarCollapsed ? "px-3 py-3" : "px-4 py-3"}`}>
               <button
                 type="button"
                 onClick={toggleSidebar}
                 className={`w-full rounded-2xl border border-border bg-bg-tertiary/70 text-sm text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary ${
                   sidebarCollapsed
-                    ? "flex items-center justify-center px-0 py-3"
+                    ? "flex h-12 items-center justify-center px-0"
                     : "flex items-center justify-between gap-2 px-3 py-3"
                 }`}
                 aria-label={sidebarCollapsed ? "ขยาย sidebar" : "ย่อ sidebar"}
@@ -512,35 +522,89 @@ export default function Home() {
             </div>
 
             <div className="flex-1 overflow-y-auto">
-              <div className={`border-b border-border ${sidebarCollapsed ? "px-2 py-3 text-center" : "px-4 py-3"}`}>
-                <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-text-muted">
-                  {sidebarCollapsed ? `${files.length}` : `ไฟล์ (${files.length})`}
-                </span>
-              </div>
-              {files.length === 0 && (
-                <p className={`py-6 text-center text-xs text-text-muted ${sidebarCollapsed ? "px-2" : "px-4"}`}>
-                  {sidebarCollapsed ? "ไม่มี" : "ยังไม่มีไฟล์"}
-                </p>
-              )}
-              <div className={`py-2 ${sidebarCollapsed ? "px-2" : "px-2"}`}>
-                {files.map((f) => (
-                  <div
-                    key={f.name}
-                    className={`group flex cursor-pointer items-center rounded-2xl px-2 py-2 hover:bg-bg-hover/70 ${
-                      sidebarCollapsed ? "justify-center" : "gap-2"
-                    }`}
-                  >
-                    {sidebarCollapsed ? (
-                      <button
-                        onClick={() => setPreviewFile(f.name)}
-                        className="flex h-10 w-10 items-center justify-center rounded-xl text-base text-text-primary transition-colors hover:bg-bg-tertiary"
-                        title={`${f.name} · ${formatBytes(f.size)}`}
-                        aria-label={`เปิดไฟล์ ${f.name}`}
-                      >
-                        {fileIcon(f.name)}
-                      </button>
+              {sidebarCollapsed ? (
+                <div className="flex flex-col items-center gap-4 px-3 py-4">
+                  <div className="w-full">
+                    <div className="mb-2 flex items-center justify-center">
+                      <span className="inline-flex min-w-10 items-center justify-center rounded-full border border-border bg-bg-tertiary px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-text-muted">
+                        {files.length}F
+                      </span>
+                    </div>
+                    {files.length === 0 ? (
+                      <div className="flex justify-center">
+                        <span className="text-[10px] text-text-muted">-</span>
+                      </div>
                     ) : (
-                      <>
+                      <div className="flex flex-col items-center gap-2">
+                        {files.slice(0, 4).map((f) => (
+                          <button
+                            key={f.name}
+                            onClick={() => setPreviewFile(f.name)}
+                            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border bg-bg-secondary/80 text-base text-text-primary transition-all hover:-translate-y-0.5 hover:bg-bg-hover"
+                            title={`${f.name} · ${formatBytes(f.size)}`}
+                            aria-label={`เปิดไฟล์ ${f.name}`}
+                          >
+                            {fileIcon(f.name)}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="h-px w-10 bg-border" />
+
+                  <div className="w-full">
+                    <div className="mb-2 flex items-center justify-center">
+                      <span className="inline-flex min-w-10 items-center justify-center rounded-full border border-border bg-bg-tertiary px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-text-muted">
+                        {sessions.length}S
+                      </span>
+                    </div>
+                    {sessions.length === 0 ? (
+                      <div className="flex justify-center">
+                        <span className="text-[10px] text-text-muted">-</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-2">
+                        {sessions.slice(0, 5).map((s) => {
+                          const isSelected = s.session_id === selectedSessionId;
+                          return (
+                            <button
+                              key={s.session_id}
+                              onClick={() => void handleSessionSelect(s.session_id)}
+                              className={`flex h-11 w-11 items-center justify-center rounded-2xl border text-sm font-semibold transition-all hover:-translate-y-0.5 ${
+                                isSelected
+                                  ? "border-accent/40 bg-bg-active text-text-primary shadow-[0_10px_24px_rgba(45,108,223,0.18)]"
+                                  : "border-border bg-bg-secondary/80 text-text-secondary hover:bg-bg-hover hover:text-text-primary"
+                              }`}
+                              title={`${s.first_message} · ${agentLabel(s.last_agent)} · ${s.job_count} งาน`}
+                              aria-label={`เปิดเซสชัน ${s.first_message.slice(0, 20)}`}
+                            >
+                              {getSessionBadgeLabel(s.first_message)}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="border-b border-border px-4 py-3">
+                    <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-text-muted">
+                      ไฟล์ ({files.length})
+                    </span>
+                  </div>
+                  {files.length === 0 && (
+                    <p className="px-4 py-6 text-center text-xs text-text-muted">
+                      ยังไม่มีไฟล์
+                    </p>
+                  )}
+                  <div className="px-2 py-2">
+                    {files.map((f) => (
+                      <div
+                        key={f.name}
+                        className="group flex cursor-pointer items-center gap-2 rounded-2xl px-2 py-2 hover:bg-bg-hover/70"
+                      >
                         <span className="text-sm">{fileIcon(f.name)}</span>
                         <button
                           onClick={() => setPreviewFile(f.name)}
@@ -558,83 +622,59 @@ export default function Home() {
                         >
                           ×
                         </button>
-                      </>
-                    )}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
 
-              <div className={`mt-2 border-b border-border ${sidebarCollapsed ? "px-2 py-3 text-center" : "px-4 py-3"}`}>
-                <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-text-muted">
-                  {sidebarCollapsed ? `${sessions.length}` : `เซสชัน (${sessions.length})`}
-                </span>
-              </div>
-              {sessions.length === 0 && (
-                <p className={`py-6 text-center text-xs text-text-muted ${sidebarCollapsed ? "px-2" : "px-4"}`}>
-                  {sidebarCollapsed ? "ไม่มี" : "ยังไม่มีเซสชัน"}
-                </p>
-              )}
-              <div className="px-2 pb-4 pt-2">
-                {sessions.map((s) => (
-                  <div
-                    key={s.session_id}
-                    className={`w-full rounded-2xl px-2 py-2 text-left transition-colors ${
-                      s.session_id === selectedSessionId
-                        ? "bg-bg-active text-accent"
-                        : "hover:bg-bg-hover/70"
-                    }`}
-                  >
-                    {sidebarCollapsed ? (
-                      <div className="flex flex-col items-center gap-2">
-                        <button
-                          onClick={() => void handleSessionSelect(s.session_id)}
-                          className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-medium text-text-primary"
-                          title={s.first_message}
-                          aria-label={`เปิดเซสชัน ${s.first_message.slice(0, 20)}`}
-                        >
-                          {s.first_message.slice(0, 1).toUpperCase()}
-                        </button>
-                        <button
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            void handleDeleteSession(s.session_id);
-                          }}
-                          className="px-1 text-text-muted transition-colors hover:text-error"
-                          aria-label={`ลบเซสชัน ${s.first_message.slice(0, 20)}`}
-                          title="ลบเซสชัน"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex items-start gap-2">
-                        <button
-                          onClick={() => void handleSessionSelect(s.session_id)}
-                          className="min-w-0 flex-1 text-left"
-                        >
-                          <p className="truncate text-sm text-text-primary">
-                            {s.first_message.slice(0, 40)}
-                          </p>
-                          <p className="mt-1 text-[10px] text-text-muted">
-                            {agentLabel(s.last_agent)} · {s.job_count} งาน
-                          </p>
-                        </button>
-                        <button
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            void handleDeleteSession(s.session_id);
-                          }}
-                          className="shrink-0 px-1 text-text-muted transition-colors hover:text-error"
-                          aria-label={`ลบเซสชัน ${s.first_message.slice(0, 20)}`}
-                          title="ลบเซสชัน"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    )}
+                  <div className="mt-2 border-b border-border px-4 py-3">
+                    <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-text-muted">
+                      เซสชัน ({sessions.length})
+                    </span>
                   </div>
-                ))}
-              </div>
+                  {sessions.length === 0 && (
+                    <p className="px-4 py-6 text-center text-xs text-text-muted">
+                      ยังไม่มีเซสชัน
+                    </p>
+                  )}
+                  <div className="px-2 pb-4 pt-2">
+                    {sessions.map((s) => (
+                      <div
+                        key={s.session_id}
+                        className={`w-full rounded-2xl px-2 py-2 text-left transition-colors ${
+                          s.session_id === selectedSessionId
+                            ? "bg-bg-active text-accent"
+                            : "hover:bg-bg-hover/70"
+                        }`}
+                      >
+                        <div className="flex items-start gap-2">
+                          <button
+                            onClick={() => void handleSessionSelect(s.session_id)}
+                            className="min-w-0 flex-1 text-left"
+                          >
+                            <p className="truncate text-sm text-text-primary">
+                              {s.first_message.slice(0, 40)}
+                            </p>
+                            <p className="mt-1 text-[10px] text-text-muted">
+                              {agentLabel(s.last_agent)} · {s.job_count} งาน
+                            </p>
+                          </button>
+                          <button
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              void handleDeleteSession(s.session_id);
+                            }}
+                            className="shrink-0 px-1 text-text-muted transition-colors hover:text-error"
+                            aria-label={`ลบเซสชัน ${s.first_message.slice(0, 20)}`}
+                            title="ลบเซสชัน"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
 
             <div className={`border-t border-border ${sidebarCollapsed ? "px-2 py-3" : "px-4 py-4"}`}>

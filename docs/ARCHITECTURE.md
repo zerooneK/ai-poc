@@ -619,7 +619,7 @@ The primary production frontend remains the single-page application in `index.ht
 A separate `history.html` provides a job history viewer that queries `/api/history`.
 
 There is also an in-progress Next.js frontend under `frontend/` used for the migration effort. Its file/workspace APIs are now session-scoped in the same way as the Flask chat flow, so it no longer falls back to the process-global workspace during preview, delete, file streaming, or workspace switching.
-The Next.js shell now also supports a collapsible sidebar, with the collapse control inside the sidebar itself and the workspace selector anchored at the bottom of that rail.
+The Next.js shell now also supports a collapsible sidebar, with the collapse control inside the sidebar itself, the workspace selector anchored at the bottom, and a compact rail presentation for files and sessions when collapsed.
 
 ## Data Flow
 
