@@ -1,10 +1,10 @@
 # Changelog — Internal AI Assistant POC
 
-## [v0.32.18] — 3 เมษายน 2569 · fix
+## [v0.32.19] — 3 เมษายน 2569 · fix/docs
 - fix (frontend/app/page.tsx): ป้องกัน workspace เด้งกลับค่าเริ่มต้นเมื่อสร้าง session ใหม่ โดยการผูกเซสชันกับพาทปัจจุบันทันที
 - fix (frontend/app/page.tsx): บังคับโหลดรายการไฟล์ใหม่ทันทีหลังจากสลับ workspace ใน modal ป้องกัน sidebar ว่างเปล่าระหว่างรอ SSE
 - fix (frontend/app/page.tsx): แก้ไขปัญหา syntax error ในการ import `setWorkspace` และ `ErrorBoundary`
-
+- docs: เพิ่ม `docs/PROJECT_RATING.md` — ผลการประเมินโปรเจกต์ครบ 10 มิติ พร้อม actionable roadmap
 
 ## [v0.32.17] — 3 เมษายน 2569 · feature
 - feat (frontend): Redesign UI ตามหลักการ "The Silent Architect" (อิงจาก `docs/DESIGN.md`)
@@ -12,6 +12,13 @@
 - feat (frontend/app/layout.tsx): นำอักษร `Manrope` มาใช้เพื่อความเป็น Editorial Layout
 - refactor (frontend/components): ย้ายกล่องข้อความจากเส้นขอบ 1px แบบแข็ง ไปใช้การไล่ระดับแสงเงา `shadow-ambient` และลดเส้นกรอบใน Layout ทั้งหมด
 - fix (frontend/app/page.tsx): แก้ปัญหา TypeScript Error ในการดึง Cache ตอนสลับ Session
+
+- fix (frontend/app/page.tsx): แก้ปัญหา TypeScript Error ในการดึง Cache ตอนสลับ Session
+- fix (frontend/app/layout.tsx): ลบ `'use client'` directive ที่ไม่จำเป็น เพิ่ม `export const metadata` — ปลดล็อก Next.js Metadata API สำหรับ SEO/title
+- fix (frontend/components/MessageBubble.tsx): ครอบด้วย `React.memo` — ลดการ re-render ทุก message bubble ทุกครั้งที่ state เปลี่ยน
+- fix (frontend/next.config.ts): เพิ่ม security headers (X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy) และปิด `poweredByHeader`
+- fix (frontend/components/PreviewPanel.tsx): เพิ่ม `sandbox="allow-same-origin allow-scripts"` ให้ iframe PDF preview — ป้องกัน iframe เข้าถึง parent DOM โดยตรง
+- fix (frontend/app/page.tsx): แก้ dual `createSessionId()` — `sessionId` และ `selectedSessionId` เริ่มจากค่าเดียวกันแล้ว ป้องกัน session mismatch ตอน mount
 
 ## [v0.32.16] — 2 เมษายน 2569 · chore
 - chore: ลบไฟล์ที่ไม่จำเป็นออกจาก repo — `index.html`, `history.html` (legacy SPA ที่ย้ายไป Next.js แล้ว), `PROJECT_SUMMARY.md`, `backup/`, `docs/MANUAL.md` (outdated v0.20.0), `docs/poc-plan.md`, `docs/project-plan.md`, `docs/architect.md` (ซ้ำกับ ARCHITECTURE.md)

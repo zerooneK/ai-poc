@@ -134,6 +134,7 @@ export default function PreviewPanel({ filename, sessionId, onClose }: PreviewPa
               src={getFileUrlForSession(filename, sessionId)}
               className="w-full h-full border-none"
               title={filename}
+              sandbox="allow-same-origin allow-scripts"
               onLoad={() => setPdfLoading(false)}
               onError={() => { setPdfLoading(false); setPdfError(true); }}
             />

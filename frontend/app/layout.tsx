@@ -1,7 +1,11 @@
-"use client";
-
+import type { Metadata } from "next";
 import { Inter, JetBrains_Mono, Manrope } from "next/font/google";
 import "./globals.css";
+
+export const metadata: Metadata = {
+  title: "AI Workspace Assistant",
+  description: "พื้นที่ทำงานสนทนาแบบสะอาดตา พร้อมสลับธีมและจัดการเซสชันได้ทันที",
+};
 
 const inter = Inter({
   subsets: ["latin"],

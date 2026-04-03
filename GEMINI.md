@@ -8,7 +8,7 @@ This project is a Proof of Concept (POC) for an **Internal AI Assistant Platform
 
 - **Purpose**: Automate the creation of Thai corporate documents and provide general AI assistance.
 - **Goal**: Demonstrate AI capability to senior management to secure budget for full production development.
-- **Current Version**: v0.32.18 (Updated: April 3, 2026)
+- **Current Version**: v0.32.19 (Updated: April 3, 2026)
 
 ### **Architecture**
 - **Orchestration**: A central Orchestrator analyzes user input and routes it to specialized agents or the general chat agent.
