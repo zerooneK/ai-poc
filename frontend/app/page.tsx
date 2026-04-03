@@ -324,14 +324,6 @@ export default function Home() {
   const handleWorkspaceSwitch = (path: string) => {
     setWorkspacePath(path);
     setFiles([]);
-    setConversationHistory([]);
-    setMessages([]);
-    setPendingDoc("");
-    setPendingAgent("");
-    setPendingTempPaths([]);
-    setPendingAgentTypes([]);
-    setPendingFilename("");
-    setPendingAgentLabel("");
     // Reconnect SSE so it watches the new workspace directory
     reconnectFileSSE();
     getFilesForSession(sessionId)
