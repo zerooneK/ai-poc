@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { X, Copy, FileText, Code } from "lucide-react";
 import { cn, fileIcon } from "@/lib/utils";
 import { getPreviewForSession, getFileUrlForSession } from "@/lib/api";
+
+const PdfViewer = dynamic(() => import("./PdfViewer"), { ssr: false });
 
 interface PreviewPanelProps {
   filename: string | null;
@@ -19,13 +22,12 @@ export default function PreviewPanel({ filename, sessionId, onClose }: PreviewPa
   const [error, setError] = useState<string | null>(null);
   const [loadedFilename, setLoadedFilename] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"rendered" | "raw">("rendered");
-  const [pdfLoading, setPdfLoading] = useState(false);
-  const [pdfError, setPdfError] = useState(false);
 
   const ext = filename?.split(".").pop()?.toLowerCase() || "";
   const isPdf = ext === "pdf";
   const isMarkdown = ["md", "txt"].includes(ext);
 
+  // Load text file content
   useEffect(() => {
     if (!filename || isPdf) return;
     let cancelled = false;
@@ -44,29 +46,17 @@ export default function PreviewPanel({ filename, sessionId, onClose }: PreviewPa
         setError(err.message);
         setLoadedFilename(filename);
       });
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [filename, sessionId, isPdf]);
-
-  // Reset PDF loading/error state when filename changes
-  useEffect(() => {
-    if (isPdf) {
-      setPdfLoading(true);
-      setPdfError(false);
-    }
-  }, [filename, isPdf]);
 
   if (!filename) return null;
 
   const loading = !isPdf && loadedFilename !== filename && !error;
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(content);
-  };
+  const handleCopy = () => navigator.clipboard.writeText(content);
 
   return (
-    <div className="fixed inset-y-0 right-0 w-[420px] bg-bg-secondary border-l border-border flex flex-col z-40 shadow-xl">
+    <div className="fixed inset-0 sm:inset-y-0 sm:left-auto sm:right-0 sm:w-[380px] lg:w-[420px] bg-bg-secondary border-l border-border flex flex-col z-40 shadow-xl">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
         <div className="flex items-center gap-2 min-w-0">
@@ -116,29 +106,8 @@ export default function PreviewPanel({ filename, sessionId, onClose }: PreviewPa
 
       {/* Body */}
       {isPdf ? (
-        <div className="flex-1 relative overflow-hidden">
-          {pdfLoading && !pdfError && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-text-muted text-sm z-10 bg-bg-secondary">
-              <span className="text-3xl opacity-40">📄</span>
-              กำลังโหลด PDF...
-            </div>
-          )}
-          {pdfError ? (
-            <div className="flex flex-col items-center justify-center h-full gap-2 text-text-muted text-sm px-6 text-center">
-              <span className="text-3xl opacity-40">❌</span>
-              ไม่สามารถแสดงตัวอย่าง PDF ได้
-            </div>
-          ) : (
-            <iframe
-              key={filename}
-              src={getFileUrlForSession(filename, sessionId)}
-              className="w-full h-full border-none"
-              title={filename}
-              sandbox="allow-same-origin allow-scripts"
-              onLoad={() => setPdfLoading(false)}
-              onError={() => { setPdfLoading(false); setPdfError(true); }}
-            />
-          )}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <PdfViewer url={getFileUrlForSession(filename, sessionId)} />
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto p-4">
