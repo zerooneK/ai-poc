@@ -1,5 +1,11 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.32.18] — 3 เมษายน 2569 · fix
+- fix (frontend/app/page.tsx): ป้องกัน workspace เด้งกลับค่าเริ่มต้นเมื่อสร้าง session ใหม่ โดยการผูกเซสชันกับพาทปัจจุบันทันที
+- fix (frontend/app/page.tsx): บังคับโหลดรายการไฟล์ใหม่ทันทีหลังจากสลับ workspace ใน modal ป้องกัน sidebar ว่างเปล่าระหว่างรอ SSE
+- fix (frontend/app/page.tsx): แก้ไขปัญหา syntax error ในการ import `setWorkspace` และ `ErrorBoundary`
+
+
 ## [v0.32.17] — 3 เมษายน 2569 · feature
 - feat (frontend): Redesign UI ตามหลักการ "The Silent Architect" (อิงจาก `docs/DESIGN.md`)
 - feat (frontend/app/globals.css): เพิ่ม Dark Mode (`Atmospheric Neutrals`) และ Light Mode (`Soft Morning Light`) พร้อม CSS Variables สำหรับ Typography และ Shadows

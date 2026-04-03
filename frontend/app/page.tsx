@@ -17,6 +17,7 @@ import {
   deleteFileForSession,
   getFilesForSession,
   getWorkspaceForSession,
+  setWorkspace,
 } from "@/lib/api";
 import { fileIcon, formatBytes, agentLabel } from "@/lib/utils";
 
@@ -333,6 +334,9 @@ export default function Home() {
     setPendingAgentLabel("");
     // Reconnect SSE so it watches the new workspace directory
     reconnectFileSSE();
+    getFilesForSession(sessionId)
+      .then((res) => setFiles(res.files))
+      .catch(() => {});
   };
 
   const handleDeleteFile = (filename: string) => {
@@ -367,8 +371,16 @@ export default function Home() {
     [loadSessions, sessionId]
   );
 
-  const handleNewSession = useCallback(() => {
+  const handleNewSession = useCallback(async () => {
     const nextSessionId = createSessionId();
+    
+    // Map this new session to the current workspace to prevent jumping back to default
+    try {
+      await setWorkspace({ path: workspacePath, session_id: nextSessionId });
+    } catch (e) {
+      console.warn("Failed to set workspace for new session:", e);
+    }
+
     setPreviewFile(null);
     setMessages([]);
     setConversationHistory([]);
@@ -382,7 +394,7 @@ export default function Home() {
     setSessionId(nextSessionId);
     setSelectedSessionId(nextSessionId);
     setIsSwitchingSession(false);
-  }, []);
+  }, [workspacePath]);
 
   const toggleTheme = useCallback(() => {
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));
