@@ -8,7 +8,7 @@ This project is a Proof of Concept (POC) for an **Internal AI Assistant Platform
 
 - **Purpose**: Automate the creation of Thai corporate documents and provide general AI assistance.
 - **Goal**: Demonstrate AI capability to senior management to secure budget for full production development.
-- **Current Version**: v0.12.2 (Updated: March 26, 2026)
+- **Current Version**: v0.32.16 (Updated: April 2, 2026)
 
 ### **Architecture**
 - **Orchestration**: A central Orchestrator analyzes user input and routes it to specialized agents or the general chat agent.
@@ -32,8 +32,8 @@ This project is a Proof of Concept (POC) for an **Internal AI Assistant Platform
 - **Backend**: Python 3.11 + Flask + flask-cors
 - **AI Provider**: OpenRouter API (OpenAI SDK) using `anthropic/claude-sonnet-4-5` (default).
 - **Streaming**: Server-Sent Events (SSE) for real-time typewriter-style responses.
-- **Frontend**: Single-file Vanilla HTML/JS/CSS ("The Silent Concierge" design system).
-- **Libraries**: `openai`, `python-dotenv`, `mcp`, `watchdog`, `python-docx`, `openpyxl`, `weasyprint`, `markdown`.
+- **Frontend**: Next.js 16 (App Router) + Tailwind CSS v4 + TypeScript.
+- **Libraries**: `openai`, `python-dotenv`, `mcp`, `watchdog`, `python-docx`, `openpyxl`, `weasyprint`, `markdown`, `Next.js`.
 
 ---
 
@@ -49,9 +49,9 @@ This project is a Proof of Concept (POC) for an **Internal AI Assistant Platform
 - **Paths**: Agents operate strictly within the `workspace/` directory.
 
 ### **3. Versioning & Documentation**
-- **Every code change MUST bump the version** in `index.html` (line 1238 approx.) and add a entry in `CHANGELOG.md`.
+- **Every code change MUST bump the version** and add a entry in `CHANGELOG.md`.
 - Follow semantic versioning (v0.MINOR.PATCH).
-- Update `PROJECT_SUMMARY.md` and `DEMO-READINESS-REPORT.md` if features or architecture change.
+- Update `DEMO-READINESS-REPORT.md` if features or architecture change.
 
 ### **4. Workflow & Process Rules**
 1. **Clear Understanding**: Thoroughly understand the goals and requirements of any instruction before starting work.
@@ -83,15 +83,16 @@ Activates `venv` and runs Flask on `http://localhost:5000` (host=0.0.0.0 for WSL
 
 ---
 
-## 🏗️ Architecture (Modular — Completed in v0.12.0, Hardened in v0.12.2)
+## 🏗️ Architecture
 
-The project was refactored from a monolithic `app.py` to a modular structure:
-- **`app.py`**: Flask Routes and request/response flow only
-- **`core/`**: `orchestrator.py`, `agent_factory.py`, `shared.py`, `utils.py`
-- **`agents/`**: `base_agent.py`, `hr_agent.py`, `accounting_agent.py`, `manager_agent.py`, `pm_agent.py`, `chat_agent.py`
-- **`prompts/`**: System prompts as `.md` files for easy prompt engineering (`orchestrator.md`, `hr_agent.md`, `accounting_agent.md`, `manager_agent.md`, `pm_agent.md`, `chat_agent.md`)
+The project is split into a **Next.js Frontend** (port 3000) and a **Flask Backend** (port 5000).
+- **`frontend/`**: Next.js App Router providing SSE client, Chat UI (with Context Injection and Action Logs), and local workspace viewer.
+- **`app.py`**: Flask API and SSE routing.
+- **`core/`**: Orchestration logic and agent factory.
+- **`agents/`**: LLM-based Sub-agents (`pm_agent`, `hr_agent`, `base_agent`, etc.).
+- **`prompts/`**: Markdown-based system prompts.
 
-### Hardening Rules (v0.12.2)
+### Hardening Rules
 - Both SSE Response generators must be wrapped with `stream_with_context` — prevents silent crashes under Gunicorn/production WSGI.
 - All `str(e)` in SSE error events replaced with Thai user-friendly messages; full tracebacks logged server-side with `exc_info=True`.
 - Bare `except: pass` blocks replaced with `except OSError` (or specific exception) to avoid swallowing signals.
@@ -103,11 +104,10 @@ The project was refactored from a monolithic `app.py` to a modular structure:
 Instructional context for specific tasks can be found in `.claude/agents/`:
 - `backend-python-reviewer.md`: **Primary reviewer** — run on every change to `app.py`, `core/`, `agents/`, `db.py`, `converter.py`, `mcp_server.py` before committing.
 - `python-reviewer.md`: Reviewing other `.py` files (test scripts, etc.).
-- `frontend-developer.md` & `ui-ux-reviewer.md`: UI/UX updates to `index.html` or `history.html`.
+- `frontend-developer.md` & `ui-ux-reviewer.md`: UI/UX updates in the `frontend/` Next.js directory.
 - `thai-doc-checker.md`: Validating Thai document quality and cultural correctness.
 - `debug-assistant.md`: Troubleshooting errors — run immediately on any error, before attempting fixes.
 - `security-checker.md`: Run before demo, before git commit, and when touching `.env` or API key config.
 - `db-checker.md`: Run after editing `db.py` or `converter.py`, and before demo.
 - `prompt-engineer.md`: Run when agent output is wrong, routing misbehaves, or when writing/editing system prompts.
 - `demo-preparer.md`: Run when preparing for demo or dry-run.
-- `project-documenter.md`: Updating `poc-plan.md` at end of sessions.
