@@ -1,11 +1,17 @@
 "use client";
 
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono, Manrope } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
+  display: "swap",
+});
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  variable: "--font-display",
   display: "swap",
 });
 
@@ -42,7 +48,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased bg-bg-primary text-text-primary h-screen overflow-hidden`}
+        className={`${inter.variable} ${manrope.variable} ${jetbrainsMono.variable} font-sans antialiased bg-surface text-text-primary h-screen overflow-hidden`}
       >
         {children}
       </body>

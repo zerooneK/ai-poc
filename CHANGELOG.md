@@ -1,5 +1,12 @@
 # Changelog — Internal AI Assistant POC
 
+## [v0.32.17] — 3 เมษายน 2569 · feature
+- feat (frontend): Redesign UI ตามหลักการ "The Silent Architect" (อิงจาก `docs/DESIGN.md`)
+- feat (frontend/app/globals.css): เพิ่ม Dark Mode (`Atmospheric Neutrals`) และ Light Mode (`Soft Morning Light`) พร้อม CSS Variables สำหรับ Typography และ Shadows
+- feat (frontend/app/layout.tsx): นำอักษร `Manrope` มาใช้เพื่อความเป็น Editorial Layout
+- refactor (frontend/components): ย้ายกล่องข้อความจากเส้นขอบ 1px แบบแข็ง ไปใช้การไล่ระดับแสงเงา `shadow-ambient` และลดเส้นกรอบใน Layout ทั้งหมด
+- fix (frontend/app/page.tsx): แก้ปัญหา TypeScript Error ในการดึง Cache ตอนสลับ Session
+
 ## [v0.32.16] — 2 เมษายน 2569 · chore
 - chore: ลบไฟล์ที่ไม่จำเป็นออกจาก repo — `index.html`, `history.html` (legacy SPA ที่ย้ายไป Next.js แล้ว), `PROJECT_SUMMARY.md`, `backup/`, `docs/MANUAL.md` (outdated v0.20.0), `docs/poc-plan.md`, `docs/project-plan.md`, `docs/architect.md` (ซ้ำกับ ARCHITECTURE.md)
 

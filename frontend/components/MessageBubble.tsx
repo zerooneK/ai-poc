@@ -98,7 +98,7 @@ function WebSearchRow({ event }: { event: ToolEvent }) {
 function ActionLog({ toolEvents }: { toolEvents: ToolEvent[] }) {
   if (toolEvents.length === 0) return null;
   return (
-    <div className="mb-3 rounded-xl border border-border-light bg-bg-primary/30 px-3 py-2.5">
+    <div className="mb-3 rounded-[16px] bg-bg-tertiary px-3 py-2.5">
       <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-text-muted">
         AI ดำเนินการ
       </p>
@@ -142,21 +142,24 @@ export default function MessageBubble({
       )}
     >
       {!isUser && (
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-border bg-surface-elevated text-sm shadow-sm">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[16px] bg-surface text-sm shadow-ambient">
           {agent ? agentIcon(agent) : "🤖"}
         </div>
       )}
 
       <div
         className={cn(
-          "max-w-[80%] rounded-[22px] border px-4 py-3 text-sm leading-relaxed shadow-[0_10px_30px_rgba(15,23,42,0.08)]",
+          "max-w-[80%] rounded-[24px] px-4 py-3 text-[15px] leading-relaxed shadow-ambient relative overflow-hidden",
           isUser
-            ? "border-transparent bg-accent text-white"
-            : "border-border bg-surface-elevated text-text-primary"
+            ? "bg-bg-tertiary text-text-primary"
+            : "bg-surface text-text-primary"
         )}
       >
+        {!isUser && (
+          <div className="absolute left-0 top-0 bottom-0 w-1 bg-accent" />
+        )}
         {!isUser && agent && (
-          <div className="mb-2 flex items-center gap-1.5 border-b border-border-light pb-2">
+          <div className="mb-2 flex items-center gap-1.5 pb-2">
             <span className="text-xs font-medium uppercase tracking-[0.14em] text-text-secondary">
               {agentIcon(agent)} {agentLabel(agent)}
             </span>

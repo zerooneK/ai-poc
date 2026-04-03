@@ -2,67 +2,71 @@
 
 :root,
 [data-theme="dark"] {
-  --color-bg-primary: #0d1324;
-  --color-bg-secondary: rgba(18, 27, 47, 0.86);
-  --color-bg-tertiary: #1a2742;
-  --color-bg-hover: #233457;
-  --color-bg-active: #2f6fed;
-  --color-surface: rgba(17, 24, 39, 0.76);
-  --color-surface-strong: rgba(24, 35, 59, 0.95);
-  --color-surface-elevated: rgba(30, 41, 59, 0.92);
+  /* Dark Mode Atmospheric Neutrals */
+  --color-bg-primary: #0c0f10;
+  --color-bg-secondary: rgba(20, 24, 25, 0.86); /* surface_container_low approx */
+  --color-bg-tertiary: #1a1d1f;
+  --color-bg-hover: #212628;
+  --color-bg-active: #2a3134;
+  --color-surface: #0c0f10;
+  --color-surface-strong: rgba(26, 29, 31, 0.95);
+  --color-surface-elevated: #1a1d1f; /* surface_container_lowest in dark */
 
-  --color-text-primary: #eef4ff;
-  --color-text-secondary: #adc0e0;
-  --color-text-muted: #6e83a8;
-  --color-text-link: #7eb6ff;
+  --color-text-primary: #f8f9fa;
+  --color-text-secondary: #9b9d9e;
+  --color-text-muted: #737c7f;
+  --color-text-link: #7ff8cf;
 
-  --color-border: rgba(130, 151, 185, 0.18);
-  --color-border-light: rgba(148, 163, 184, 0.2);
+  --color-border: rgba(171, 179, 183, 0.15); /* Ghost Border */
+  --color-border-light: rgba(171, 179, 183, 0.08);
 
-  --color-accent: #4c8dff;
-  --color-accent-hover: #3478f6;
+  --color-accent: #7ff8cf; /* primary_fixed */
+  --color-accent-hover: #70eac1;
   --color-success: #2ac38d;
-  --color-error: #f26d7d;
+  --color-error: #ff8b9a;
   --color-warning: #f2b247;
 
-  --color-agent-hr: #43c68f;
-  --color-agent-accounting: #d98d47;
-  --color-agent-manager: #f36ca4;
-  --color-agent-pm: #4c8dff;
-  --color-agent-chat: #2cb6d8;
-  --color-agent-document: #f2b247;
+  /* Unified Teal Agent Colors */
+  --color-agent-hr: #006c52;
+  --color-agent-accounting: #006c52;
+  --color-agent-manager: #006c52;
+  --color-agent-pm: #006c52;
+  --color-agent-chat: #006c52;
+  --color-agent-document: #006c52;
 }
 
 [data-theme="light"] {
-  --color-bg-primary: #f4f7fb;
-  --color-bg-secondary: rgba(255, 255, 255, 0.88);
-  --color-bg-tertiary: #edf2fa;
-  --color-bg-hover: #dde7f5;
-  --color-bg-active: #d9e7ff;
-  --color-surface: rgba(255, 255, 255, 0.8);
-  --color-surface-strong: rgba(255, 255, 255, 0.98);
-  --color-surface-elevated: rgba(255, 255, 255, 0.95);
+  /* Light Mode Soft Morning Light */
+  --color-bg-primary: #f8f9fa;
+  --color-bg-secondary: #f1f4f6; /* surface_container_low */
+  --color-bg-tertiary: #eaeff1;
+  --color-bg-hover: #e2e9ec;
+  --color-bg-active: #dbe4e7;
+  --color-surface: #f8f9fa;
+  --color-surface-strong: rgba(255, 255, 255, 0.95);
+  --color-surface-elevated: #ffffff; /* surface_container_lowest */
 
-  --color-text-primary: #142033;
-  --color-text-secondary: #5d6d86;
+  --color-text-primary: #2b3437;
+  --color-text-secondary: #586064;
   --color-text-muted: #8a98ad;
-  --color-text-link: #2d6cdf;
+  --color-text-link: #006c52;
 
-  --color-border: rgba(70, 98, 139, 0.14);
-  --color-border-light: rgba(112, 133, 168, 0.18);
+  --color-border: rgba(171, 179, 183, 0.3); /* outline_variant */
+  --color-border-light: rgba(171, 179, 183, 0.15); /* Ghost Border */
 
-  --color-accent: #2d6cdf;
-  --color-accent-hover: #1e5fd2;
+  --color-accent: #006c52; /* primary */
+  --color-accent-hover: #005e48; /* primary_dim */
   --color-success: #14976f;
-  --color-error: #d45262;
+  --color-error: #9f403d;
   --color-warning: #df9d2f;
 
-  --color-agent-hr: #18a26e;
-  --color-agent-accounting: #c97e1c;
-  --color-agent-manager: #d84c84;
-  --color-agent-pm: #2d6cdf;
-  --color-agent-chat: #148fb2;
-  --color-agent-document: #d79b33;
+  /* Unified Teal Agent Colors */
+  --color-agent-hr: #006c52;
+  --color-agent-accounting: #006c52;
+  --color-agent-manager: #006c52;
+  --color-agent-pm: #006c52;
+  --color-agent-chat: #005e48;
+  --color-agent-document: #006c52;
 }
 
 @theme inline {
@@ -92,6 +96,7 @@
   --color-agent-chat: var(--color-agent-chat);
   --color-agent-document: var(--color-agent-document);
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-display: "Manrope", "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", monospace;
 }
 
@@ -174,4 +179,10 @@ button {
     radial-gradient(circle at 82% 10%, rgba(42, 195, 141, 0.12), transparent 20%);
   pointer-events: none;
   z-index: -1;
+}
+
+/* ─── Ambient Shadows (The Silent Architect) ─────────────────────────────────────────────── */
+
+.shadow-ambient {
+  box-shadow: 0 12px 40px rgba(43, 52, 55, 0.06);
 }

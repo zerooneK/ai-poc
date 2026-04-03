@@ -178,8 +178,8 @@ export default function InputArea({
         )}
 
         {/* Input card */}
-        <div className="rounded-[28px] border border-border bg-surface-strong/90 p-3 shadow-[0_20px_60px_rgba(15,23,42,0.12)] backdrop-blur-xl">
-          <div className="flex items-end gap-3 rounded-2xl border border-border-light bg-bg-tertiary/60 px-3 py-2 transition-colors focus-within:border-accent">
+        <div className="rounded-[28px] border border-border-light bg-surface-elevated/80 p-3 shadow-ambient backdrop-blur-2xl">
+          <div className="flex items-end gap-3 rounded-[24px] bg-bg-tertiary px-3 py-2 transition-all ring-1 ring-transparent focus-within:ring-accent/40 focus-within:shadow-[0_0_8px_rgba(0,108,82,0.4)]">
             <textarea
               ref={textareaRef}
               value={text}
@@ -202,9 +202,9 @@ export default function InputArea({
               onClick={handleSend}
               disabled={!text.trim() || isDisabled}
               className={cn(
-                "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl transition-all shadow-sm",
+                "flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all shadow-sm",
                 text.trim() && !isDisabled
-                  ? "bg-accent text-white hover:bg-accent-hover hover:shadow-[0_10px_24px_rgba(45,108,223,0.28)]"
+                  ? "bg-gradient-to-br from-accent to-accent-hover text-white hover:scale-[0.98] hover:shadow-ambient"
                   : "bg-bg-hover text-text-muted cursor-not-allowed"
               )}
               aria-label="ส่งข้อความ"

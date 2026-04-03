@@ -160,12 +160,10 @@ export default function Home() {
       setPendingAgentLabel("");
       setSessionId(selectedSessionId);
       const cachedSession = sessionCacheRef.current.get(selectedSessionId);
-      const hasCachedContent = Boolean(
+      if (
         cachedSession &&
         (cachedSession.messages.length > 0 || cachedSession.history.length > 0)
-      );
-
-      if (hasCachedContent) {
+      ) {
         setMessages(cachedSession.messages);
         setConversationHistory(cachedSession.history);
         return;
@@ -455,7 +453,7 @@ export default function Home() {
   return (
     <ErrorBoundary>
       <div className="app-shell relative flex h-full flex-col">
-        <header className="shrink-0 border-b border-border bg-bg-secondary/80 px-4 backdrop-blur-xl">
+        <header className="shrink-0 bg-bg-secondary/80 px-4 backdrop-blur-xl">
           <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between gap-4">
             <div className="min-w-0">
               <p className="text-sm font-semibold tracking-tight text-text-primary">
@@ -496,7 +494,7 @@ export default function Home() {
         <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 overflow-hidden px-3 pb-3 pt-3 sm:px-4">
           {/* Sidebar */}
           <aside
-            className={`flex shrink-0 flex-col overflow-hidden rounded-[30px] border border-border bg-bg-secondary/70 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl transition-[width] duration-200 ${
+            className={`flex shrink-0 flex-col overflow-hidden rounded-[30px] bg-bg-secondary shadow-ambient backdrop-blur-xl transition-[width] duration-200 ${
               sidebarCollapsed ? "w-16" : "w-72"
             }`}
           >
@@ -567,7 +565,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="border-t border-border px-2 py-3">
+                <div className="px-2 py-3">
                   <button
                     onClick={() => setWorkspaceModalOpen(true)}
                     className="flex h-10 w-full items-center justify-center rounded-xl bg-bg-tertiary/70 text-base text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary"
@@ -580,7 +578,7 @@ export default function Home() {
               </>
             ) : (
               <>
-                <div className="border-b border-border px-4 py-5">
+                <div className="px-4 py-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-lg font-semibold tracking-tight text-text-primary">
@@ -603,7 +601,7 @@ export default function Home() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto">
-                  <div className="border-b border-border px-4 py-3">
+                  <div className="px-4 py-3">
                     <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-text-muted">
                       ไฟล์ ({files.length})
                     </span>
@@ -640,7 +638,7 @@ export default function Home() {
                     ))}
                   </div>
 
-                  <div className="mt-2 border-b border-border px-4 py-3">
+                  <div className="mt-2 px-4 py-3">
                     <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-text-muted">
                       เซสชัน ({sessions.length})
                     </span>
@@ -689,7 +687,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="border-t border-border px-4 py-4">
+                <div className="px-4 py-4">
                   <button
                     onClick={() => setWorkspaceModalOpen(true)}
                     className="w-full rounded-2xl bg-bg-tertiary/70 px-3 py-3 text-left text-sm text-text-secondary transition-colors hover:bg-bg-hover hover:text-text-primary"
@@ -709,8 +707,8 @@ export default function Home() {
           </aside>
 
           {/* Chat area */}
-          <div className="ml-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[34px] border border-border bg-surface/70 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-xl">
-            <div className="border-b border-border px-6 py-4">
+          <div className="ml-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[34px] bg-surface shadow-ambient backdrop-blur-xl">
+            <div className="px-6 py-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-text-primary">
