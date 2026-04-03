@@ -3,6 +3,26 @@
 All notable changes to this project will be documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.32.45] — 2026-04-03
+
+### Added
+- **Partial file editing** — เลือกข้อความใน Preview Panel แล้วกด "แก้ไขส่วนนี้" เพื่อให้ AI แก้เฉพาะส่วนนั้น
+- **`[PARTIAL_EDIT]` prompt marker** — Document Agent รับ marker นี้และ return เฉพาะ `[REPLACEMENT]...[/REPLACEMENT]` แทนการเขียนทั้งไฟล์
+- **`POST /api/workspace/replace`** — endpoint สำหรับ find-and-replace-one ในไฟล์
+- **ConfirmBar type="replace"** — ขั้นตอนยืนยันก่อนเขียนทับ รองรับคำสั่ง "เขียนทับ" หรือกดปุ่ม
+- **`replaceInFile()` API** — frontend function สำหรับเรียก replace endpoint
+- **Preview auto-refresh** — PreviewPanel refresh เนื้อหาอัตโนมัติหลัง replace สำเร็จ
+
+### Fixed
+- **Raw-only selection** — popup "แก้ไขส่วนนี้" ใช้ได้เฉพาะ raw view เพื่อให้ text ตรงกับไฟล์จริง
+- **Text overflow** — ข้อความใน user bubble ใช้ `break-words` ป้องกัน overflow
+- **Prefill key pattern** — ใช้ `{ text, key }` state แทน setText+clear เพื่อ trigger useEffect ได้ถูกต้อง
+- **`.docx`/`.xlsx` binary serving** — `serve_workspace_file` แปลง markdown text เป็น binary on-the-fly
+
+### Changed
+- **AI message bubble** — ขยายเต็มความกว้าง chat column ลบ `max-w-4xl` และ `max-w-[80%]`
+- **InputArea width** — ปรับ padding ให้ตรงกับ message bubble (`px-5`, ลบ `max-w-4xl`)
+
 ## [1.0.0] — 2026-03-31
 
 ### Added

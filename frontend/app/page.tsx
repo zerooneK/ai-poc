@@ -6,6 +6,7 @@ import { useFileSSE } from "@/hooks/useFileSSE";
 import { useSessions } from "@/hooks/useSessions";
 import { useShortcuts } from "@/lib/shortcuts";
 import ChatWindow from "@/components/ChatWindow";
+import ConfirmBar from "@/components/ConfirmBar";
 import InputArea from "@/components/InputArea";
 import PreviewPanel from "@/components/PreviewPanel";
 import WorkspaceModal from "@/components/WorkspaceModal";
@@ -18,6 +19,7 @@ import {
   getFilesForSession,
   getWorkspaceForSession,
   setWorkspace,
+  replaceInFile,
 } from "@/lib/api";
 import { fileIcon, formatBytes, agentLabel } from "@/lib/utils";
 
@@ -53,9 +55,19 @@ function getSessionBadgeLabel(firstMessage: string): string {
 type ThemeMode = "light" | "dark";
 
 const SAVE_INTENT_RE = /^(save|ok|บันทึก|เซฟ|ตกลง|ได้เลย|โอเค)$/i;
+const REPLACE_INTENT_RE = /^(เขียนทับ|overwrite|replace|confirm)$/i;
+
+function parseReplacement(text: string): string | null {
+  const match = text.match(/\[REPLACEMENT\]([\s\S]*?)\[\/REPLACEMENT\]/);
+  return match ? match[1].trim() : null;
+}
 
 function isSaveIntent(text: string): boolean {
   return SAVE_INTENT_RE.test(text.trim());
+}
+
+function isReplaceIntent(text: string): boolean {
+  return REPLACE_INTENT_RE.test(text.trim());
 }
 
 export default function Home() {
@@ -81,6 +93,10 @@ export default function Home() {
   const [isSwitchingSession, setIsSwitchingSession] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [theme, setTheme] = useState<ThemeMode>("dark");
+  const [prefill, setPrefill] = useState<{ text: string; key: number } | undefined>(undefined);
+  const [partialEditContext, setPartialEditContext] = useState<{ filename: string; originalText: string } | null>(null);
+  const [pendingReplacement, setPendingReplacement] = useState<{ filename: string; originalText: string; replacementText: string } | null>(null);
+  const [previewRefreshKey, setPreviewRefreshKey] = useState(0);
   const [pendingDoc, setPendingDoc] = useState("");
   const [pendingAgent, setPendingAgent] = useState("");
   const [pendingTempPaths, setPendingTempPaths] = useState<string[]>([]);
@@ -214,6 +230,17 @@ export default function Home() {
 
   const handleStreamComplete = useCallback(
     (outputText: string, agent?: string, toolEvents?: ToolEvent[]) => {
+      // Partial edit: parse [REPLACEMENT] → store for user confirmation
+      const replacementText = parseReplacement(outputText);
+      if (replacementText !== null && partialEditContext) {
+        setPendingReplacement({
+          filename: partialEditContext.filename,
+          originalText: partialEditContext.originalText,
+          replacementText,
+        });
+        setPartialEditContext(null);
+      }
+
       if (outputText.trim()) {
         const assistantMsg: Message = {
           role: "assistant",
@@ -257,7 +284,7 @@ export default function Home() {
       }
       loadSessions();
     },
-    [loadSessions, pendingFiles, sessionId]
+    [loadSessions, partialEditContext, pendingFiles, sessionId]
   );
 
   // Ref keeps onStreamComplete always calling the latest handleStreamComplete,
@@ -310,15 +337,33 @@ export default function Home() {
     ]
   );
 
+  const confirmReplace = useCallback(() => {
+    if (!pendingReplacement) return;
+    const { filename, originalText, replacementText } = pendingReplacement;
+    setPendingReplacement(null);
+    replaceInFile({
+      filename,
+      session_id: sessionId,
+      original_text: originalText,
+      replacement_text: replacementText,
+    })
+      .then(() => setPreviewRefreshKey((k) => k + 1))
+      .catch((err) => console.error("[replace] failed:", err));
+  }, [pendingReplacement, sessionId]);
+
   const handleSend = useCallback(
     (text: string) => {
+      if (pendingReplacement && isReplaceIntent(text)) {
+        confirmReplace();
+        return;
+      }
       if ((pendingDoc || pendingTempPaths.length > 0) && isSaveIntent(text)) {
         setFormatModalOpen(true);
         return;
       }
       submitMessage(text);
     },
-    [pendingDoc, pendingTempPaths.length, submitMessage]
+    [confirmReplace, pendingDoc, pendingReplacement, pendingTempPaths.length, submitMessage]
   );
 
   const handleWorkspaceSwitch = (path: string) => {
@@ -739,10 +784,21 @@ export default function Home() {
                 isLoadingSession={isSwitchingSession}
               />
             </div>
+            {pendingReplacement && (
+              <ConfirmBar
+                type="replace"
+                filename={pendingReplacement.filename}
+                previewText={pendingReplacement.replacementText.slice(0, 40)}
+                onConfirm={confirmReplace}
+                onCancel={() => setPendingReplacement(null)}
+              />
+            )}
             <InputArea
               onSend={handleSend}
               isStreaming={isStreaming}
               files={files}
+              prefillText={prefill?.text}
+              prefillKey={prefill?.key}
             />
           </div>
         </div>
@@ -753,7 +809,12 @@ export default function Home() {
             key={previewFile}
             filename={previewFile}
             sessionId={sessionId}
+            refreshKey={previewRefreshKey}
             onClose={() => setPreviewFile(null)}
+            onEditSelection={({ prefill: text, filename, originalText }) => {
+              setPrefill((prev) => ({ text, key: (prev?.key ?? 0) + 1 }));
+              setPartialEditContext({ filename, originalText });
+            }}
           />
         )}
 

@@ -140,7 +140,7 @@ function MessageBubble({
   return (
     <div
       className={cn(
-        "mx-auto flex max-w-4xl gap-3 px-4 py-3",
+        "flex gap-3 px-5 py-3",
         isUser ? "justify-end" : "justify-start"
       )}
     >
@@ -152,10 +152,10 @@ function MessageBubble({
 
       <div
         className={cn(
-          "max-w-[80%] rounded-[24px] px-4 py-3 text-[15px] leading-relaxed shadow-ambient relative overflow-hidden",
+          "rounded-[24px] px-4 py-3 text-[15px] leading-relaxed shadow-ambient relative overflow-hidden",
           isUser
-            ? "bg-bg-tertiary text-text-primary"
-            : "bg-surface text-text-primary"
+            ? "max-w-[80%] bg-bg-tertiary text-text-primary"
+            : "w-full bg-surface text-text-primary"
         )}
       >
         {!isUser && (
@@ -174,7 +174,7 @@ function MessageBubble({
         )}
 
         {isUser ? (
-          <p className="whitespace-pre-wrap">{content}</p>
+          <p className="whitespace-pre-wrap break-words">{content}</p>
         ) : (
           <div
             className="prose prose-sm max-w-none

@@ -293,3 +293,17 @@ export async function createWorkspace(
     body: JSON.stringify(body),
   });
 }
+
+// ─── Partial Replace ──────────────────────────────────────────────────
+
+export async function replaceInFile(body: {
+  filename: string;
+  session_id?: string;
+  original_text: string;
+  replacement_text: string;
+}): Promise<{ success: boolean; replaced: boolean; filename: string }> {
+  return request("/api/workspace/replace", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}

@@ -1,38 +1,50 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { X, Copy, FileText, Code } from "lucide-react";
+import { X, Copy, FileText, Code, Pencil } from "lucide-react";
 import { cn, fileIcon } from "@/lib/utils";
 import { getPreviewForSession, getFileUrlForSession } from "@/lib/api";
 
 const PdfViewer = dynamic(() => import("./PdfViewer"), { ssr: false });
 
+interface SelectionPopup {
+  top: number;
+  left: number;
+  text: string;
+}
+
 interface PreviewPanelProps {
   filename: string | null;
   sessionId?: string;
+  refreshKey?: number;
   onClose: () => void;
+  onEditSelection?: (data: { prefill: string; filename: string; originalText: string }) => void;
 }
 
-export default function PreviewPanel({ filename, sessionId, onClose }: PreviewPanelProps) {
+export default function PreviewPanel({ filename, sessionId, refreshKey, onClose, onEditSelection }: PreviewPanelProps) {
   const [content, setContent] = useState("");
   const [size, setSize] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadedFilename, setLoadedFilename] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"rendered" | "raw">("rendered");
+  const [selectionPopup, setSelectionPopup] = useState<SelectionPopup | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const ext = filename?.split(".").pop()?.toLowerCase() || "";
   const isPdf = ext === "pdf";
-  const isMarkdown = ["md", "txt"].includes(ext);
+  // docx/xlsx store markdown text internally — render as formatted, not raw
+  const isMarkdown = ["md", "txt", "docx", "xlsx"].includes(ext);
 
-  // Load text file content
+  // Load text file content — re-fetches when refreshKey changes (after partial replace)
   useEffect(() => {
     if (!filename || isPdf) return;
     let cancelled = false;
     setContent("");
     setError(null);
+    setLoadedFilename(null);
     getPreviewForSession(filename, sessionId)
       .then((res) => {
         if (cancelled) return;
@@ -47,7 +59,7 @@ export default function PreviewPanel({ filename, sessionId, onClose }: PreviewPa
         setLoadedFilename(filename);
       });
     return () => { cancelled = true; };
-  }, [filename, sessionId, isPdf]);
+  }, [filename, sessionId, isPdf, refreshKey]);
 
   if (!filename) return null;
 
@@ -55,8 +67,48 @@ export default function PreviewPanel({ filename, sessionId, onClose }: PreviewPa
 
   const handleCopy = () => navigator.clipboard.writeText(content);
 
+  const handleMouseUp = () => {
+    if (!onEditSelection) return;
+    // Only allow partial edit from raw view — rendered markdown text differs from file content
+    if (isMarkdown && viewMode === "rendered") return;
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed) {
+      setSelectionPopup(null);
+      return;
+    }
+    const text = sel.toString().trim();
+    if (!text) {
+      setSelectionPopup(null);
+      return;
+    }
+    const range = sel.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    const panelRect = panelRef.current?.getBoundingClientRect();
+    if (!panelRect) return;
+    setSelectionPopup({
+      top: rect.bottom - panelRect.top + 8,
+      left: Math.min(
+        rect.left - panelRect.left + rect.width / 2,
+        panelRect.width - 140
+      ),
+      text,
+    });
+  };
+
+  const handleEditSelection = () => {
+    if (!selectionPopup || !onEditSelection || !filename) return;
+    const prefill = `[PARTIAL_EDIT] @${filename}\n"""\n${selectionPopup.text}\n"""\nแก้ไขโดย: `;
+    onEditSelection({ prefill, filename, originalText: selectionPopup.text });
+    setSelectionPopup(null);
+    window.getSelection()?.removeAllRanges();
+  };
+
   return (
-    <div className="fixed inset-0 sm:inset-y-0 sm:left-auto sm:right-0 sm:w-[380px] lg:w-[420px] bg-bg-secondary border-l border-border flex flex-col z-40 shadow-xl">
+    <div
+      ref={panelRef}
+      className="fixed inset-0 sm:inset-y-0 sm:left-auto sm:right-0 sm:w-[380px] lg:w-[420px] bg-bg-secondary border-l border-border flex flex-col z-40 shadow-xl"
+      onMouseUp={handleMouseUp}
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
         <div className="flex items-center gap-2 min-w-0">
@@ -150,6 +202,19 @@ export default function PreviewPanel({ filename, sessionId, onClose }: PreviewPa
             </div>
           )}
         </div>
+      )}
+
+      {/* Selection popup */}
+      {selectionPopup && onEditSelection && (
+        <button
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={handleEditSelection}
+          style={{ top: selectionPopup.top, left: selectionPopup.left }}
+          className="absolute z-50 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent text-white text-xs font-medium shadow-lg hover:bg-accent-hover transition-colors"
+        >
+          <Pencil className="w-3 h-3" />
+          แก้ไขส่วนนี้
+        </button>
       )}
 
       {/* Footer (text files only) */}

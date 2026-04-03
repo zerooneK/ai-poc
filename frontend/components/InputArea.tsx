@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, KeyboardEvent } from "react";
+import { useState, useRef, useCallback, useEffect, KeyboardEvent } from "react";
 import { Send, Loader2 } from "lucide-react";
 import { cn, fileIcon, formatBytes } from "@/lib/utils";
 
@@ -15,6 +15,8 @@ interface InputAreaProps {
   isStreaming: boolean;
   disabled?: boolean;
   files?: WorkspaceFile[];
+  prefillText?: string;
+  prefillKey?: number;
 }
 
 interface MentionState {
@@ -28,10 +30,24 @@ export default function InputArea({
   isStreaming,
   disabled = false,
   files = [],
+  prefillText,
+  prefillKey,
 }: InputAreaProps) {
   const [text, setText] = useState("");
   const [mention, setMention] = useState<MentionState | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (!prefillText || prefillKey === undefined) return;
+    setText(prefillText);
+    requestAnimationFrame(() => {
+      const el = textareaRef.current;
+      if (!el) return;
+      el.focus();
+      el.style.height = "auto";
+      el.style.height = Math.min(el.scrollHeight, 160) + "px";
+    });
+  }, [prefillKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filteredFiles = mention
     ? files
@@ -140,8 +156,8 @@ export default function InputArea({
   const isDisabled = disabled || isStreaming;
 
   return (
-    <div className="shrink-0 px-4 pb-5 pt-3">
-      <div className="mx-auto max-w-4xl relative">
+    <div className="shrink-0 px-5 pb-5 pt-3">
+      <div className="relative">
         {/* @mention dropdown — appears above the input */}
         {mention && filteredFiles.length > 0 && (
           <div className="absolute bottom-full left-0 right-0 mb-2 rounded-2xl border border-border bg-bg-secondary shadow-xl overflow-hidden z-50">

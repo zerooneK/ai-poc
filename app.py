@@ -715,9 +715,16 @@ def history_job(job_id: str):
     job = db.get_job(job_id)
     return jsonify(job) if job else (jsonify({'error': 'Not found'}), 404)
 
+_BINARY_MIMETYPES = {
+    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'pdf':  'application/pdf',
+}
+
 @app.route('/api/serve/<filename>')
 def serve_workspace_file(filename: str):
-    """Serve a raw file from the current workspace (used for PDF/image inline preview)."""
+    """Serve a file from the current workspace.
+    For .docx/.xlsx/.pdf files stored as markdown text, convert to binary on-the-fly."""
     if not re.match(r'^[\w.\-]{1,200}$', filename):
         return jsonify({'error': 'invalid filename'}), 400
     if _has_invalid_request_session_id():
@@ -730,6 +737,28 @@ def serve_workspace_file(filename: str):
         return jsonify({'error': 'access denied'}), 403
     if not os.path.isfile(filepath):
         return jsonify({'error': 'not found'}), 404
+
+    ext = os.path.splitext(filename)[1].lower().lstrip('.')
+    if ext in _BINARY_MIMETYPES:
+        try:
+            raw = open(filepath, 'rb').read()
+            # Check if stored as markdown text (not already binary)
+            try:
+                text = raw.decode('utf-8')
+                file_bytes = converter.convert(text, ext)
+            except UnicodeDecodeError:
+                # Already binary — serve as-is
+                file_bytes = raw
+            from flask import Response
+            return Response(
+                file_bytes,
+                mimetype=_BINARY_MIMETYPES[ext],
+                headers={'Content-Disposition': f'inline; filename="{filename}"'}
+            )
+        except Exception as e:
+            logger.error("[serve] convert error for %s: %s", filename, e)
+            return jsonify({'error': 'ไม่สามารถแปลงไฟล์ได้'}), 500
+
     return send_file(filepath, conditional=True, max_age=60)
 
 
@@ -774,6 +803,46 @@ def delete_file_api():
     logger.info("[delete_file_api] deleted: %s from workspace %s", filename, workspace)
     _notify_workspace_changed(workspace)
     return jsonify({'success': True, 'filename': filename})
+
+
+@app.route('/api/workspace/replace', methods=['POST'])
+@limiter.limit("30 per minute")
+def replace_in_file_api():
+    data = request.json or {}
+    filename = (data.get('filename') or '').strip()
+    original_text = data.get('original_text', '')
+    replacement_text = data.get('replacement_text', '')
+
+    if not filename or not re.match(r'^[\w.\-]{1,200}$', filename):
+        return jsonify({'error': 'invalid filename'}), 400
+    if not original_text:
+        return jsonify({'error': 'original_text is required'}), 400
+    if replacement_text is None:
+        return jsonify({'error': 'replacement_text is required'}), 400
+
+    session_id = _get_request_session_id()
+    workspace = get_session_workspace(session_id) if session_id else get_workspace()
+
+    filepath = os.path.join(workspace, filename)
+    real_workspace = os.path.realpath(workspace)
+    real_filepath = os.path.realpath(filepath)
+    if not real_filepath.startswith(real_workspace + os.sep) and real_filepath != real_workspace:
+        return jsonify({'error': 'access denied'}), 403
+    if not os.path.isfile(filepath):
+        return jsonify({'error': 'file not found'}), 404
+
+    try:
+        content = fs_read_file(workspace, filename)
+        if original_text not in content:
+            return jsonify({'error': 'original text not found in file', 'replaced': False}), 404
+        new_content = content.replace(original_text, replacement_text, 1)
+        fs_update_file(workspace, filename, new_content)
+        _notify_workspace_changed(workspace)
+        logger.info("[replace_in_file] partial replace in %s", filename)
+        return jsonify({'success': True, 'replaced': True, 'filename': filename})
+    except Exception as e:
+        logger.error("[replace_in_file] error: %s", e)
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/sessions')
